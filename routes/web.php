@@ -28,4 +28,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+Route::group(['middleware' => ['role:admin']], function () {
+    Route::resource('supplier', SupplierController::class);
+
+
+    // API
+    Route::get('supplier/api/data', [SupplierController::class, 'data'])->name('supplier.data');
+
+    // Import
+    Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
+});
+
+require __DIR__ . '/auth.php';
