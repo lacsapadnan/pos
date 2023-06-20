@@ -4,6 +4,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
 Route::group(['middleware' => ['role:admin']], function () {
     Route::resource('supplier', SupplierController::class)->except(['show', 'create']);
     Route::resource('customer', CustomerController::class)->except(['show', 'create']);
+    Route::resource('cabang', WarehouseController::class)->except(['show', 'create']);
+
 
 
     // API
