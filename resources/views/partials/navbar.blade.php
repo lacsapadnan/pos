@@ -130,7 +130,7 @@
                             <div class="d-flex flex-column">
                                 <div class="fw-bold d-flex align-items-center fs-5">{{ auth()->user()->name }}
                                     <span
-                                        class="px-2 py-1 badge badge-light-success fw-bold fs-8 ms-2">{{ auth()->user()->role->name }}</span>
+                                        class="px-2 py-1 badge badge-light-success fw-bold fs-8 ms-2">{{ auth()->user()->role }}</span>
                                 </div>
                                 <a href="#"
                                     class="fw-semibold text-muted text-hover-primary fs-7">{{ auth()->user()->email }}</a>
@@ -192,14 +192,14 @@
                 </div>
                 <!--end:Menu item-->
                 <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('cabang.*') ? ' here' : '' }}">
+                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('cabang.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('cabang.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Cabang</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
                 <!--begin:Menu item-->
                 <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('supplier.*') ? ' here' : '' }}">
@@ -220,42 +220,42 @@
                 </div>
                 <!--end:Menu item-->
                 <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
+                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('produk.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Produk</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
                 <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('pembelian.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Pembelian</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
+                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('penjualan.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Penjualan</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}"">
+                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}"">
                     <!--begin:Menu link-->
                     <a href="{{ route('inventori.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Inventory</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div>
+                </div> --}}
                 <!--end:Menu item-->
                 <div class="menu-item me-0 me-lg-2">
                     <!--begin:Menu link-->

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupplierController;
@@ -28,17 +29,21 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::group(['middleware' => ['role:admin']], function () {
-    Route::resource('supplier', SupplierController::class);
+    Route::resource('supplier', SupplierController::class)->except(['show', 'create']);
+    Route::resource('customer', CustomerController::class)->except(['show', 'create']);
 
 
     // API
     Route::get('supplier/api/data', [SupplierController::class, 'data'])->name('api.supplier');
+    Route::get('customer/api/data', [CustomerController::class, 'data'])->name('api.customer');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
+    Route::post('customer/import', [CustomerController::class, 'import'])->name('customer.import');
 
     // Download
     Route::get('supplier/download', [SupplierController::class, 'download'])->name('supplier.template.download');
+    Route::get('customer/download', [CustomerController::class, 'download'])->name('customer.template.download');
 });
 
 require __DIR__ . '/auth.php';
