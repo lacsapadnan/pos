@@ -17,8 +17,8 @@ class UsersAndRolesSeeder extends Seeder
         // Create admin user
         $adminUser = User::create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
+            'email' => 'admin@mail.com',
+            'password' => bcrypt('admin123'),
         ]);
 
         // Assign 'admin' role to the admin user
@@ -28,8 +28,8 @@ class UsersAndRolesSeeder extends Seeder
         // Create kasir user
         $kasirUser = User::create([
             'name' => 'Kasir User',
-            'email' => 'kasir@example.com',
-            'password' => bcrypt('password'),
+            'email' => 'kasir@mail.com',
+            'password' => bcrypt('kasir12'),
         ]);
 
         // Assign 'kasir' role to the kasir user
@@ -39,8 +39,8 @@ class UsersAndRolesSeeder extends Seeder
         // Create gudang user
         $gudangUser = User::create([
             'name' => 'Gudang User',
-            'email' => 'gudang@example.com',
-            'password' => bcrypt('password'),
+            'email' => 'gudang@mail.com',
+            'password' => bcrypt('gudang123'),
         ]);
 
         // Assign 'gudang' role to the gudang user
