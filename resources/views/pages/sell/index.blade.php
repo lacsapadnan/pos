@@ -206,10 +206,19 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
+    </script>
+
+    <script>
+        var datatable;
 
         function openModal(id) {
             // Clear the table body
             $('#kt_datatable_detail tbody').empty();
+
+            // Check if DataTable instance exists and destroy it
+            if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
+                datatable.destroy();
+            }
 
             // Send a request to fetch the sell details for the given ID
             $.ajax({
@@ -217,7 +226,7 @@
                 method: 'GET',
                 success: function(response) {
                     // Initialize the DataTable on the table
-                    var datatable = $('#kt_datatable_detail').DataTable({
+                    datatable = $('#kt_datatable_detail').DataTable({
                         data: response,
                         columns: [{
                                 data: 'product.name'
@@ -229,12 +238,12 @@
                                 data: 'quantity'
                             },
                             {
-                                data: 'price'
+                                data: 'price',
                             },
                             {
                                 data: 'diskon',
                                 render: function(data, type, row) {
-                                    return data == null ? 0 : data;
+                                    return data ? data : 0;
                                 }
                             }
                         ]
