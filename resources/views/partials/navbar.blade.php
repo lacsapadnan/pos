@@ -230,14 +230,14 @@
                 </div>
                 <!--end:Menu item-->
                 <!--begin:Menu item-->
-                {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('pembelian.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Pembelian</span>
                         <span class="menu-arrow d-lg-none"></span>
                     </a>
                     <!--end:Menu link-->
-                </div> --}}
+                </div>
                 <!--end:Menu item-->
                 <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
