@@ -216,19 +216,28 @@
                 url: '/penjualan/' + id,
                 method: 'GET',
                 success: function(response) {
-                    // Iterate over the sell details and append them to the table
-                    response.forEach(function(detail) {
-                        var diskon = detail.diskon !== null ? detail.diskon : 0;
-                        var row = `
-                    <tr>
-                        <td>${detail.product.name}</td>
-                        <td>${detail.unit.name}</td>
-                        <td>${detail.quantity}</td>
-                        <td>${detail.price}</td>
-                        <td>${diskon}</td>
-                    </tr>
-                `;
-                        $('#kt_datatable_detail tbody').append(row);
+                    // Initialize the DataTable on the table
+                    var datatable = $('#kt_datatable_detail').DataTable({
+                        data: response,
+                        columns: [{
+                                data: 'product.name'
+                            },
+                            {
+                                data: 'unit.name'
+                            },
+                            {
+                                data: 'quantity'
+                            },
+                            {
+                                data: 'price'
+                            },
+                            {
+                                data: 'diskon',
+                                render: function(data, type, row) {
+                                    return data == null ? 0 : data;
+                                }
+                            }
+                        ]
                     });
 
                     // Open the modal
