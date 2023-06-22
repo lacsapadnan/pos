@@ -19,6 +19,7 @@ class UsersAndRolesSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@mail.com',
             'password' => bcrypt('admin123'),
+            'warehouse_id' => '1',
         ]);
 
         // Assign 'admin' role to the admin user
@@ -30,6 +31,7 @@ class UsersAndRolesSeeder extends Seeder
             'name' => 'Kasir User',
             'email' => 'kasir@mail.com',
             'password' => bcrypt('kasir12'),
+            'warehouse_id' => '2',
         ]);
 
         // Assign 'kasir' role to the kasir user
@@ -41,6 +43,7 @@ class UsersAndRolesSeeder extends Seeder
             'name' => 'Gudang User',
             'email' => 'gudang@mail.com',
             'password' => bcrypt('gudang123'),
+            'warehouse_id' => '3',
         ]);
 
         // Assign 'gudang' role to the gudang user
