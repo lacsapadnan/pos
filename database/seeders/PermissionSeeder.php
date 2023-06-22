@@ -13,79 +13,79 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // CRUD warehouse permissions
-        Permission::create(['name' => 'create warehouse']);
-        Permission::create(['name' => 'read warehouse']);
-        Permission::create(['name' => 'update warehouse']);
-        Permission::create(['name' => 'delete warehouse']);
+        // CRUD gudang permissions
+        Permission::create(['name' => 'simpan gudang']);
+        Permission::create(['name' => 'baca gudang']);
+        Permission::create(['name' => 'update gudang']);
+        Permission::create(['name' => 'hapus gudang']);
 
-        // CRUD product permissions
-        Permission::create(['name' => 'create product']);
-        Permission::create(['name' => 'read product']);
-        Permission::create(['name' => 'update product']);
-        Permission::create(['name' => 'delete product']);
-        Permission::create(['name' => 'import product']);
+        // CRUD produk permissions
+        Permission::create(['name' => 'simpan produk']);
+        Permission::create(['name' => 'baca produk']);
+        Permission::create(['name' => 'update produk']);
+        Permission::create(['name' => 'hapus produk']);
+        Permission::create(['name' => 'import produk']);
 
         // CRUD supplier permissions
-        Permission::create(['name' => 'create supplier']);
-        Permission::create(['name' => 'read supplier']);
+        Permission::create(['name' => 'simpan supplier']);
+        Permission::create(['name' => 'baca supplier']);
         Permission::create(['name' => 'update supplier']);
-        Permission::create(['name' => 'delete supplier']);
+        Permission::create(['name' => 'hapus supplier']);
         Permission::create(['name' => 'import supplier']);
 
         // CRUD customer permissions
-        Permission::create(['name' => 'create customer']);
-        Permission::create(['name' => 'read customer']);
+        Permission::create(['name' => 'simpan customer']);
+        Permission::create(['name' => 'baca customer']);
         Permission::create(['name' => 'update customer']);
-        Permission::create(['name' => 'delete customer']);
+        Permission::create(['name' => 'hapus customer']);
         Permission::create(['name' => 'import customer']);
 
         // CRUD unit permissions
-        Permission::create(['name' => 'create unit']);
-        Permission::create(['name' => 'read unit']);
+        Permission::create(['name' => 'simpan unit']);
+        Permission::create(['name' => 'baca unit']);
         Permission::create(['name' => 'update unit']);
-        Permission::create(['name' => 'delete unit']);
+        Permission::create(['name' => 'hapus unit']);
 
-        // CRUD tresury permissions
-        Permission::create(['name' => 'create tresury']);
-        Permission::create(['name' => 'read tresury']);
-        Permission::create(['name' => 'update tresury']);
-        Permission::create(['name' => 'delete tresury']);
+        // CRUD kas permissions
+        Permission::create(['name' => 'simpan kas']);
+        Permission::create(['name' => 'baca kas']);
+        Permission::create(['name' => 'update kas']);
+        Permission::create(['name' => 'hapus kas']);
 
         // CRUD inventory permissions
-        Permission::create(['name' => 'create inventory']);
-        Permission::create(['name' => 'read inventory']);
+        Permission::create(['name' => 'simpan inventory']);
+        Permission::create(['name' => 'baca inventory']);
         Permission::create(['name' => 'update inventory']);
-        Permission::create(['name' => 'delete inventory']);
+        Permission::create(['name' => 'hapus inventory']);
 
         // CRUD user permissions
-        Permission::create(['name' => 'create user']);
-        Permission::create(['name' => 'read user']);
+        Permission::create(['name' => 'simpan user']);
+        Permission::create(['name' => 'baca user']);
         Permission::create(['name' => 'update user']);
-        Permission::create(['name' => 'delete user']);
+        Permission::create(['name' => 'hapus user']);
 
         // CRUD role permissions
-        Permission::create(['name' => 'create role']);
-        Permission::create(['name' => 'read role']);
+        Permission::create(['name' => 'simpan role']);
+        Permission::create(['name' => 'baca role']);
         Permission::create(['name' => 'update role']);
-        Permission::create(['name' => 'delete role']);
+        Permission::create(['name' => 'hapus role']);
 
         // CRUD permission permissions
-        Permission::create(['name' => 'create permission']);
-        Permission::create(['name' => 'read permission']);
+        Permission::create(['name' => 'simpan permission']);
+        Permission::create(['name' => 'baca permission']);
         Permission::create(['name' => 'update permission']);
-        Permission::create(['name' => 'delete permission']);
+        Permission::create(['name' => 'hapus permission']);
 
-        // CRUD purchase permissions
-        Permission::create(['name' => 'create purchase']);
-        Permission::create(['name' => 'read purchase']);
-        Permission::create(['name' => 'update purchase']);
-        Permission::create(['name' => 'delete purchase']);
+        // CRUD pembelian permissions
+        Permission::create(['name' => 'simpan pembelian']);
+        Permission::create(['name' => 'baca pembelian']);
+        Permission::create(['name' => 'update pembelian']);
+        Permission::create(['name' => 'hapus pembelian']);
 
-        // CRUD sale permissions
-        Permission::create(['name' => 'create sale']);
-        Permission::create(['name' => 'read sale']);
-        Permission::create(['name' => 'update sale']);
-        Permission::create(['name' => 'delete sale']);
+        // CRUD penjualan permissions
+        Permission::create(['name' => 'simpan penjualan']);
+        Permission::create(['name' => 'baca penjualan']);
+        Permission::create(['name' => 'update penjualan']);
+        Permission::create(['name' => 'hapus penjualan']);
     }
 }

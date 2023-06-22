@@ -6,6 +6,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\WarehouseController;
@@ -42,6 +43,7 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::resource('inventori', InventoryController::class)->only(['store', 'index']);
     Route::resource('penjualan', SellController::class);
     Route::resource('pembelian', PurchaseController::class)->except(['destroy', 'edit', 'update']);
+    Route::resource('role-permission', RolePermissionController::class);
 
     // API
     Route::get('supplier/api/data', [SupplierController::class, 'data'])->name('api.supplier');
@@ -50,6 +52,7 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
     Route::get('penjualan/api/data', [SellController::class, 'data'])->name('api.penjualan');
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
+    Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');

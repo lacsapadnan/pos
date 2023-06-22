@@ -15,8 +15,10 @@
             </div>
             <!--end::Heaeder menu toggle-->
             <a href="/dashboard">
-                <img alt="Logo" src="{{ URL::asset('assets/media/logos/demo11.svg') }}" class="theme-light-show h-20px h-lg-30px" />
-                <img alt="Logo" src="{{ URL::asset('assets/media/logos/demo11-dark.svg') }}" class="theme-dark-show h-20px h-lg-30px" />
+                <img alt="Logo" src="{{ URL::asset('assets/media/logos/demo11.svg') }}"
+                    class="theme-light-show h-20px h-lg-30px" />
+                <img alt="Logo" src="{{ URL::asset('assets/media/logos/demo11-dark.svg') }}"
+                    class="theme-dark-show h-20px h-lg-30px" />
             </a>
         </div>
         <!--end::Header Logo-->
@@ -248,7 +250,7 @@
                     <!--end:Menu link-->
                 </div>
                 <!--end:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}"">
+                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
                     <a href="{{ route('inventori.index') }}" class="py-3 menu-link">
                         <span class="menu-title">Inventory</span>
@@ -264,6 +266,37 @@
                         <span class="menu-arrow d-lg-none"></span>
                     </span>
                     <!--end:Menu link-->
+                </div>
+                <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                    class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
+                    <!--begin:Menu link-->
+                    <span class="py-3 menu-link">
+                        <span class="menu-title">Pengaturan</span>
+                        <span class="menu-arrow d-lg-none"></span>
+                    </span>
+                    <!--end:Menu link-->
+                    <!--begin:Menu sub-->
+                    <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                        <!--begin:Menu item-->
+                        <div class="menu-item {{ request()->routeIs('role-permission.*') ? ' here' : '' }}">
+                            <!--begin:Menu link-->
+                            <a class="menu-link"href="{{ route('role-permission.index') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-lock-2 fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                        <i class="path3"></i>
+                                        <i class="path4"></i>
+                                        <i class="path5"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Role & Permission</span>
+                            </a>
+                            <!--end:Menu link-->
+                        </div>
+                        <!--end:Menu item-->
+                    </div>
+                    <!--end:Menu sub-->
                 </div>
             </div>
             <!--end::Menu-->
