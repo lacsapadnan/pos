@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupplierController;
@@ -35,13 +36,13 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::resource('customer', CustomerController::class)->except(['show', 'create']);
     Route::resource('cabang', WarehouseController::class)->except(['show', 'create']);
     Route::resource('produk', ProductController::class)->except(['show', 'create']);
-
-
+    Route::resource('inventori', InventoryController::class)->only(['store', 'index']);
 
     // API
     Route::get('supplier/api/data', [SupplierController::class, 'data'])->name('api.supplier');
     Route::get('customer/api/data', [CustomerController::class, 'data'])->name('api.customer');
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
+    Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
