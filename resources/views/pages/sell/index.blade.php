@@ -125,14 +125,25 @@
                             "data": "warehouse.name"
                         },
                         {
-                            "data": "grand_total"
+                            "data": "grand_total",
+                            "render": function(data, type, row) {
+                                // using javascript number formatter
+                                return new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                            }
                         },
                         {
                             "data": "id",
                             "render": function(data, type, row) {
-                                return `<a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>`;
+                                return `
+                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                <a href="/penjualan/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
+                                `;
                             }
                         },
+
                     ],
                 });
             }
@@ -239,11 +250,20 @@
                             },
                             {
                                 data: 'price',
+                                render: function(data, type, row) {
+                                    return new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                }
                             },
                             {
                                 data: 'diskon',
                                 render: function(data, type, row) {
-                                    return data ? data : 0;
+                                    return new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
                                 }
                             }
                         ]

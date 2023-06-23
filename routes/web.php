@@ -69,9 +69,9 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::post('pembelian/cart', [PurchaseController::class, 'addCart'])->name('pembelian.addCart');
     Route::delete('penjualan/cart/hapus/{id}', [SellController::class, 'destroyCart'])->name('penjualan.destroyCart');
     Route::delete('pembelian/cart/hapus/{id}', [PurchaseController::class, 'destroyCart'])->name('pembelian.destroyCart');
-});
 
-Route::group(['middleware' => ['role:kasir']], function () {
+    // Print
+    Route::get('penjualan/print/{id}', [SellController::class, 'print'])->name('penjualan.print');
 });
 
 require __DIR__ . '/auth.php';
