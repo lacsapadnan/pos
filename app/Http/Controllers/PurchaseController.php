@@ -90,6 +90,32 @@ class PurchaseController extends Controller
                 $product->price_eceran = $cart->price;
             }
             $product->update();
+
+            // update inventory
+            $inventory = Inventory::where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('product_id', $cart->product_id)
+                ->first();
+
+            // check quantity is dus, pak, or eceran
+            $quantity = 0;
+            if ($cart->unit_id == $product->unit_dus) {
+                $quantity = $cart->quantity * $product->dus_to_eceran;
+            } elseif ($cart->unit_id == $product->unit_pak) {
+                $quantity = $cart->quantity * $product->pak_to_eceran;
+            } elseif ($cart->unit_id == $product->unit_eceran) {
+                $quantity = $cart->quantity * 1;
+            }
+
+            if ($inventory) {
+                $inventory->quantity += $quantity;
+                $inventory->update();
+            } else {
+                Inventory::create([
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                    'product_id' => $cart->product_id,
+                    'quantity' => $quantity,
+                ]);
+            }
         }
 
         // clear the cart
