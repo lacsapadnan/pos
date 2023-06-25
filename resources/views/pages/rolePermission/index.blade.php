@@ -197,8 +197,8 @@
                         "targets": [0, 1, 2, 3],
                         "className": "text-gray-900 fs-7 fw-bold"
                     }, {
-                        "targets": [1],
-                        "className": "min-w-100px"
+                        "targets": [1, 3],
+                        "className": "min-w-200px"
                     }]
                 });
             }

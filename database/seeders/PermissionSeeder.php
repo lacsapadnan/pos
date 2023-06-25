@@ -13,11 +13,11 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // CRUD gudang permissions
-        Permission::create(['name' => 'simpan gudang']);
-        Permission::create(['name' => 'baca gudang']);
-        Permission::create(['name' => 'update gudang']);
-        Permission::create(['name' => 'hapus gudang']);
+        // CRUD cabang permissions
+        Permission::create(['name' => 'simpan cabang']);
+        Permission::create(['name' => 'baca cabang']);
+        Permission::create(['name' => 'update cabang']);
+        Permission::create(['name' => 'hapus cabang']);
 
         // CRUD produk permissions
         Permission::create(['name' => 'simpan produk']);
