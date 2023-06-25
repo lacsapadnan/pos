@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Sell;
 use App\Models\SellCart;
 use App\Models\SellDetail;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -96,7 +97,7 @@ class SellController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        abort(404);
     }
 
     /**
@@ -112,7 +113,7 @@ class SellController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        abort(404);
     }
 
     public function addCart(Request $request)
@@ -251,5 +252,19 @@ class SellController extends Controller
         $inventory->save();
 
         return redirect()->back();
+    }
+
+    public function print($id)
+    {
+        $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
+        $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details'));
+
+        return response()->stream(function () use ($pdf) {
+            echo $pdf->output();
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Transaksi-' . $sell->order_number . '.pdf"'
+        ]);
     }
 }
