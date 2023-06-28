@@ -26,7 +26,7 @@
             </button>
         </div>
     @endif
-    @if($errors->any())
+    @if ($errors->any())
         <div class="p-5 mb-10 alert alert-dismissible bg-danger d-flex flex-column flex-sm-row">
             <div class="d-flex flex-column text-light pe-0 pe-sm-10">
                 <h4 class="mb-2 text-light">Gagal Menyimpan data</h4>
@@ -207,19 +207,59 @@
                             data: 'pak_to_eceran'
                         },
                         {
-                            data: 'price_dus'
+                            data: 'price_dus',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
-                            data: 'price_pak'
+                            data: 'price_pak',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
-                            data: 'price_eceran'
+                            data: 'price_eceran',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
-                            data: 'lastest_price_eceran'
+                            data: 'lastest_price_eceran',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
-                            data: 'sales_price'
+                            data: 'sales_price',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
                             data: 'hadiah',

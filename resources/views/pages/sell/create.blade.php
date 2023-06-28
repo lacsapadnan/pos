@@ -309,7 +309,15 @@
                             }
                         },
                         {
-                            data: "product.price_dus"
+                            data: "product.price_dus",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
                             data: null,
@@ -324,7 +332,15 @@
                             }
                         },
                         {
-                            data: "product.price_pak"
+                            data: "product.price_pak",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
                             data: null,
@@ -339,7 +355,15 @@
                             }
                         },
                         {
-                            data: "product.price_eceran"
+                            data: "product.price_eceran",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
                             data: null,
@@ -417,14 +441,10 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
-                            // Handle success response
-                            console.log(response);
                             // reload page
                             location.reload();
                         },
                         error: function(xhr, status, error) {
-                            // Handle error response
-                            console.log(xhr);
                         }
                     });
                 });

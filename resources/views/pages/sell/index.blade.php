@@ -126,12 +126,13 @@
                         },
                         {
                             "data": "grand_total",
-                            "render": function(data, type, row) {
-                                // using javascript number formatter
-                                return new Intl.NumberFormat('id-ID', {
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
                                 }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
                             }
                         },
                         {
@@ -251,19 +252,23 @@
                             {
                                 data: 'price',
                                 render: function(data, type, row) {
-                                    return new Intl.NumberFormat('id-ID', {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
                                         currency: 'IDR'
                                     }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
                                 }
                             },
                             {
                                 data: 'diskon',
                                 render: function(data, type, row) {
-                                    return new Intl.NumberFormat('id-ID', {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
                                         currency: 'IDR'
                                     }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
                                 }
                             }
                         ]
