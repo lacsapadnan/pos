@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UsersAndRolesSeeder extends Seeder
@@ -25,6 +26,9 @@ class UsersAndRolesSeeder extends Seeder
         // Assign 'admin' role to the admin user
         $adminRole = Role::create(['name' => 'admin']);
         $adminUser->roles()->attach($adminRole);
+
+        // assign all permissions to the admin role
+        $adminRole->givePermissionTo(Permission::all());
 
         // Create kasir user
         $kasirUser = User::create([

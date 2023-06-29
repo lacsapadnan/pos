@@ -87,5 +87,11 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'baca penjualan']);
         Permission::create(['name' => 'update penjualan']);
         Permission::create(['name' => 'hapus penjualan']);
+
+        // CRUD retur permissions
+        Permission::create(['name' => 'simpan retur']);
+        Permission::create(['name' => 'baca retur']);
+        Permission::create(['name' => 'update retur']);
+        Permission::create(['name' => 'hapus retur']);
     }
 }
