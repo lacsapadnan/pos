@@ -86,6 +86,8 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>Kelompok</th>
                                 <th>Nama Barang</th>
+                                <th>Barcode Dus</th>
+                                <th>Barcode Eceran</th>
                                 <th>Stok</th>
                                 <th>Jml Per Dus</th>
                                 <th>Jml Per Pak</th>
@@ -288,6 +290,26 @@
                             data: "product.name"
                         },
                         {
+                            data: "product.barcode_dus",
+                            render: function(data, type, row) {
+                                if (data == null) {
+                                    return "Tidak ada barcode";
+                                } else {
+                                    return data;
+                                }
+                            }
+                        },
+                        {
+                            data: "product.barcode_eceran",
+                            render: function(data, type, row) {
+                                if (data == null) {
+                                    return "Tidak ada barcode";
+                                } else {
+                                    return data;
+                                }
+                            }
+                        },
+                        {
                             data: "quantity"
                         },
                         {
@@ -382,27 +404,27 @@
                             className: 'min-w-100px',
                         },
                         {
-                            target: 5,
+                            target: 7,
                             className: 'min-w-60px',
-                        },
-                        {
-                            target: 6,
-                            className: 'min-w-80px',
                         },
                         {
                             target: 8,
-                            className: 'min-w-60px',
-                        },
-                        {
-                            target: 9,
                             className: 'min-w-80px',
                         },
                         {
-                            target: 11,
+                            target: 10,
                             className: 'min-w-60px',
                         },
                         {
-                            target: 12,
+                            target: 11,
+                            className: 'min-w-80px',
+                        },
+                        {
+                            target: 13,
+                            className: 'min-w-60px',
+                        },
+                        {
+                            target: 14,
                             className: 'min-w-80px',
                         },
                         {
