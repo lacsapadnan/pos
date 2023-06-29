@@ -41,7 +41,7 @@ class ReturController extends Controller
     {
         $returCart = ReturCart::where('user_id', auth()->id())->get();
         foreach ($returCart as $rc) {
-            $retur = Retur::create([
+            Retur::create([
                 'sell_id' => $request->sell_id,
                 'product_id' => $rc->product_id,
                 'unit_id' => $rc->unit_id,
@@ -49,10 +49,8 @@ class ReturController extends Controller
                 'retur_date' => date('Y-m-d'),
                 'qty' => $rc->quantity,
             ]);
-        }
 
-        // update the sell
-        foreach ($returCart as $rc) {
+            // update the sell
             $sell = SellDetail::where('sell_id', $request->sell_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
             $sell->quantity -= $rc->quantity;
             $sell->update();
