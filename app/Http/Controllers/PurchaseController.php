@@ -63,10 +63,9 @@ class PurchaseController extends Controller
             'warehouse_id' => auth()->user()->warehouse_id,
             'invoice' => $request->invoice,
             'subtotal' => $request->subtotal,
-            'discount' => $request->discount,
+            'discount' => $request->discount ?? 0,
             'grand_total' => $request->grand_total,
             'pay' => $request->pay,
-            'due_date' => Carbon::createFromFormat('d/m/Y', $request->due_date)->format('Y-m-d'),
             'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
             'description' => $request->description,
         ]);
@@ -84,6 +83,7 @@ class PurchaseController extends Controller
             $product = Product::find($cart->product_id);
             if ($cart->unit_id == $product->unit_dus) {
                 $product->price_dus = $cart->price;
+                $product->lastest_price_eceran = $cart->price / $product->dus_to_eceran;
             } elseif ($cart->unit_id == $product->unit_pak) {
                 $product->price_pak = $cart->price;
             } elseif ($cart->unit_id == $product->unit_eceran) {

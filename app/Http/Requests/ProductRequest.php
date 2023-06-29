@@ -59,7 +59,6 @@ class ProductRequest extends FormRequest
             'price_pak.required' => 'Harga pak harus diisi',
             'price_eceran.required' => 'Harga eceran harus diisi',
             'sales_price.required' => 'Harga jual harus diisi',
-            'lastest_price_eceran.required' => 'Harga terakhir eceran harus diisi',
         ];
     }
 }

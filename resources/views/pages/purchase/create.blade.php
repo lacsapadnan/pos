@@ -197,19 +197,6 @@
                             <label for="inputEmail3" class="col-form-label">Keterangan</label>
                             <input name="description" type="text" class="form-control" />
                         </div>
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Tgl Jatuh Tempo</label>
-                            <div class="input-group" id="kt_td_picker_due_date" data-td-target-input="nearest"
-                                data-td-target-toggle="nearest">
-                                <input id="kt_td_picker_due_date_input" type="text" class="form-control"
-                                    data-td-target="#kt_td_picker_due_date" name="due_date" />
-                                <span class="input-group-text" data-td-target="#kt_td_picker_due_date"
-                                    data-td-toggle="datetimepicker">
-                                    <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span
-                                            class="path2"></span></i>
-                                </span>
-                            </div>
-                        </div>
                     </div>
                     <div class="mt-5 row">
                         <button type="submit" onclick="submitForms()" class="btn btn-primary">Simpan</button>
@@ -269,26 +256,6 @@
     {{-- Datepicker --}}
     <script>
         new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_date_only"), {
-            localization: {
-                locale: "id",
-                startOfTheWeek: 1
-            },
-            display: {
-                viewMode: "calendar",
-
-                components: {
-                    decades: true,
-                    year: true,
-                    month: true,
-                    date: true,
-                    hours: false,
-                    minutes: false,
-                    seconds: false
-                }
-            }
-        });
-
-        new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_due_date"), {
             localization: {
                 locale: "id",
                 startOfTheWeek: 1

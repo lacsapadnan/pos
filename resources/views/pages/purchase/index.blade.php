@@ -74,7 +74,6 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>Faktur Supplier</th>
                                 <th>tanggal Terima</th>
-                                <th>tanggal Jatuh Tempo</th>
                                 <th>Supplier</th>
                                 <th>kas</th>
                                 <th>Cabang</th>
@@ -87,20 +86,6 @@
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
-                            {{-- @foreach ($purchases as $purchase)
-                                @foreach ($purchase->details as $details)
-                                    <tr class="odd">
-                                    <td>{{ $purchase->invoice }}</td>
-                                    <td>{{ $purchase->supplier->name }}</td>
-                                    <td>{{ $purchase->warehouse->name }}</td>
-                                    <td>{{ $details->product->group }}</td>
-                                    <td>{{ $details->product->name }}</td>
-                                    <td>{{ $details->unit->name }}</td>
-                                    <td>{{ $details->quantity }}</td>
-                                    <td>Rp{{ number_format($details->price) }}</td>
-                                </tr>
-                                @endforeach
-                            @endforeach --}}
                         </tbody>
                     </table>
                 </div>
@@ -141,9 +126,6 @@
                         },
                         {
                             "data": "reciept_date",
-                        },
-                        {
-                            "data": "due_date"
                         },
                         {
                             "data": "supplier.name"

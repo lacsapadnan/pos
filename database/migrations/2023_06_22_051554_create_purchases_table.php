@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('discount');
             $table->string('grand_total');
             $table->string('pay');
-            $table->date('due_date');
             $table->date('reciept_date');
             $table->text('description')->nullable();
             $table->timestamps();
