@@ -193,72 +193,117 @@
                     <!--end:Menu link-->
                 </div>
                 <!--end:Menu item-->
-                <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('cabang.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('cabang.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Cabang</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
+                @can('simpan cabang', 'baca cabang', 'update cabang', 'hapus cabang')
+                    <!--begin:Menu item-->
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('cabang.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('cabang.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Cabang</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                    <!--end:Menu item-->
+                @endcan
+                @can('simpan supplier', 'baca supplier', 'update supplier', 'hapus supplier')
+                    <!--begin:Menu item-->
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('supplier.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('supplier.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Supplier</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                    </div>
                     <!--end:Menu link-->
-                </div>
+                @endcan
+                @can('simpan customer', 'baca customer', 'update customer', 'hapus customer')
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('customer.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('customer.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Customer</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                @endcan
                 <!--end:Menu item-->
-                <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('supplier.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('supplier.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Supplier</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('customer.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('customer.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Customer</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <!--end:Menu item-->
-                <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('produk.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Produk</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <!--end:Menu item-->
-                <!--begin:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('pembelian.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Pembelian</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <!--end:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('penjualan.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Penjualan</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <!--end:Menu item-->
-                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
-                    <!--begin:Menu link-->
-                    <a href="{{ route('inventori.index') }}" class="py-3 menu-link">
-                        <span class="menu-title">Inventory</span>
-                        <span class="menu-arrow d-lg-none"></span>
-                    </a>
-                    <!--end:Menu link-->
-                </div>
-                <!--end:Menu item-->
+                @can('simpan produk', 'baca produk', 'update produk', 'hapus produk')
+                    <!--begin:Menu item-->
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('produk.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Produk</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                    <!--end:Menu item-->
+                @endcan
+                @can('simpan pembelian', 'baca pembelian', 'update pembelian', 'hapus pembelian')
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('pembelian.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Pembelian</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                @endcan
+                @can('simpan penjualan', 'baca penjualan', 'update penjualan', 'hapus penjualan')
+                    <!--begin:Menu item-->
+                    {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('penjualan.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Penjualan</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div> --}}
+                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                        class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
+                        <!--begin:Menu link-->
+                        <span class="py-3 menu-link">
+                            <span class="menu-title">Penjualan</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </span>
+                        <!--end:Menu link-->
+                        <!--begin:Menu sub-->
+                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('penjualan.index') }}">
+                                    <span class="menu-title">Data Penjualan</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('retur.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('retur.index') }}">
+                                    <span class="menu-title">Data Retur</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                        </div>
+                        <!--end:Menu sub-->
+                    </div>
+                    <!--end:Menu item-->
+                @endcan
+                @can('simpan inventory', 'baca inventory', 'update inventory', 'hapus inventory')
+                    <!--begin:Menu item-->
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('inventori.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Inventory</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                    <!--end:Menu item-->
+                @endcan
                 <div class="menu-item me-0 me-lg-2">
                     <!--begin:Menu link-->
                     <span class="py-3 menu-link">
@@ -278,7 +323,21 @@
                     <!--begin:Menu sub-->
                     <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
                         <!--begin:Menu item-->
-                        <div class="menu-item {{ request()->routeIs('role-permission.*') ? ' here' : '' }}">
+                        <div class="menu-item">
+                            <!--begin:Menu link-->
+                            <a class="menu-link"href="#">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-people fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                        <i class="path3"></i>
+                                        <i class="path4"></i>
+                                        <i class="path5"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Data User</span>
+                            </a>
+                            <!--end:Menu link-->
                             <!--begin:Menu link-->
                             <a class="menu-link"href="{{ route('role-permission.index') }}">
                                 <span class="menu-icon">

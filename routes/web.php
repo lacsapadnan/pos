@@ -6,6 +6,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReturController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SupplierController;
@@ -41,9 +42,10 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::resource('cabang', WarehouseController::class)->except(['show', 'create']);
     Route::resource('produk', ProductController::class)->except(['show', 'create']);
     Route::resource('inventori', InventoryController::class)->only(['store', 'index']);
-    Route::resource('penjualan', SellController::class);
+    Route::resource('penjualan', SellController::class)->except(['destroy', 'edit', 'update']);
     Route::resource('pembelian', PurchaseController::class)->except(['destroy', 'edit', 'update']);
-    Route::resource('role-permission', RolePermissionController::class);
+    Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
+    Route::resource('retur', ReturController::class);
 
     // API
     Route::get('supplier/api/data', [SupplierController::class, 'data'])->name('api.supplier');
@@ -53,6 +55,7 @@ Route::group(['middleware' => ['role:admin']], function () {
     Route::get('penjualan/api/data', [SellController::class, 'data'])->name('api.penjualan');
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
     Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');
+    Route::get('retur/api/data', [ReturController::class, 'data'])->name('api.retur');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
@@ -67,8 +70,10 @@ Route::group(['middleware' => ['role:admin']], function () {
     // Cart
     Route::post('penjualan/cart', [SellController::class, 'addCart'])->name('penjualan.addCart');
     Route::post('pembelian/cart', [PurchaseController::class, 'addCart'])->name('pembelian.addCart');
+    Route::post('retur/cart', [ReturController::class, 'addCart'])->name('retur.addCart');
     Route::delete('penjualan/cart/hapus/{id}', [SellController::class, 'destroyCart'])->name('penjualan.destroyCart');
     Route::delete('pembelian/cart/hapus/{id}', [PurchaseController::class, 'destroyCart'])->name('pembelian.destroyCart');
+    Route::delete('retur/cart/hapus/{id}', [ReturController::class, 'destroyCart'])->name('retur.destroyCart');
 
     // Print
     Route::get('penjualan/print/{id}', [SellController::class, 'print'])->name('penjualan.print');
