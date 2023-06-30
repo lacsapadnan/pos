@@ -259,8 +259,11 @@ class SellController extends Controller
     {
         $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
-        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details'));
-
+        $totalQuantity = 0;
+        foreach ($details as $d) {
+            $totalQuantity += $d->quantity;
+        }
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
         return response()->stream(function () use ($pdf) {
             echo $pdf->output();
         }, 200, [
