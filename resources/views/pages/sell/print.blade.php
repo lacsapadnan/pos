@@ -8,7 +8,7 @@
     <title>Struk</title>
     <style>
         @page {
-            size: 9.5cm 11cm;
+            size: letter;
             margin: 0;
         }
 
@@ -61,7 +61,10 @@
         }
 
         body {
-            padding: 32px;
+            width: 3.5in;
+            height: 5.5in;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
