@@ -57,7 +57,7 @@ class WarehouseController extends Controller
     public function update(Request $request, string $id)
     {
         $warehouse = Warehouse::findOrFail($id);
-        $warehouse->update($request->validated());
+        $warehouse->update($request->all());
         return redirect()->route('cabang.index')->with('success', 'Gudang ' . $warehouse->name . ' berhasil diubah.');
     }
 
