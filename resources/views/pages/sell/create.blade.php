@@ -181,6 +181,13 @@
                                     readonly />
                             </div>
                             <div class="mb-1">
+                                <label for="grandTotal" class="col-form-label">Metode Bayar</label>
+                                <select name="payment_method" class="form-select" aria-label="Select example">
+                                    <option value="transfer">Transfer</option>
+                                    <option value="cash">Cash</option>
+                                </select>
+                            </div>
+                            <div class="mb-1">
                                 <label for="kembali" class="col-form-label">Kembali</label>
                                 <input type="text" name="change" class="form-control" id="kembali" readonly />
                             </div>

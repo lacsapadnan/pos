@@ -64,6 +64,7 @@ class SellController extends Controller
             'pay' => $request->pay,
             'change' => $request->change ?? 0,
             'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
+            'payment_method' => $request->payment_method,
             'status' => 'success',
         ]);
 

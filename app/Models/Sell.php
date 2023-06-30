@@ -18,6 +18,7 @@ class Sell extends Model
         'pay',
         'change',
         'transaction_date',
+        'payment_method',
         'status',
     ];
 

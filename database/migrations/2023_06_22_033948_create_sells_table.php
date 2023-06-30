@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('pay');
             $table->string('change');
             $table->date('transaction_date');
+            $table->string('payment_method');
             $table->enum('status', ['drafted', 'success'])->default('drafted');
             $table->timestamps();
         });

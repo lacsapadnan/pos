@@ -75,6 +75,7 @@
                                 <th>No. Order</th>
                                 <th>Customer</th>
                                 <th>Cabang</th>
+                                <th>Metode Pembayaran</th>
                                 <th>Total Pembelian</th>
                                 <th>Aksi</th>
                             </tr>
@@ -123,6 +124,9 @@
                         },
                         {
                             "data": "warehouse.name"
+                        },
+                        {
+                            "data": "payment_method"
                         },
                         {
                             "data": "grand_total",
