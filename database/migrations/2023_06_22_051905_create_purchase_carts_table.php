@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreignId('unit_id')->references('id')->on('units')->onDelete('cascade');
             $table->foreignId('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->integer('quantity');
+            $table->string('quantity');
             $table->string('discount_fix')->nullable();
             $table->string('discount_percent')->nullable();
             $table->string('price_unit');
