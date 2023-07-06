@@ -21,7 +21,10 @@
                                     <th>Produk</th>
                                     <th>Unit</th>
                                     <th>Quantity</th>
-                                    <th>Harga</th>
+                                    <th>Harga Unit</th>
+                                    <th>Diskon Fix</th>
+                                    <th>Diskon Persen</th>
+                                    <th>Total Harga</th>
                                 </tr>
                             </thead>
                             <tbody class="fw-semibold">

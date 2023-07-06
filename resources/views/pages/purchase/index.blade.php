@@ -148,17 +148,6 @@
                             }
                         },
                         {
-                            "data": "discount",
-                            render: function(data, type, row) {
-                                var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
-                                return formattedPrice;
-                            }
-                        },
-                        {
                             "data": "grand_total",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -306,6 +295,34 @@
                                     return formattedPrice;
                                 }
                             },
+                            {
+                               data: 'discount_fix',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: 'discount_percent',
+                                render: function(data, type, row) {
+                                    return data + '%';
+                                }
+                            },
+                            {
+                                data: 'total_price',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            }
                         ]
                     });
 
