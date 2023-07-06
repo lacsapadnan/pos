@@ -13,7 +13,10 @@ class PurchaseCart extends Model
         'product_id',
         'unit_id',
         'quantity',
-        'price',
+        'discount_fix',
+        'discount_percent',
+        'price_unit',
+        'total_price'
     ];
 
     public function product()

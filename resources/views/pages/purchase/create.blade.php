@@ -75,10 +75,16 @@
                                 <th>Jml Per Pak</th>
                                 <th>Jml Beli Dus</th>
                                 <th>Harga Dus</th>
+                                <th>Diskon Fix</th>
+                                <th>Diskon Persen</th>
                                 <th>Jml Beli Pak</th>
                                 <th>Harga Pak</th>
+                                <th>Diskon Fix</th>
+                                <th>Diskon Persen</th>
                                 <th>Jml Beli Eceran</th>
                                 <th>Harga Eceran</th>
+                                <th>Diskon Fix</th>
+                                <th>Diskon Persen</th>
                                 <th class="min-w-100px">Aksi</th>
                             </tr>
                         </thead>
@@ -113,10 +119,10 @@
                                         <td>{{ $cart->product->group }}</td>
                                         <td>{{ $cart->product->name }}</td>
                                         <td>{{ $cart->quantity }}</td>
-                                        <td>{{ number_format($cart->price) }}</td>
+                                        <td>{{ number_format($cart->price_unit) }}</td>
                                         <td>{{ $cart->unit->name }}</td>
                                         <td>
-                                            {{ number_format($cart->price * $cart->quantity) }}
+                                            {{ number_format($cart->total_price) }}
                                         </td>
                                         <td>
                                             <form action="{{ route('pembelian.destroyCart', $cart->id) }}" method="POST">
@@ -159,9 +165,9 @@
                     <div class="row">
                         <div class="col">
                             <div class="mb-1">
-                                <label for="diskon" class="col-form-label">Diskon</label>
-                                <input type="text" name="discount" class="form-control" id="diskon"
-                                    oninput="calculateTotal()" />
+                                <label for="grandTotal" class="col-form-label">Grand Total</label>
+                                <input type="text" name="grand_total" class="form-control" id="grandTotal"
+                                    readonly />
                             </div>
                         </div>
                         <div class="col">
@@ -171,17 +177,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-1">
-                                <label for="grandTotal" class="col-form-label">Grand Total</label>
-                                <input type="text" name="grand_total" class="form-control" id="grandTotal"
-                                    readonly />
-                            </div>
-                        </div>
-                        <div class="col"></div>
-                    </div>
-
                     <div class="mt-5 row">
                         <div class="mb-1">
                             <label for="inputEmail3" class="col-form-label">Metode Bayar</label>
@@ -215,12 +210,16 @@
 
     {{-- calculated form --}}
     <script>
+        function calculateSisa(grandTotal, bayar) {
+            return Math.max(bayar - grandTotal, 0);
+        }
+
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var diskon = parseFloat(document.getElementById('diskon').value.replace(/[^0-9.-]+/g, '')) || 0;
             var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
 
-            var grandTotal = calculateGrandTotal(subtotal, diskon);
+            var grandTotal = subtotal; // Assign subtotal to grandTotal or calculate it based on your requirements
+
             var sisa = calculateSisa(grandTotal, bayar);
 
             document.getElementById('grandTotal').value = grandTotal.toFixed(0);
@@ -228,13 +227,6 @@
         }
 
 
-        function calculateGrandTotal(subtotal, diskon) {
-            return subtotal - diskon;
-        }
-
-        function calculateSisa(grandTotal, bayar) {
-            return Math.max(bayar - grandTotal, 0);
-        }
 
         function submitForms() {
             // Get the values from form1
@@ -298,7 +290,8 @@
                     "pageLength": 10,
                     "scrollX": true,
                     "fixedColumns": {
-                        left: 2
+                        left: 2,
+                        right: 1
                     },
                     "ajax": {
                         url: '{{ route('api.inventori') }}',
@@ -324,7 +317,7 @@
                             data: null,
                             render: function(data, type, row) {
                                 return `
-                                    <input type="number" name="quantity_dus" class="form-control">
+                                    <input type="text" name="quantity_dus" class="form-control">
                                     <input type="hidden" name="unit_dus" value="${row.product.unit_dus}">
                                 `;
                             }
@@ -338,8 +331,20 @@
                         {
                             data: null,
                             render: function(data, type, row) {
+                                return `<input type="text" name="discount_fix_dus" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<input type="text" name="discount_percent_dus" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
                                 return `
-                                    <input type="number" name="quantity_pak" class="form-control">
+                                    <input type="text" name="quantity_pak" class="form-control">
                                     <input type="hidden" name="unit_pak" value="${row.product.unit_pak}">
                                 `;
                             }
@@ -353,8 +358,20 @@
                         {
                             data: null,
                             render: function(data, type, row) {
+                                return `<input type="text" name="discount_fix_pak" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<input type="text" name="discount_percent_pak" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
                                 return `
-                                <input type="number" name="quantity_eceran" class="form-control">
+                                <input type="text" name="quantity_eceran" class="form-control">
                                 <input type="hidden" name="unit_eceran" value="${row.product.unit_eceran}">
                             `;
                             }
@@ -363,6 +380,18 @@
                             data: null,
                             render: function(data, type, row) {
                                 return `<input type="text" name="price_eceran" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<input type="text" name="discount_fix_eceran" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<input type="text" name="discount_percent_eceran" class="form-control price-input">`;
                             }
                         },
                         {
@@ -425,6 +454,16 @@
                     var priceDus = $(this).closest('tr').find('input[name="price_dus"]').val();
                     var pricePak = $(this).closest('tr').find('input[name="price_pak"]').val();
                     var priceEceran = $(this).closest('tr').find('input[name="price_eceran"]').val();
+                    var diskonFixDus = $(this).closest('tr').find('input[name="discount_fix_dus"]').val();
+                    var diskonFixPak = $(this).closest('tr').find('input[name="discount_fix_pak"]').val();
+                    var diskonFixEceran = $(this).closest('tr').find('input[name="discount_fix_eceran"]')
+                        .val();
+                    var diskonPersenDus = $(this).closest('tr').find('input[name="discount_percent_dus"]')
+                        .val();
+                    var diskonPersenPak = $(this).closest('tr').find('input[name="discount_percent_pak"]')
+                        .val();
+                    var diskonPersenEceran = $(this).closest('tr').find(
+                        'input[name="discount_percent_eceran"]').val();
 
                     var inputRequest = {
                         product_id: productId,
@@ -437,6 +476,12 @@
                         price_dus: priceDus,
                         price_pak: pricePak,
                         price_eceran: priceEceran,
+                        discount_fix_dus: diskonFixDus,
+                        discount_fix_pak: diskonFixPak,
+                        discount_fix_eceran: diskonFixEceran,
+                        discount_percent_dus: diskonPersenDus,
+                        discount_percent_pak: diskonPersenPak,
+                        discount_percent_eceran: diskonPersenEceran,
                     };
 
                     console.log(inputRequest);

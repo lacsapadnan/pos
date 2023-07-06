@@ -296,7 +296,7 @@
                                 data: 'quantity'
                             },
                             {
-                                data: 'price',
+                                data: 'price_unit',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',

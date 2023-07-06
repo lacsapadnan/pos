@@ -18,7 +18,6 @@ return new class extends Migration
             $table->foreignId('treasury_id')->references('id')->on('treasuries')->onDelete('cascade');
             $table->string('invoice');
             $table->string('subtotal');
-            $table->string('discount');
             $table->string('grand_total');
             $table->string('pay');
             $table->date('reciept_date');

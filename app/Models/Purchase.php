@@ -16,7 +16,6 @@ class Purchase extends Model
         'quantity',
         'invoice',
         'subtotal',
-        'discount',
         'grand_total',
         'pay',
         'due_date',

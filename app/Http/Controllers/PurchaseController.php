@@ -41,10 +41,10 @@ class PurchaseController extends Controller
             ->get();
         $products = Product::all();
         $units = Unit::all();
-        $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->get();
+        $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
-            $subtotal += $c->price * $c->quantity;
+            $subtotal += $c->total_price;
         }
 
         return view('pages.purchase.create', compact('treasuries', 'suppliers', 'inventories', 'products', 'units', 'cart', 'subtotal'));
@@ -63,7 +63,6 @@ class PurchaseController extends Controller
             'warehouse_id' => auth()->user()->warehouse_id,
             'invoice' => $request->invoice,
             'subtotal' => $request->subtotal,
-            'discount' => $request->discount ?? 0,
             'grand_total' => $request->grand_total,
             'pay' => $request->pay,
             'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
@@ -76,18 +75,21 @@ class PurchaseController extends Controller
                 'product_id' => $cart->product_id,
                 'unit_id' => $cart->unit_id,
                 'quantity' => $cart->quantity,
-                'price' => $cart->price,
+                'discount_fix' => $cart->discount_fix,
+                'discount_percent' => $cart->discount_percent,
+                'price_unit' => $cart->price_unit,
+                'total_price' => $cart->total_price,
             ]);
 
             // update product price
             $product = Product::find($cart->product_id);
             if ($cart->unit_id == $product->unit_dus) {
-                $product->price_dus = $cart->price;
-                $product->lastest_price_eceran = $cart->price / $product->dus_to_eceran;
+                $product->price_dus = $cart->price_unit;
+                $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
             } elseif ($cart->unit_id == $product->unit_pak) {
-                $product->price_pak = $cart->price;
+                $product->price_pak = $cart->price_unit;
             } elseif ($cart->unit_id == $product->unit_eceran) {
-                $product->price_eceran = $cart->price;
+                $product->price_eceran = $cart->price_unit;
             }
             $product->update();
 
@@ -164,7 +166,24 @@ class PurchaseController extends Controller
 
         // Save quantity_dus if it exists
         if ($request->has('quantity_dus') && $request->quantity_dus) {
+            $priceDus = $request->price_dus;
             $quantityDus = $request->quantity_dus;
+            $discountFixDus = $request->discount_fix_dus ?? 0;
+            $discountPercentDus = $request->discount_percent_dus ?? 0;
+            $totalPrice = 0;
+
+            // calculated total price if discount_fix or discount_percent exists or both exists using price unit
+            if ($discountFixDus && $discountPercentDus) {
+                $totalPrice = ($priceDus * $quantityDus) - $discountFixDus - ($priceDus * $quantityDus * $discountPercentDus / 100);
+            } elseif ($discountFixDus) {
+                $totalPrice = ($priceDus * $quantityDus) - $discountFixDus;
+            } elseif ($discountPercentDus) {
+                $totalPrice = ($priceDus * $quantityDus) - ($priceDus * $quantityDus * $discountPercentDus / 100);
+            } else {
+                $totalPrice = $priceDus * $quantityDus;
+            }
+
+
             $existingCart = PurchaseCart::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->where('unit_id', $request->unit_dus)
@@ -179,14 +198,33 @@ class PurchaseController extends Controller
                     'product_id' => $productId,
                     'unit_id' => $request->unit_dus,
                     'quantity' => $quantityDus,
-                    'price' => $request->price_dus,
+                    'discount_fix' => $discountFixDus,
+                    'discount_percent' => $discountPercentDus,
+                    'price_unit' => $priceDus,
+                    'total_price' => $totalPrice,
                 ]);
             }
         }
 
         // Save quantity_pak if it exists
         if ($request->has('quantity_pak') && $request->quantity_pak) {
+            $pricePak = $request->price_pak;
             $quantityPak = $request->quantity_pak;
+            $discountFixPak = $request->discount_fix_pak ?? 0;
+            $discountPercentPak = $request->discount_percent_pak ?? 0;
+            $totalPrice = 0;
+
+            // calculated total price if discount_fix or discount_percent exists or both exists
+            if ($discountFixPak && $discountPercentPak) {
+                $totalPrice = ($pricePak * $quantityPak) - $discountFixPak - ($pricePak * $quantityPak * $discountPercentPak / 100);
+            } elseif ($discountFixPak) {
+                $totalPrice = ($pricePak * $quantityPak) - $discountFixPak;
+            } elseif ($discountPercentPak) {
+                $totalPrice = ($pricePak * $quantityPak) - ($pricePak * $quantityPak * $discountPercentPak / 100);
+            } else {
+                $totalPrice = $pricePak * $quantityPak;
+            }
+
             $existingCart = PurchaseCart::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->where('unit_id', $request->unit_pak)
@@ -201,14 +239,32 @@ class PurchaseController extends Controller
                     'product_id' => $productId,
                     'unit_id' => $request->unit_pak,
                     'quantity' => $quantityPak,
-                    'price' => $request->price_pak,
+                    'discount_fix' => $discountFixPak,
+                    'discount_percent' => $discountPercentPak,
+                    'price_unit' => $pricePak,
+                    'total_price' => $totalPrice,
                 ]);
             }
         }
 
         // Save quantity_eceran if it exists
         if ($request->has('quantity_eceran') && $request->quantity_eceran) {
+            $priceEceran = $request->price_eceran;
             $quantityEceran = $request->quantity_eceran;
+            $discountFixEceran = $request->discount_fix_eceran ?? 0;
+            $discountPercentEceran = $request->discount_percent_eceran ?? 0;
+            $totalPrice = 0;
+
+            // calculated total price if discount_fix or discount_percent exists or both exists
+            if ($discountFixEceran && $discountPercentEceran) {
+                $totalPrice = ($priceEceran * $quantityEceran) - $discountFixEceran - ($priceEceran * $quantityEceran * $discountPercentEceran / 100);
+            } elseif ($discountFixEceran) {
+                $totalPrice = ($priceEceran * $quantityEceran) - $discountFixEceran;
+            } elseif ($discountPercentEceran) {
+                $totalPrice = ($priceEceran * $quantityEceran) - ($priceEceran * $quantityEceran * $discountPercentEceran / 100);
+            } else {
+                $totalPrice = $priceEceran * $quantityEceran;
+            }
             $existingCart = PurchaseCart::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->where('unit_id', $request->unit_eceran)
@@ -223,7 +279,10 @@ class PurchaseController extends Controller
                     'product_id' => $productId,
                     'unit_id' => $request->unit_eceran,
                     'quantity' => $quantityEceran,
-                    'price' => $request->price_eceran,
+                    'discount_fix' => $discountFixEceran,
+                    'discount_percent' => $discountPercentEceran,
+                    'price_unit' => $priceEceran,
+                    'total_price' => $totalPrice,
                 ]);
             }
         }
