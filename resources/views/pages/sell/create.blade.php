@@ -328,7 +328,7 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="number" name="quantity_dus" class="form-control">`;
+                                return `<input type="text" name="quantity_dus" class="form-control">`;
                             }
                         },
                         {
@@ -351,7 +351,7 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="number" name="quantity_pak" class="form-control">`;
+                                return `<input type="text" name="quantity_pak" class="form-control">`;
                             }
                         },
                         {
@@ -374,7 +374,7 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="number" name="quantity_eceran" class="form-control">`;
+                                return `<input type="text" name="quantity_eceran" class="form-control">`;
                             }
                         },
                         {
@@ -461,6 +461,8 @@
                         diskon_eceran: diskonEceran,
                     };
 
+                    console.log(inputRequest);
+
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('penjualan.addCart') }}',
@@ -498,6 +500,13 @@
 
                     initDatatable();
                     handleSearchDatatable();
+                    $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"]', function(event) {
+                        if(event.which === 13) {
+                            event.preventDefault();
+                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                            btnSubmit.click();
+                        }
+                    });
                 }
             };
         }();
