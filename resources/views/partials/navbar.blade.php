@@ -240,25 +240,42 @@
                     <!--end:Menu item-->
                 @endcan
                 @can('simpan pembelian', 'baca pembelian', 'update pembelian', 'hapus pembelian')
-                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                    <!--begin:Menu item-->
+                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                        class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
-                        <a href="{{ route('pembelian.index') }}" class="py-3 menu-link">
+                        <span class="py-3 menu-link">
                             <span class="menu-title">Pembelian</span>
                             <span class="menu-arrow d-lg-none"></span>
-                        </a>
+                        </span>
                         <!--end:Menu link-->
+                        <!--begin:Menu sub-->
+                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('pembelian.index') }}">
+                                    <span class="menu-title">Data Pembelian</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('pembelian-retur.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('pembelian-retur.index') }}">
+                                    <span class="menu-title">Data Retur</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                        </div>
+                        <!--end:Menu sub-->
                     </div>
+                    <!--end:Menu item-->
                 @endcan
                 @can('simpan penjualan', 'baca penjualan', 'update penjualan', 'hapus penjualan')
                     <!--begin:Menu item-->
-                    {{-- <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
-                        <!--begin:Menu link-->
-                        <a href="{{ route('penjualan.index') }}" class="py-3 menu-link">
-                            <span class="menu-title">Penjualan</span>
-                            <span class="menu-arrow d-lg-none"></span>
-                        </a>
-                        <!--end:Menu link-->
-                    </div> --}}
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
