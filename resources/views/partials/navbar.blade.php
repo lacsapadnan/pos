@@ -311,13 +311,36 @@
                 @endcan
                 @can('simpan inventory', 'baca inventory', 'update inventory', 'hapus inventory')
                     <!--begin:Menu item-->
-                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
+                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                        class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
-                        <a href="{{ route('inventori.index') }}" class="py-3 menu-link">
+                        <span class="py-3 menu-link">
                             <span class="menu-title">Inventory</span>
                             <span class="menu-arrow d-lg-none"></span>
-                        </a>
+                        </span>
                         <!--end:Menu link-->
+                        <!--begin:Menu sub-->
+                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('inventori.index') }}">
+                                    <span class="menu-title">Data Inventory</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('pindah-stok.*') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('pindah-stok.index') }}">
+                                    <span class="menu-title">Pindah Stok</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
+                        </div>
+                        <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
                 @endcan
