@@ -279,9 +279,9 @@
                             </div>
                             <!--end:Menu item-->
                             <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('pembelian-retur.*') ? ' here' : '' }}">
+                            <div class="menu-item {{ request()->routeIs('penjualan-retur.*') ? ' here' : '' }}">
                                 <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('pembelian-retur.index') }}">
+                                <a class="menu-link"href="{{ route('penjualan-retur.index') }}">
                                     <span class="menu-title">Data Retur</span>
                                 </a>
                                 <!--end:Menu link-->

@@ -31,7 +31,7 @@
                                 <th>No. Order</th>
                                 <th>Customer</th>
                                 <th>Cabang</th>
-                                <th>Total Pembelian</th>
+                                <th>Total Penjualan</th>
                                 <th class="min-w-100px">Aksi</th>
                             </tr>
                         </thead>
@@ -97,7 +97,7 @@
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-                                <a href="/pembelian-retur/${data}" class="btn btn-sm btn-warning">Retur</a>
+                                <a href="/penjualan-retur/${data}" class="btn btn-sm btn-warning">Retur</a>
                                 `;
                             }
                         },

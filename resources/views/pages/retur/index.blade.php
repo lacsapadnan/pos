@@ -26,7 +26,7 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('pembelian-retur.create') }}" type="button" class="btn btn-primary">
+                <a href="{{ route('penjualan-retur.create') }}" type="button" class="btn btn-primary">
                     Tambah retur
                 </a>
                 <!--begin::Menu-->
@@ -220,7 +220,7 @@
 
             // Send a request to fetch the sell details for the given ID
             $.ajax({
-                url: '/pembelian-retur/api/data-detail/' + id,
+                url: '/penjualan-retur/api/data-detail/' + id,
                 method: 'GET',
                 success: function(response) {
                     // Initialize the DataTable on the table

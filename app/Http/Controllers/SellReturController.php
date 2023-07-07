@@ -87,7 +87,7 @@ class SellReturController extends Controller
         // delete the cart
         SellReturCart::where('user_id', auth()->id())->delete();
 
-        return redirect()->route('pembelian-retur.index')->with('success', 'Retur berhasil disimpan');
+        return redirect()->route('penjualan-retur.index')->with('success', 'Retur berhasil disimpan');
     }
 
     /**

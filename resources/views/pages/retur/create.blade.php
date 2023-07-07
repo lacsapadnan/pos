@@ -69,9 +69,9 @@
                                 <th>Unit</th>
                                 <th>Harga</th>
                                 <th>Quantity Penjualan</th>
-                                <th>Quantity Retur</th>
+                                <th class="max-w-50px">Quantity Retur</th>
                                 <th>Total</th>
-                                <th class="min-w-100px">Aksi</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="fw-semibold">
@@ -107,7 +107,7 @@
                                         <td>Rp{{ number_format($cart->price) }}</td>
                                         <td>Rp{{ number_format($cart->price * $cart->quantity) }}</td>
                                         <td>
-                                            <form action="{{ route('pembelian-retur.destroyCart', $cart->id) }}"
+                                            <form action="{{ route('penjualan-retur.destroyCart', $cart->id) }}"
                                                 method="POST">
                                                 @csrf
                                                 @method('delete')
@@ -130,7 +130,7 @@
                 </div>
             </div>
             <div class="col-12">
-                <form id="form2" action="{{ route('pembelian-retur.store') }}" method="post">
+                <form id="form2" action="{{ route('penjualan-retur.store') }}" method="post">
                     @csrf
                     <input type="hidden" name="sell_id" id="sell_id_form2" value="{{ $sellId }}">
                     <div class="mt-5 row">
@@ -242,7 +242,7 @@
 
                     // Send AJAX request
                     $.ajax({
-                        url: '{{ route('pembelian-retur.addCart') }}',
+                        url: '{{ route('penjualan-retur.addCart') }}',
                         type: 'POST',
                         data: inputRequest,
                         headers: {
