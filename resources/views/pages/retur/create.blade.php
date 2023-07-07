@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Retur')
-@section('menu-title', 'Retur Barang')
+@section('title', 'Retur Penjualan')
+@section('menu-title', 'Retur Penjualan')
 
 @push('addon-style')
     <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
@@ -44,12 +44,6 @@
                                 value="{{ auth()->user()->name }}" />
                         </div>
                     </div>
-                    {{-- <div class="col-md-3">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Total</label>
-                            <input id="user_id" type="text" name="user_id" class="form-control" />
-                        </div>
-                    </div> --}}
                 </div>
             </form>
         </div>
@@ -113,7 +107,8 @@
                                         <td>Rp{{ number_format($cart->price) }}</td>
                                         <td>Rp{{ number_format($cart->price * $cart->quantity) }}</td>
                                         <td>
-                                            <form action="{{ route('retur.destroyCart', $cart->id) }}" method="POST">
+                                            <form action="{{ route('pembelian-retur.destroyCart', $cart->id) }}"
+                                                method="POST">
                                                 @csrf
                                                 @method('delete')
                                                 <button class="btn btn-sm btn-danger">
@@ -135,7 +130,7 @@
                 </div>
             </div>
             <div class="col-12">
-                <form id="form2" action="{{ route('retur.store') }}" method="post">
+                <form id="form2" action="{{ route('pembelian-retur.store') }}" method="post">
                     @csrf
                     <input type="hidden" name="sell_id" id="sell_id_form2" value="{{ $sellId }}">
                     <div class="mt-5 row">
@@ -247,7 +242,7 @@
 
                     // Send AJAX request
                     $.ajax({
-                        url: '{{ route('retur.addCart') }}',
+                        url: '{{ route('pembelian-retur.addCart') }}',
                         type: 'POST',
                         data: inputRequest,
                         headers: {
@@ -278,7 +273,13 @@
                     if (!table) {
                         return;
                     }
-
+                    $(table).on('keydown', 'input[name^="quantity_"]', function(event) {
+                        if(event.which === 13) {
+                            event.preventDefault();
+                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                            btnSubmit.click();
+                        }
+                    });
                     initDatatable();
                     handleSearchDatatable();
                 }

@@ -26,7 +26,7 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('retur.create') }}" type="button" class="btn btn-primary">
+                <a href="{{ route('pembelian-retur.create') }}" type="button" class="btn btn-primary">
                     Tambah retur
                 </a>
                 <!--begin::Menu-->
@@ -73,10 +73,9 @@
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>No. Order Penjualan</th>
-                                <th>cabang</th>
-                                <th>Produk</th>
-                                <th>Unit</th>
-                                <th>Jumlah</th>
+                                <th>Cabang</th>
+                                <th>Pembeli</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
@@ -86,6 +85,7 @@
             </div>
         </div>
     </div>
+    @includeIf('pages.retur.modal')
 @endsection
 
 @push('addon-script')
@@ -121,13 +121,15 @@
                             "data": "warehouse.name"
                         },
                         {
-                            "data": "product.name"
+                            "data": "sell.customer.name"
                         },
                         {
-                            "data": "unit.name"
-                        },
-                        {
-                            "data": "qty"
+                            "data": "id",
+                            "render": function(data, type, row) {
+                                return `
+                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                `;
+                            }
                         },
                     ],
                 });
@@ -204,7 +206,7 @@
         });
     </script>
 
-    {{-- <script>
+    <script>
         var datatable;
 
         function openModal(id) {
@@ -218,7 +220,7 @@
 
             // Send a request to fetch the sell details for the given ID
             $.ajax({
-                url: '/penjualan/' + id,
+                url: '/pembelian-retur/api/data-detail/' + id,
                 method: 'GET',
                 success: function(response) {
                     // Initialize the DataTable on the table
@@ -231,29 +233,7 @@
                                 data: 'unit.name'
                             },
                             {
-                                data: 'quantity'
-                            },
-                            {
-                                data: 'price',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'diskon',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
+                                data: 'qty'
                             }
                         ]
                     });
@@ -266,5 +246,5 @@
                 }
             });
         }
-    </script> --}}
+    </script>
 @endpush

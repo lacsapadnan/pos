@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Retur')
-@section('menu-title', 'Retur Barang')
+@section('title', 'Retur Penjualan')
+@section('menu-title', 'Retur Penjualan')
 
 @push('addon-style')
     <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
@@ -65,7 +65,7 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": false,
+                    "info": true,
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
@@ -97,49 +97,12 @@
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-                                <a href="/retur/${data}" class="btn btn-sm btn-warning">Retur</a>
+                                <a href="/pembelian-retur/${data}" class="btn btn-sm btn-warning">Retur</a>
                                 `;
                             }
                         },
 
                     ],
-                });
-
-                $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-                    var quantityDus = $(this).closest('tr').find('input[name="quantity_dus"]').val();
-                    var quantityPak = $(this).closest('tr').find('input[name="quantity_pak"]').val();
-                    var quantityEceran = $(this).closest('tr').find('input[name="quantity_eceran"]').val();
-                    var diskonDus = $(this).closest('tr').find('input[name="diskon_dus"]').val();
-                    var diskonPak = $(this).closest('tr').find('input[name="diskon_pak"]').val();
-                    var diskonEceran = $(this).closest('tr').find('input[name="diskon_eceran"]').val();
-
-                    var inputRequest = {
-                        product_id: productId,
-                        quantity_dus: quantityDus,
-                        quantity_pak: quantityPak,
-                        quantity_eceran: quantityEceran,
-                        diskon_dus: diskonDus,
-                        diskon_pak: diskonPak,
-                        diskon_eceran: diskonEceran,
-                    };
-
-                    // Send AJAX request
-                    $.ajax({
-                        url: '{{ route('penjualan.addCart') }}',
-                        type: 'POST',
-                        data: inputRequest,
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(response) {
-                            // reload page
-                            location.reload();
-                        },
-                        error: function(xhr, status, error) {
-                        }
-                    });
                 });
             }
 

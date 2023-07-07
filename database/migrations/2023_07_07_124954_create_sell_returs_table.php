@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('returs', function (Blueprint $table) {
+        Schema::create('sell_returs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sell_id')->references('id')->on('sells')->onDelete('cascade');
-            $table->foreignId('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreignId('unit_id')->references('id')->on('units')->onDelete('cascade');
             $table->foreignId('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
             $table->date('retur_date');
-            $table->integer('qty');
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('returs');
+        Schema::dropIfExists('sell_returs');
     }
 };
