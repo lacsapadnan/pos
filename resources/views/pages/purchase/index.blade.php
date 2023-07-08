@@ -78,7 +78,7 @@
                                 <th>kas</th>
                                 <th>Cabang</th>
                                 <th>Subtotal</th>
-                                <th>Diskon</th>
+                                <th>PPN</th>
                                 <th>Grand Total</th>
                                 <th>Bayar</th>
                                 <th>Deskripsi</th>
@@ -145,6 +145,12 @@
                                 }).format(data);
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
+                            }
+                        },
+                        {
+                            "data": "tax",
+                            render: function(data, type, row) {
+                                return data + '%';
                             }
                         },
                         {

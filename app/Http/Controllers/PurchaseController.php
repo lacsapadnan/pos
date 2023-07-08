@@ -67,6 +67,7 @@ class PurchaseController extends Controller
             'pay' => $request->pay,
             'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
             'description' => $request->description,
+            'tax' => $request->tax,
         ]);
 
         foreach ($existingCart as $cart) {

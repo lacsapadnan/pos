@@ -19,7 +19,8 @@
                             <div class="input-group" id="kt_td_picker_date_only" data-td-target-input="nearest"
                                 data-td-target-toggle="nearest">
                                 <input id="kt_td_picker_date_only_input" type="text" class="form-control"
-                                    data-td-target="#kt_td_picker_date_only" name="reciept_date" />
+                                    data-td-target="#kt_td_picker_date_only" name="reciept_date" value="{{ date('Y-m-d') }}"
+                                    disabled />
                                 <span class="input-group-text" data-td-target="#kt_td_picker_date_only"
                                     data-td-toggle="datetimepicker">
                                     <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span
@@ -151,9 +152,17 @@
                             <div class="mb-1">
                                 <label for="subtotal" class="col-form-label">Subtotal</label>
                                 <input type="text" name="subtotal" class="form-control" id="subtotal"
-                                    value="{{ $subtotal }}" readonly />
+                                    value="Rp{{ $subtotal }}" readonly />
                             </div>
                         </div>
+                        <div class="col">
+                            <div class="mb-1">
+                                <label for="ppn" class="col-form-label">PPN</label>
+                                <input type="text" name="tax" class="form-control" id="ppn" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-5">
                         <div class="col">
                             <div class="mb-1">
                                 <label for="bayar" class="col-form-label">Bayar</label>
@@ -217,8 +226,10 @@
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+            var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) ||
+            0; // Retrieve the tax value from the input field
 
-            var grandTotal = subtotal; // Assign subtotal to grandTotal or calculate it based on your requirements
+            var grandTotal = subtotal + (subtotal * (tax / 100)); // Calculate the grand total by adding the tax amount
 
             var sisa = calculateSisa(grandTotal, bayar);
 
@@ -525,6 +536,13 @@
 
                     initDatatable();
                     handleSearchDatatable();
+                    $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"], input[name^="price_"]', function(event) {
+                        if(event.which === 13) {
+                            event.preventDefault();
+                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                            btnSubmit.click();
+                        }
+                    });
                 }
             };
         }();
