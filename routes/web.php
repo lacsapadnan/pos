@@ -3,6 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
@@ -49,6 +50,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('pembelian-retur', PurchaseReturController::class);
     Route::resource('penjualan-retur', SellReturController::class);
     Route::resource('pindah-stok', SendStockController::class);
+    Route::resource('permission', PermissionController::class)->except(['show', 'create']);
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -64,6 +66,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('penjualan-retur/api/data-detail/{id}', [SellReturController::class, 'dataDetail'])->name('api.retur-detail');
     Route::get('pembelian-retur/api/data-detail/{id}', [PurchaseReturController::class, 'dataDetail'])->name('api.retur-detail');
     Route::get('data-all/api/data', [InventoryController::class, 'dataAll'])->name('api.data-all');
+    Route::get('permission/api/data', [PermissionController::class, 'data'])->name('api.permission');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');

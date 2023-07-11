@@ -379,6 +379,20 @@
                             </a>
                             <!--end:Menu link-->
                             <!--begin:Menu link-->
+                            <a class="menu-link"href="{{ route('permission.index') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-lock-2 fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                        <i class="path3"></i>
+                                        <i class="path4"></i>
+                                        <i class="path5"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Data Permission</span>
+                            </a>
+                            <!--end:Menu link-->
+                            <!--begin:Menu link-->
                             <a class="menu-link"href="{{ route('role-permission.index') }}">
                                 <span class="menu-icon">
                                     <i class="ki-duotone ki-lock-2 fs-2">
