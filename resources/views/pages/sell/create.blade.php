@@ -72,7 +72,7 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori" id="searchInput">
                 </div>
                 <!--end::Search-->
             </div>
@@ -282,13 +282,18 @@
                     "order": [],
                     "pageLength": 10,
                     "scrollX": true,
+                    deferRender: true,
+                    processing: true,
+                    serverSide: true,
                     fixedColumns: {
                         left: 2
                     },
                     "ajax": {
-                        url: '{{ route('api.inventori') }}',
+                        url: '{{ route('api.data-all') }}',
                         type: 'GET',
-                        dataSrc: '',
+                        data: function(d) {
+                            d.searchQuery = $('#searchInput').val();
+                        }
                     },
                     "columns": [{
                             data: "product.group"
@@ -475,8 +480,7 @@
                             // reload page
                             location.reload();
                         },
-                        error: function(xhr, status, error) {
-                        }
+                        error: function(xhr, status, error) {}
                     });
                 });
             }
@@ -501,7 +505,7 @@
                     initDatatable();
                     handleSearchDatatable();
                     $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"]', function(event) {
-                        if(event.which === 13) {
+                        if (event.which === 13) {
                             event.preventDefault();
                             var btnSubmit = $(this).closest('tr').find('.btn-submit');
                             btnSubmit.click();

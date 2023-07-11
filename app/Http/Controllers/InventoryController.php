@@ -26,6 +26,34 @@ class InventoryController extends Controller
         return response()->json($inventory);
     }
 
+    public function dataAll(Request $request)
+    {
+        $searchQuery = $request->input('searchQuery');
+
+        $query = Inventory::with('product', 'warehouse')
+            ->where('warehouse_id', auth()->user()->warehouse_id);
+
+        if ($searchQuery) {
+            $query->whereHas('product', function ($query) use ($searchQuery) {
+                $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+            });
+        } else {
+            $query->whereRaw('1 = 0'); // Return no results when no search query is provided
+        }
+
+        $inventory = $query->paginate(10); // Adjust the pagination as per your requirements
+
+        // Prepare the JSON response
+        $response = [
+            'draw' => $request->input('draw', 1),
+            'recordsTotal' => $inventory->total(),
+            'recordsFiltered' => $inventory->total(),
+            'data' => $inventory->items(),
+        ];
+
+        return response()->json($response);
+    }
+
     /**
      * Show the form for creating a new resource.
      */

@@ -63,6 +63,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');
     Route::get('penjualan-retur/api/data-detail/{id}', [SellReturController::class, 'dataDetail'])->name('api.retur-detail');
     Route::get('pembelian-retur/api/data-detail/{id}', [PurchaseReturController::class, 'dataDetail'])->name('api.retur-detail');
+    Route::get('data-all/api/data', [InventoryController::class, 'dataAll'])->name('api.data-all');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
