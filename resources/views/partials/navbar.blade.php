@@ -365,7 +365,7 @@
                         <!--begin:Menu item-->
                         <div class="menu-item">
                             <!--begin:Menu link-->
-                            <a class="menu-link"href="#">
+                            <a class="menu-link"href="{{ route('user.index') }}">
                                 <span class="menu-icon">
                                     <i class="ki-duotone ki-people fs-2">
                                         <i class="path1"></i>
