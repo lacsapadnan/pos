@@ -6,6 +6,15 @@
 @push('addon-style')
     <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <style>
+        ::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgba(192, 192, 192, 0.3);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            background-color: #818B99;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -57,7 +66,8 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
+                        id="searchInput">
                 </div>
                 <!--end::Search-->
             </div>
@@ -227,7 +237,7 @@
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
             var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) ||
-            0; // Retrieve the tax value from the input field
+                0; // Retrieve the tax value from the input field
 
             var grandTotal = subtotal + (subtotal * (tax / 100)); // Calculate the grand total by adding the tax amount
 
@@ -300,14 +310,19 @@
                     "order": [],
                     "pageLength": 10,
                     "scrollX": true,
-                    "fixedColumns": {
+                    deferRender: true,
+                    processing: true,
+                    serverSide: true,
+                    fixedColumns: {
                         left: 2,
                         right: 1
                     },
                     "ajax": {
-                        url: '{{ route('api.inventori') }}',
+                        url: '{{ route('api.data-all') }}',
                         type: 'GET',
-                        dataSrc: '',
+                        data: function(d) {
+                            d.searchQuery = $('#searchInput').val();
+                        }
                     },
                     "columns": [{
                             data: "product.group"
@@ -536,13 +551,15 @@
 
                     initDatatable();
                     handleSearchDatatable();
-                    $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"], input[name^="price_"]', function(event) {
-                        if(event.which === 13) {
-                            event.preventDefault();
-                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
-                            btnSubmit.click();
-                        }
-                    });
+                    $(table).on('keydown',
+                        'input[name^="quantity_"], input[name^="diskon_"], input[name^="price_"]',
+                        function(event) {
+                            if (event.which === 13) {
+                                event.preventDefault();
+                                var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                                btnSubmit.click();
+                            }
+                        });
                 }
             };
         }();
