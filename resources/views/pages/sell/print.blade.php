@@ -73,7 +73,7 @@
     <div class="p-3">
         <div class="header">
             <div class="store-name">
-                <h3>SETIA KULAKAN</h3>
+                <h3>{{ $sell->warehouse->name }}</h3>
             </div>
             <div class="address" style="margin-top: 24px">
                 <p>{{ $sell->warehouse->address }}</p>
