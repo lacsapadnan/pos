@@ -3,6 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\KasController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -53,6 +54,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('pindah-stok', SendStockController::class);
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
+    Route::resource('kas', KasController::class)->except(['show', 'create']);
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -70,6 +72,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('data-all/api/data', [InventoryController::class, 'dataAll'])->name('api.data-all');
     Route::get('permission/api/data', [PermissionController::class, 'data'])->name('api.permission');
     Route::get('user/api/data', [UserController::class, 'data'])->name('api.user');
+    Route::get('kas/api/data', [KasController::class, 'data'])->name('api.kas');
+    Route::get('kas-income/api/data', [KasController::class, 'income'])->name('api.kas-income');
+    Route::get('kas-expense/api/data', [KasController::class, 'expense'])->name('api.kas-expense');
+
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
