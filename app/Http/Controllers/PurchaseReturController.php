@@ -23,8 +23,15 @@ class PurchaseReturController extends Controller
 
     public function data()
     {
-        $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->where('warehouse_id', auth()->user()->warehouse_id)->get();
-        return response()->json($retur);
+        $userRoles = auth()->user()->getRoleNames();
+
+        if ($userRoles[0] == 'superadmin') {
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->get();
+            return response()->json($retur);
+        } else {
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+            return response()->json($retur);
+        }
     }
 
     public function  dataDetail($id)

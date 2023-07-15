@@ -22,8 +22,15 @@ class InventoryController extends Controller
 
     public function data()
     {
-        $inventory = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id)->get();
-        return response()->json($inventory);
+        $userRoles = auth()->user()->getRoleNames();
+
+        if ($userRoles[0] == 'superadmin') {
+            $inventory = Inventory::with('product', 'warehouse')->get();
+            return response()->json($inventory);
+        } else {
+            $inventory = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+            return response()->json($inventory);
+        }
     }
 
     public function dataAll(Request $request)

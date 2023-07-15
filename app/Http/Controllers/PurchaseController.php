@@ -25,8 +25,17 @@ class PurchaseController extends Controller
 
     public function data()
     {
-        $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')->get();
-        return response()->json($purchases);
+        $userRoles = auth()->user()->getRoleNames();
+
+        if ($userRoles[0] == 'superadmin') {
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')->get();
+            return response()->json($purchases);
+        } else {
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->get();
+            return response()->json($purchases);
+        }
     }
 
     /**

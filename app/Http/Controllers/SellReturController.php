@@ -23,8 +23,15 @@ class SellReturController extends Controller
 
     public function data()
     {
-        $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit')->where('warehouse_id', auth()->user()->warehouse_id)->get();
-        return response()->json($retur);
+        $userRoles = auth()->user()->getRoleNames();
+
+        if ($userRoles[0] == 'superadmin') {
+            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit')->get();
+            return response()->json($retur);
+        } else {
+            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+            return response()->json($retur);
+        }
     }
 
     public function  dataDetail($id)
