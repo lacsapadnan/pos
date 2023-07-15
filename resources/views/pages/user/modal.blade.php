@@ -36,6 +36,16 @@
                             @endforelse
                         </select>
                     </div>
+                    <div class="mb-5">
+                        <label for="warehouse" class="col-form-label">Role</label>
+                        <select name="warehouse_id" class="form-select" aria-label="Select example">
+                            @forelse ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @empty
+                                <option value="">Tidak ada cabang</option>
+                            @endforelse
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-success">Simpan</button>
                 </form>
             </div>

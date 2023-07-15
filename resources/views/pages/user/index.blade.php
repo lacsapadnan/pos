@@ -108,6 +108,7 @@
                                 <th>Nama</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Cabang</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -160,6 +161,10 @@
                         },
                         {
                             data: 'roles.0.name'
+                        },
+                        {
+                            data: 'warehouse.name',
+                            defaultContent: '-'
                         },
                         {
                             data: "id",

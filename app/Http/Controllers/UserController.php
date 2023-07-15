@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -16,12 +17,13 @@ class UserController extends Controller
     public function index()
     {
         $roles = Role::orderBy('id', 'asc')->get();
-        return view('pages.user.index', compact('roles'));
+        $warehouses = Warehouse::orderBy('id', 'asc')->get();
+        return view('pages.user.index', compact('roles', 'warehouses'));
     }
 
     public function data()
     {
-        $users = User::with('roles')->orderBy('id', 'asc')->get();
+        $users = User::with('roles', 'warehouse')->orderBy('id', 'asc')->get();
         return response()->json($users);
     }
 
@@ -43,6 +45,7 @@ class UserController extends Controller
             'role' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'warehouse_id' => 'nullable|exists:warehouses,id'
         ], [
             'name.required' => 'Nama harus diisi!',
             'name.string' => 'Nama harus berupa string!',
@@ -58,6 +61,7 @@ class UserController extends Controller
             'password.required' => 'Password harus diisi!',
             'password.string' => 'Password harus berupa string!',
             'password.min' => 'Password minimal 8 karakter!',
+            'warehouse_id.exists' => 'Cabang tidak ditemukan!',
         ]);
 
         if ($validasi->fails()) {
@@ -69,6 +73,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'warehouse_id' => $request->warehouse_id ?? null,
         ]);
 
         $user->roles()->attach($role);
@@ -104,6 +109,7 @@ class UserController extends Controller
             'role' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
             'password' => 'nullable|string|min:8',
+            'warehouse_id' => 'nullable|exists:warehouses,id'
         ], [
             'name.required' => 'Nama harus diisi!',
             'name.string' => 'Nama harus berupa string!',
@@ -118,6 +124,7 @@ class UserController extends Controller
             'email.unique' => 'Email sudah terdaftar!',
             'password.string' => 'Password harus berupa string!',
             'password.min' => 'Password minimal 8 karakter!',
+            'warehouse_id.exists' => 'Cabang tidak ditemukan!',
         ]);
 
         if ($validasi->fails()) {
@@ -130,6 +137,7 @@ class UserController extends Controller
             'name' => $request->name ?? $user->name,
             'email' => $request->email ?? $user->email,
             'password' => $request->password ? Hash::make($request->password) : $user->password,
+            'warehouse_id' => $request->warehouse_id ?? $user->warehouse_id,
         ]);
 
         $user->roles()->sync($role);
