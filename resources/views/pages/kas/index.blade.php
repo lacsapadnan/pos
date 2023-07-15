@@ -92,6 +92,7 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No.</th>
                                 <th>Faktur</th>
+                                <th>Cabang</th>
                                 <th>Tanggal</th>
                                 <th>Jenis</th>
                                 <th>Keperluan</th>
@@ -145,6 +146,9 @@
                         },
                         {
                             data: "invoice"
+                        },
+                        {
+                            data: "warehouse.name"
                         },
                         {
                             data: "date",

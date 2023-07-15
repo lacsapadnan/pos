@@ -33,8 +33,14 @@ class KasController extends Controller
 
     public function data()
     {
-        $kas = Kas::orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item')->get();
-        return response()->json($kas);
+        $userRoles = auth()->user()->getRoleNames();
+        if ($userRoles[0] === 'superadmin') {
+            $kas = Kas::orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
+            return response()->json($kas);
+        } else {
+            $kas = Kas::where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
+            return response()->json($kas);
+        }
     }
 
     /**
@@ -89,6 +95,7 @@ class KasController extends Controller
         $kas = Kas::create([
             'kas_income_item_id' => $kasIncomeItemId,
             'kas_expense_item_id' => $kasExpenseItemId,
+            'warehouse_id' => auth()->user()->warehouse_id,
             'date' => $request->date,
             'invoice' => $request->invoice,
             'type' => $request->type,

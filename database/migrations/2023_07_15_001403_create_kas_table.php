@@ -24,6 +24,7 @@ return new class extends Migration
 
             $table->foreign('kas_income_item_id')->references('id')->on('kas_income_items')->onDelete('cascade');
             $table->foreign('kas_expense_item_id')->references('id')->on('kas_expense_items')->onDelete('cascade');
+            $table->foreignId('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
         });
     }
 
