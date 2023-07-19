@@ -44,7 +44,7 @@ class SellController extends Controller
             ->get();
         $products = Product::all();
         $customers = Customer::all();
-        $orderNumber = Carbon::now()->format('Ymd') . str_pad(Sell::count() + 1, 4, '0', STR_PAD_LEFT);
+        $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad(Sell::count() + 1, 4, '0', STR_PAD_LEFT);
         $cart = SellCart::with('product', 'unit')->get();
         $subtotal = 0;
         foreach ($cart as $c) {
