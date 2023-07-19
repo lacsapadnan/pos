@@ -50,13 +50,14 @@ class PurchaseController extends Controller
             ->get();
         $products = Product::all();
         $units = Unit::all();
+        $orderNumber = "PL -" . date('Ymd') . "-" . str_pad(Purchase::count() + 1, 4, '0', STR_PAD_LEFT);
         $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
             $subtotal += $c->total_price;
         }
 
-        return view('pages.purchase.create', compact('treasuries', 'suppliers', 'inventories', 'products', 'units', 'cart', 'subtotal'));
+        return view('pages.purchase.create', compact('treasuries', 'suppliers', 'inventories', 'products', 'units', 'cart', 'subtotal', 'orderNumber'));
     }
 
     /**
@@ -64,12 +65,14 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
 
         $purchase = Purchase::create([
             'supplier_id' => $request->supplier_id,
             'treasury_id' => $request->treasury_id,
             'warehouse_id' => auth()->user()->warehouse_id,
+            'order_number' => $request->order_number,
             'invoice' => $request->invoice,
             'subtotal' => $request->subtotal,
             'grand_total' => $request->grand_total,

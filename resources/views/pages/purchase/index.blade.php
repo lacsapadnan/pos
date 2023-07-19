@@ -73,6 +73,7 @@
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>Faktur Supplier</th>
+                                <th>No. Order</th>
                                 <th>tanggal Terima</th>
                                 <th>Supplier</th>
                                 <th>kas</th>
@@ -123,6 +124,9 @@
                     },
                     "columns": [{
                             "data": "invoice"
+                        },
+                        {
+                            "data": "order_number"
                         },
                         {
                             "data": "reciept_date",

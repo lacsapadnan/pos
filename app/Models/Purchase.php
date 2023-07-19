@@ -15,6 +15,7 @@ class Purchase extends Model
         'treasury_id',
         'quantity',
         'invoice',
+        'order_number',
         'subtotal',
         'grand_total',
         'pay',

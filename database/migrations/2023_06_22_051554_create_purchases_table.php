@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
             $table->foreignId('treasury_id')->references('id')->on('treasuries')->onDelete('cascade');
             $table->string('invoice');
+            $table->string('order_number');
             $table->string('subtotal');
             $table->string('grand_total');
             $table->string('pay');

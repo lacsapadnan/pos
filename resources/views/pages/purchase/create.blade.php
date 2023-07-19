@@ -39,6 +39,12 @@
                         </div>
                     </div>
                     <div class="col-md-3">
+                        <div class="mb-3 row align-items-center me-1">
+                            <label for="inputEmail3" class="col-form-label">No. Order</label>
+                            <input id="order_number" type="text" name="order_number" class="form-control" value="{{ $orderNumber }}" readonly />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="mb-3 row align-items-center">
                             <label for="inputEmail3" class="col-form-label">No. Faktur Supplier</label>
                             <input id="invoice" type="text" name="invoice" class="form-control"
@@ -157,12 +163,13 @@
                     <input type="hidden" name="reciept_date" id="reciept_date_form2">
                     <input type="hidden" name="invoice" id="invoice_form2">
                     <input type="hidden" name="supplier_id" id="supplier_id_form2">
+                    <input type="hidden" name="order_number" id="order_number_form2">
                     <div class="row">
                         <div class="col">
                             <div class="mb-1">
                                 <label for="subtotal" class="col-form-label">Subtotal</label>
                                 <input type="text" name="subtotal" class="form-control" id="subtotal"
-                                    value="Rp{{ $subtotal }}" readonly />
+                                    value="{{ $subtotal }}" readonly />
                             </div>
                         </div>
                         <div class="col">
@@ -259,6 +266,7 @@
             $('#reciept_date_form2').val(recieptDate);
             $('#invoice_form2').val(invoice);
             $('#supplier_id_form2').val(supplierId);
+            document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
 
             // Submit both forms
             document.getElementById('form1').submit();
