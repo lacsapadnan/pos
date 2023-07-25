@@ -4,7 +4,8 @@
 @section('menu-title', 'Produk')
 
 @push('addon-style')
-    <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
 @endpush
 
 @section('content')
@@ -50,7 +51,8 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk"
+                        id="searchInput">
                 </div>
                 <!--end::Search-->
             </div>
@@ -142,7 +144,9 @@
 @endsection
 
 @push('addon-script')
-    <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
+    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script>
         "use strict";
 
@@ -165,10 +169,16 @@
                     fixedColumns: {
                         left: 2
                     },
+                    deferRender: true,
+                    processing: true,
+                    serverSide: true,
                     "ajax": {
-                        url: '{{ route('api.produk') }}',
+                        url: '{{ route('api.produk-search') }}',
                         type: 'GET',
-                        dataSrc: '',
+                        data: function(d) {
+                            d.searchQuery = $('#searchInput').val();
+                            console.log(d.searchQuery);
+                        }
                     },
                     "columns": [{
                             data: 'group'

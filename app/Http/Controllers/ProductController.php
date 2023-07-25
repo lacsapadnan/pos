@@ -26,6 +26,31 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
+    public function dataSearch(Request $request)
+    {
+        $searchQuery = $request->input('searchQuery');
+
+        $query = Product::with('unit_dus', 'unit_pak', 'unit_eceran');
+
+        if ($searchQuery) {
+            $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+        } else {
+            $query->whereRaw('1 = 0'); // Return no results when no search query is provided
+        }
+
+        $product = $query->paginate(10); // Adjust the pagination as per your requirements
+
+        // Prepare the JSON response
+        $response = [
+            'draw' => $request->input('draw', 1),
+            'recordsTotal' => $product->total(),
+            'recordsFiltered' => $product->total(),
+            'data' => $product->items(),
+        ];
+
+        return response()->json($response);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
