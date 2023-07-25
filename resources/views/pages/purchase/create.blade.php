@@ -41,7 +41,8 @@
                     <div class="col-md-3">
                         <div class="mb-3 row align-items-center me-1">
                             <label for="inputEmail3" class="col-form-label">No. Order</label>
-                            <input id="order_number" type="text" name="order_number" class="form-control" value="{{ $orderNumber }}" readonly />
+                            <input id="order_number" type="text" name="order_number" class="form-control"
+                                value="{{ $orderNumber }}" readonly />
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -477,54 +478,63 @@
                 });
 
                 $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-                    var quantityDus = $(this).closest('tr').find('input[name="quantity_dus"]').val();
-                    var quantityPak = $(this).closest('tr').find('input[name="quantity_pak"]').val();
-                    var quantityEceran = $(this).closest('tr').find('input[name="quantity_eceran"]').val();
-                    var unitDus = $(this).closest('tr').find('input[name="unit_dus"]').val();
-                    var unitPak = $(this).closest('tr').find('input[name="unit_pak"]').val();
-                    var unitEceran = $(this).closest('tr').find('input[name="unit_eceran"]').val();
-                    var priceDus = $(this).closest('tr').find('input[name="price_dus"]').val();
-                    var pricePak = $(this).closest('tr').find('input[name="price_pak"]').val();
-                    var priceEceran = $(this).closest('tr').find('input[name="price_eceran"]').val();
-                    var diskonFixDus = $(this).closest('tr').find('input[name="discount_fix_dus"]').val();
-                    var diskonFixPak = $(this).closest('tr').find('input[name="discount_fix_pak"]').val();
-                    var diskonFixEceran = $(this).closest('tr').find('input[name="discount_fix_eceran"]')
-                        .val();
-                    var diskonPersenDus = $(this).closest('tr').find('input[name="discount_percent_dus"]')
-                        .val();
-                    var diskonPersenPak = $(this).closest('tr').find('input[name="discount_percent_pak"]')
-                        .val();
-                    var diskonPersenEceran = $(this).closest('tr').find(
-                        'input[name="discount_percent_eceran"]').val();
+                    var rows = $(table).find('tbody tr');
+                    var inputRequests = [];
 
-                    var inputRequest = {
-                        product_id: productId,
-                        quantity_dus: quantityDus,
-                        quantity_pak: quantityPak,
-                        quantity_eceran: quantityEceran,
-                        unit_dus: unitDus,
-                        unit_pak: unitPak,
-                        unit_eceran: unitEceran,
-                        price_dus: priceDus,
-                        price_pak: pricePak,
-                        price_eceran: priceEceran,
-                        discount_fix_dus: diskonFixDus,
-                        discount_fix_pak: diskonFixPak,
-                        discount_fix_eceran: diskonFixEceran,
-                        discount_percent_dus: diskonPersenDus,
-                        discount_percent_pak: diskonPersenPak,
-                        discount_percent_eceran: diskonPersenEceran,
-                    };
+                    rows.each(function() {
+                        var rowData = datatable.row($(this)).data();
+                        var productId = $(this).find('.btn-submit').data('product-id');
+                        var quantityDus = $(this).find('input[name="quantity_dus"]').val();
+                        var quantityPak = $(this).find('input[name="quantity_pak"]').val();
+                        var quantityEceran = $(this).find('input[name="quantity_eceran"]').val();
+                        var unitDus = $(this).find('input[name="unit_dus"]').val();
+                        var unitPak = $(this).find('input[name="unit_pak"]').val();
+                        var unitEceran = $(this).find('input[name="unit_eceran"]').val();
+                        var priceDus = $(this).find('input[name="price_dus"]').val();
+                        var pricePak = $(this).find('input[name="price_pak"]').val();
+                        var priceEceran = $(this).find('input[name="price_eceran"]').val();
+                        var diskonFixDus = $(this).find('input[name="discount_fix_dus"]').val();
+                        var diskonFixPak = $(this).find('input[name="discount_fix_pak"]').val();
+                        var diskonFixEceran = $(this).find('input[name="discount_fix_eceran"]')
+                        .val();
+                        var diskonPersenDus = $(this).find('input[name="discount_percent_dus"]')
+                            .val();
+                        var diskonPersenPak = $(this).find('input[name="discount_percent_pak"]')
+                            .val();
+                        var diskonPersenEceran = $(this).find(
+                            'input[name="discount_percent_eceran"]').val();
 
-                    console.log(inputRequest);
+                        var inputRequest = {
+                            product_id: productId,
+                            quantity_dus: quantityDus,
+                            quantity_pak: quantityPak,
+                            quantity_eceran: quantityEceran,
+                            unit_dus: unitDus,
+                            unit_pak: unitPak,
+                            unit_eceran: unitEceran,
+                            price_dus: priceDus,
+                            price_pak: pricePak,
+                            price_eceran: priceEceran,
+                            discount_fix_dus: diskonFixDus,
+                            discount_fix_pak: diskonFixPak,
+                            discount_fix_eceran: diskonFixEceran,
+                            discount_percent_dus: diskonPersenDus,
+                            discount_percent_pak: diskonPersenPak,
+                            discount_percent_eceran: diskonPersenEceran,
+                        };
+
+                        inputRequests.push(inputRequest);
+                    });
+
+                    console.log(inputRequests);
 
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('pembelian.addCart') }}',
                         type: 'POST',
-                        data: inputRequest,
+                        data: {
+                            requests: inputRequests // Pass the array of objects as "requests"
+                        },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
@@ -534,10 +544,11 @@
                         error: function(xhr, status, error) {
                             // Handle error response
                             console.log(xhr.responseText);
-                            console.log('Request data:', inputRequest);
+                            console.log('Request data:', inputRequests);
                         }
                     });
                 });
+
             }
 
             // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()

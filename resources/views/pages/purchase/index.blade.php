@@ -5,6 +5,15 @@
 
 @push('addon-style')
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+    <style>
+        ::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgba(192, 192, 192, 0.3);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            background-color: #818B99;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -76,13 +85,14 @@
                                 <th>No. Order</th>
                                 <th>tanggal Terima</th>
                                 <th>Supplier</th>
-                                <th>kas</th>
+                                <th>Kas</th>
                                 <th>Cabang</th>
                                 <th>Subtotal</th>
                                 <th>PPN</th>
                                 <th>Grand Total</th>
                                 <th>Bayar</th>
                                 <th>Deskripsi</th>
+                                <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -183,6 +193,16 @@
                             "data": "description",
                             "render": function(data, type, row) {
                                 return data ? data : '-';
+                            }
+                        },
+                        {
+                            "data": "status",
+                            "render": function(data, type, row) {
+                                if (data == 'hutang') {
+                                    return `<span class="badge badge-light-danger">Hutang</span>`;
+                                } else {
+                                    return `<span class="badge badge-light-primary">Lunas</span>`;
+                                }
                             }
                         },
                         {

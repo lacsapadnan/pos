@@ -22,7 +22,8 @@ class Purchase extends Model
         'due_date',
         'reciept_date',
         'description',
-        'tax'
+        'tax',
+        'status'
     ];
 
     public function treasury()

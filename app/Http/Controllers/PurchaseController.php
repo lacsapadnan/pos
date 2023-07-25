@@ -65,8 +65,14 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
+        // check if pay less than grand total status is hutang
+        if ($request->pay < $request->grand_total) {
+            $status = 'hutang';
+        } else {
+            $status = 'lunas';
+        }
+
 
         $purchase = Purchase::create([
             'supplier_id' => $request->supplier_id,
@@ -80,6 +86,7 @@ class PurchaseController extends Controller
             'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
             'description' => $request->description,
             'tax' => $request->tax,
+            'status' => $status,
         ]);
 
         foreach ($existingCart as $cart) {
@@ -174,133 +181,66 @@ class PurchaseController extends Controller
 
     public function addCart(Request $request)
     {
-        $productId = $request->product_id;
         $userId = auth()->id();
+        $requests = $request->input('requests');
 
-        // Save quantity_dus if it exists
-        if ($request->has('quantity_dus') && $request->quantity_dus) {
-            $priceDus = $request->price_dus;
-            $quantityDus = $request->quantity_dus;
-            $discountFixDus = $request->discount_fix_dus ?? 0;
-            $discountPercentDus = $request->discount_percent_dus ?? 0;
-            $totalPrice = 0;
+        foreach ($requests as $inputRequest) {
+            $productId = $inputRequest['product_id'];
 
-            // calculated total price if discount_fix or discount_percent exists or both exists using price unit
-            if ($discountFixDus && $discountPercentDus) {
-                $totalPrice = ($priceDus * $quantityDus) - $discountFixDus - ($priceDus * $quantityDus * $discountPercentDus / 100);
-            } elseif ($discountFixDus) {
-                $totalPrice = ($priceDus * $quantityDus) - $discountFixDus;
-            } elseif ($discountPercentDus) {
-                $totalPrice = ($priceDus * $quantityDus) - ($priceDus * $quantityDus * $discountPercentDus / 100);
-            } else {
-                $totalPrice = $priceDus * $quantityDus;
+            // Process quantity_dus if it exists
+            if (isset($inputRequest['quantity_dus']) && $inputRequest['quantity_dus']) {
+                $this->processCartItem($userId, $productId, $inputRequest['quantity_dus'], $inputRequest['unit_dus'], $inputRequest['price_dus'], $inputRequest['discount_fix_dus'] ?? 0, $inputRequest['discount_percent_dus'] ?? 0);
             }
 
-
-            $existingCart = PurchaseCart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->where('unit_id', $request->unit_dus)
-                ->first();
-
-            if ($existingCart) {
-                $existingCart->quantity += $quantityDus;
-                $existingCart->update();
-            } else {
-                PurchaseCart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'unit_id' => $request->unit_dus,
-                    'quantity' => $quantityDus,
-                    'discount_fix' => $discountFixDus,
-                    'discount_percent' => $discountPercentDus,
-                    'price_unit' => $priceDus,
-                    'total_price' => $totalPrice,
-                ]);
-            }
-        }
-
-        // Save quantity_pak if it exists
-        if ($request->has('quantity_pak') && $request->quantity_pak) {
-            $pricePak = $request->price_pak;
-            $quantityPak = $request->quantity_pak;
-            $discountFixPak = $request->discount_fix_pak ?? 0;
-            $discountPercentPak = $request->discount_percent_pak ?? 0;
-            $totalPrice = 0;
-
-            // calculated total price if discount_fix or discount_percent exists or both exists
-            if ($discountFixPak && $discountPercentPak) {
-                $totalPrice = ($pricePak * $quantityPak) - $discountFixPak - ($pricePak * $quantityPak * $discountPercentPak / 100);
-            } elseif ($discountFixPak) {
-                $totalPrice = ($pricePak * $quantityPak) - $discountFixPak;
-            } elseif ($discountPercentPak) {
-                $totalPrice = ($pricePak * $quantityPak) - ($pricePak * $quantityPak * $discountPercentPak / 100);
-            } else {
-                $totalPrice = $pricePak * $quantityPak;
+            // Process quantity_pak if it exists
+            if (isset($inputRequest['quantity_pak']) && $inputRequest['quantity_pak']) {
+                $this->processCartItem($userId, $productId, $inputRequest['quantity_pak'], $inputRequest['unit_pak'], $inputRequest['price_pak'], $inputRequest['discount_fix_pak'] ?? 0, $inputRequest['discount_percent_pak'] ?? 0);
             }
 
-            $existingCart = PurchaseCart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->where('unit_id', $request->unit_pak)
-                ->first();
-
-            if ($existingCart) {
-                $existingCart->quantity += $quantityPak;
-                $existingCart->update();
-            } else {
-                PurchaseCart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'unit_id' => $request->unit_pak,
-                    'quantity' => $quantityPak,
-                    'discount_fix' => $discountFixPak,
-                    'discount_percent' => $discountPercentPak,
-                    'price_unit' => $pricePak,
-                    'total_price' => $totalPrice,
-                ]);
-            }
-        }
-
-        // Save quantity_eceran if it exists
-        if ($request->has('quantity_eceran') && $request->quantity_eceran) {
-            $priceEceran = $request->price_eceran;
-            $quantityEceran = $request->quantity_eceran;
-            $discountFixEceran = $request->discount_fix_eceran ?? 0;
-            $discountPercentEceran = $request->discount_percent_eceran ?? 0;
-            $totalPrice = 0;
-
-            // calculated total price if discount_fix or discount_percent exists or both exists
-            if ($discountFixEceran && $discountPercentEceran) {
-                $totalPrice = ($priceEceran * $quantityEceran) - $discountFixEceran - ($priceEceran * $quantityEceran * $discountPercentEceran / 100);
-            } elseif ($discountFixEceran) {
-                $totalPrice = ($priceEceran * $quantityEceran) - $discountFixEceran;
-            } elseif ($discountPercentEceran) {
-                $totalPrice = ($priceEceran * $quantityEceran) - ($priceEceran * $quantityEceran * $discountPercentEceran / 100);
-            } else {
-                $totalPrice = $priceEceran * $quantityEceran;
-            }
-            $existingCart = PurchaseCart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->where('unit_id', $request->unit_eceran)
-                ->first();
-
-            if ($existingCart) {
-                $existingCart->quantity += $quantityEceran;
-                $existingCart->update();
-            } else {
-                PurchaseCart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'unit_id' => $request->unit_eceran,
-                    'quantity' => $quantityEceran,
-                    'discount_fix' => $discountFixEceran,
-                    'discount_percent' => $discountPercentEceran,
-                    'price_unit' => $priceEceran,
-                    'total_price' => $totalPrice,
-                ]);
+            // Process quantity_eceran if it exists
+            if (isset($inputRequest['quantity_eceran']) && $inputRequest['quantity_eceran']) {
+                $this->processCartItem($userId, $productId, $inputRequest['quantity_eceran'], $inputRequest['unit_eceran'], $inputRequest['price_eceran'], $inputRequest['discount_fix_eceran'] ?? 0, $inputRequest['discount_percent_eceran'] ?? 0);
             }
         }
 
         return redirect()->back();
+    }
+
+    private function processCartItem($userId, $productId, $quantity, $unitId, $price, $discountFix, $discountPercent)
+    {
+        $totalPrice = 0;
+
+        // calculated total price if discount_fix or discount_percent exists or both exists
+        if ($discountFix && $discountPercent) {
+            $totalPrice = ($price * $quantity) - $discountFix - ($price * $quantity * $discountPercent / 100);
+        } elseif ($discountFix) {
+            $totalPrice = ($price * $quantity) - $discountFix;
+        } elseif ($discountPercent) {
+            $totalPrice = ($price * $quantity) - ($price * $quantity * $discountPercent / 100);
+        } else {
+            $totalPrice = $price * $quantity;
+        }
+
+        $existingCart = PurchaseCart::where('user_id', $userId)
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
+            ->first();
+
+        if ($existingCart) {
+            $existingCart->quantity += $quantity;
+            $existingCart->update();
+        } else {
+            PurchaseCart::create([
+                'user_id' => $userId,
+                'product_id' => $productId,
+                'unit_id' => $unitId,
+                'quantity' => $quantity,
+                'discount_fix' => $discountFix,
+                'discount_percent' => $discountPercent,
+                'price_unit' => $price,
+                'total_price' => $totalPrice,
+            ]);
+        }
     }
 
     public function destroyCart($id)
