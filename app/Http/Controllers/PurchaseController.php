@@ -250,4 +250,41 @@ class PurchaseController extends Controller
 
         return redirect()->back();
     }
+
+    public function debt()
+    {
+        return view('pages.purchase.debt');
+    }
+
+    public function dataDebt()
+    {
+        $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
+            ->where('status', 'hutang')
+            ->get();
+
+        return response()->json($purchases);
+    }
+
+    public function payDebt(Request $request)
+    {
+        $purchase = Purchase::find($request->purchase_id);
+
+        if ($request->pay > $purchase->grand_total) {
+            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh lebih dari total hutang');
+        } elseif ($request->pay < 0) {
+            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh kurang dari 0');
+        } elseif ($request->pay == 0) {
+            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh 0');
+        } else {
+            $purchase->pay += $request->pay;
+
+            if ($purchase->pay == $purchase->grand_total) {
+                $purchase->status = 'lunas';
+            }
+
+            $purchase->save();
+
+            return redirect()->back()->with('success', 'Pembayaran hutang berhasil');
+        }
+    }
 }
