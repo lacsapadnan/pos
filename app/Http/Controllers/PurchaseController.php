@@ -258,9 +258,17 @@ class PurchaseController extends Controller
 
     public function dataDebt()
     {
-        $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
-            ->where('status', 'hutang')
-            ->get();
+        $userRoles = auth()->user()->getRoleNames();
+        if ($userRoles[0] == 'superadmin') {
+            $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
+                ->where('status', 'hutang')
+                ->get();
+        } else {
+            $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('status', 'hutang')
+                ->get();
+        }
 
         return response()->json($purchases);
     }

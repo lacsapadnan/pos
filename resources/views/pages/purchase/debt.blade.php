@@ -286,6 +286,13 @@
                     initDatatable();
                     exportButtons();
                     handleSearchDatatable();
+                    $(table).on('keydown', 'input[name^="pay_debt"]', function(event) {
+                        if (event.which === 13) {
+                            event.preventDefault();
+                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                            btnSubmit.click();
+                        }
+                    });
                 }
             };
         }();
