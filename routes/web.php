@@ -56,7 +56,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
     Route::get('hutang', [PurchaseController::class, 'debt'])->name('hutang');
+    Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
+    Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -79,6 +81,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('kas-income/api/data', [KasController::class, 'income'])->name('api.kas-income');
     Route::get('kas-expense/api/data', [KasController::class, 'expense'])->name('api.kas-expense');
     Route::get('hutang/api/data', [PurchaseController::class, 'dataDebt'])->name('api.hutang');
+    Route::get('piutang/api/data', [SellController::class, 'dataCredit'])->name('api.piutang');
 
 
     // Import

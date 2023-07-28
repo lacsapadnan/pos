@@ -313,6 +313,15 @@
                                 <!--end:Menu link-->
                             </div>
                             <!--end:Menu item-->
+                            <!--begin:Menu item-->
+                            <div class="menu-item {{ request()->routeIs('piutang') ? ' here' : '' }}">
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('piutang') }}">
+                                    <span class="menu-title">Data Piutang</span>
+                                </a>
+                                <!--end:Menu link-->
+                            </div>
+                            <!--end:Menu item-->
                         </div>
                         <!--end:Menu sub-->
                     </div>

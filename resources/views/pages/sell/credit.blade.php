@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Penjualan')
-@section('menu-title', 'Penjualan')
+@section('title', 'Piutang')
+@section('menu-title', 'Piutang')
 
 @push('addon-style')
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -15,7 +15,7 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data penjualan">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data piutang">
                 </div>
                 <!--end::Search-->
             </div>
@@ -26,9 +26,6 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('penjualan.create') }}" type="button" class="btn btn-primary">
-                    Tambah Penjualan
-                </a>
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -75,9 +72,10 @@
                                 <th>No. Order</th>
                                 <th>Customer</th>
                                 <th>Cabang</th>
-                                <th>Metode Pembayaran</th>
                                 <th>Total Pembelian</th>
-                                <th>Status</th>
+                                <th>Terima Piutang</th>
+                                <th>Terbayar</th>
+                                <th>Sisa Piutang</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -113,7 +111,7 @@
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
-                        url: '{{ route('api.penjualan') }}',
+                        url: '{{ route('api.piutang') }}',
                         type: 'GET',
                         dataSrc: '',
                     },
@@ -127,9 +125,6 @@
                             "data": "warehouse.name"
                         },
                         {
-                            "data": "payment_method"
-                        },
-                        {
                             "data": "grand_total",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -141,25 +136,73 @@
                             }
                         },
                         {
-                            "data": "status",
-                            "render": function(data, type, row) {
-                                if (data == 'hutang') {
-                                    return `<span class="badge badge-light-danger">Hutang</span>`;
-                                } else {
-                                    return `<span class="badge badge-light-primary">Lunas</span>`;
-                                }
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<input type="text" name="pay_credit" class="form-control price-input">`;
                             }
                         },
                         {
-                            "data": "id",
+                            "data": "pay",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            "data": null,
                             "render": function(data, type, row) {
-                                return `
-                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-                                <a href="/penjualan/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
-                                `;
+                                // grand total - paid
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data.grand_total - data.pay);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: "id",
+                            "render": function(data, type, row) {
+                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-sell-id="${data}">Terima</a>`;
                             }
                         },
                     ],
+                });
+
+                $(table).on('click', '.btn-submit', function() {
+                    var rowData = datatable.row($(this).closest('tr')).data();
+                    var sellId = rowData.id;
+                    var payCredit = $(this).closest('tr').find('input[name="pay_credit"]').val();
+
+                    var inputRequest = {
+                        sell_id: sellId,
+                        pay: payCredit
+                    };
+
+                    console.log(inputRequest);
+
+                    // Send AJAX request with the POST method
+                    $.ajax({
+                        url: '{{ route('bayar-piutang') }}',
+                        type: 'POST',
+                        data: inputRequest,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            // Reload the page after successful update
+                            location.reload();
+                        },
+                        error: function(xhr, status, error) {
+                            // Handle error response
+                            console.log(xhr.responseText);
+                            console.log('Request data:', inputRequest);
+                        }
+                    });
                 });
             }
 
@@ -224,6 +267,14 @@
                     initDatatable();
                     exportButtons();
                     handleSearchDatatable();
+
+                    $(table).on('keydown', 'input[name^="pay_credit"]', function(event) {
+                        if (event.which === 13) {
+                            event.preventDefault();
+                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                            btnSubmit.click();
+                        }
+                    });
                 }
             };
         }();
@@ -232,69 +283,5 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-
-    <script>
-        var datatable;
-
-        function openModal(id) {
-            // Clear the table body
-            $('#kt_datatable_detail tbody').empty();
-
-            // Check if DataTable instance exists and destroy it
-            if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
-                datatable.destroy();
-            }
-
-            // Send a request to fetch the sell details for the given ID
-            $.ajax({
-                url: '/penjualan/' + id,
-                method: 'GET',
-                success: function(response) {
-                    // Initialize the DataTable on the table
-                    datatable = $('#kt_datatable_detail').DataTable({
-                        data: response,
-                        columns: [{
-                                data: 'product.name'
-                            },
-                            {
-                                data: 'unit.name'
-                            },
-                            {
-                                data: 'quantity'
-                            },
-                            {
-                                data: 'price',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'diskon',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            }
-                        ]
-                    });
-
-                    // Open the modal
-                    $('#kt_modal_1').modal('show');
-                },
-                error: function(xhr, status, error) {
-                    console.error(error); // Handle the error appropriately
-                }
-            });
-        }
     </script>
 @endpush

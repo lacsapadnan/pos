@@ -58,7 +58,14 @@ class SellController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $sellCart = SellCart::where('cashier_id', auth()->id())->get();
+
+        if ($request->pay < $request->grand_total) {
+            $status = 'hutang';
+        } else {
+            $status = 'lunas';
+        }
 
         $sell = Sell::create([
             'cashier_id' => auth()->id(),
@@ -71,7 +78,7 @@ class SellController extends Controller
             'change' => $request->change ?? 0,
             'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
             'payment_method' => $request->payment_method,
-            'status' => 'success',
+            'status' => $status,
         ]);
 
         foreach ($sellCart as $sc) {
@@ -276,5 +283,51 @@ class SellController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="Transaksi-' . $sell->order_number . '.pdf"'
         ]);
+    }
+
+    public function credit()
+    {
+        return view('pages.sell.credit');
+    }
+
+    public function dataCredit()
+    {
+        $userRoles = auth()->user()->getRoleNames();
+
+        if ($userRoles[0] == 'superadmin') {
+            $sell = Sell::with('warehouse', 'customer')
+                ->where('status', 'hutang')
+                ->get();
+        } else {
+            $sell = Sell::with('warehouse', 'customer')
+                ->where('status', 'hutang')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->get();
+        }
+
+        return response()->json($sell);
+    }
+
+    public function payCredit(Request $request)
+    {
+        $sell = Sell::find($request->sell_id);
+
+        if ($request->pay > $sell->grand_total) {
+            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh lebih dari total piutang');
+        } elseif ($request->pay < 0) {
+            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh kurang dari 0');
+        } elseif ($request->pay == 0) {
+            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh 0');
+        } else {
+            $sell->pay += $request->pay;
+
+            if ($sell->pay == $sell->grand_total) {
+                $sell->status = 'lunas';
+            }
+
+            $sell->save();
+
+            return redirect()->back()->with('success', 'Pembayaran piutang berhasil');
+        }
     }
 }
