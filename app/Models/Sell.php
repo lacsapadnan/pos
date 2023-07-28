@@ -20,6 +20,8 @@ class Sell extends Model
         'transaction_date',
         'payment_method',
         'status',
+        'cash',
+        'transfer',
     ];
 
     public function details()

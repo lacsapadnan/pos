@@ -76,6 +76,8 @@
                                 <th>Customer</th>
                                 <th>Cabang</th>
                                 <th>Metode Pembayaran</th>
+                                <th>Cash</th>
+                                <th>Transfer</th>
                                 <th>Total Pembelian</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -130,6 +132,28 @@
                             "data": "payment_method"
                         },
                         {
+                            "data": "cash",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            "data": "transfer",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
                             "data": "grand_total",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -143,8 +167,8 @@
                         {
                             "data": "status",
                             "render": function(data, type, row) {
-                                if (data == 'hutang') {
-                                    return `<span class="badge badge-light-danger">Hutang</span>`;
+                                if (data == 'piutang') {
+                                    return `<span class="badge badge-light-danger">Piutang</span>`;
                                 } else {
                                     return `<span class="badge badge-light-primary">Lunas</span>`;
                                 }

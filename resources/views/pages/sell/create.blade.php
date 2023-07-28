@@ -81,7 +81,8 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori" id="searchInput">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
+                        id="searchInput">
                 </div>
                 <!--end::Search-->
             </div>
@@ -179,23 +180,43 @@
                                 <input type="text" name="subtotal" class="form-control" id="subtotal"
                                     value="{{ $subtotal }}" readonly />
                             </div>
-                            <div class="mb-1">
+
+                            <!-- Parent div with id="bayarDiv" -->
+                            <div class="mb-1" id="bayarDiv">
                                 <label for="bayar" class="col-form-label">Bayar</label>
                                 <input type="text" name="pay" class="form-control" id="bayar"
                                     oninput="calculateTotal()" />
                             </div>
+
+                            <!-- Additional input fields initially hidden -->
+                            <div class="mb-1" style="display: none;" id="transferDiv">
+                                <label for="transfer" class="col-form-label">Transfer</label>
+                                <input type="text" name="transfer" class="form-control" id="transfer"
+                                    oninput="calculateTotal()" />
+                            </div>
+
+                            <div class="mb-1" style="display: none;" id="cashDiv">
+                                <label for="cash" class="col-form-label">Cash</label>
+                                <input type="text" name="cash" class="form-control" id="cash"
+                                    oninput="calculateTotal()" />
+                            </div>
+
                             <div class="mb-1">
                                 <label for="grandTotal" class="col-form-label">Grand Total</label>
                                 <input type="text" name="grand_total" class="form-control" id="grandTotal"
                                     readonly />
                             </div>
+
                             <div class="mb-1">
                                 <label for="grandTotal" class="col-form-label">Metode Bayar</label>
-                                <select name="payment_method" class="form-select" aria-label="Select example">
+                                <select name="payment_method" class="form-select" aria-label="Select example"
+                                    onchange="togglePaymentFields()">
                                     <option value="transfer">Transfer</option>
                                     <option value="cash">Cash</option>
+                                    <option value="split">Split Payment</option>
                                 </select>
                             </div>
+
                             <div class="mb-1">
                                 <label for="kembali" class="col-form-label">Kembali</label>
                                 <input type="text" name="change" class="form-control" id="kembali" readonly />
@@ -222,18 +243,68 @@
     <script>
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
-
             var grandTotal = subtotal;
-            var kembali = calculateKembali(grandTotal, bayar);
+
+            var paymentMethod = document.getElementsByName('payment_method')[0].value;
+            var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
+            var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+            if (paymentMethod === 'split') {
+                // Calculate grand total based on the sum of transfer and cash
+                grandTotal = subtotal;
+            }
+
+            var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash);
 
             document.getElementById('grandTotal').value = grandTotal.toFixed(0);
             document.getElementById('kembali').value = kembali.toFixed(0);
         }
 
-        function calculateKembali(grandTotal, bayar) {
-            return Math.max(bayar - grandTotal, 0);
+        function calculateKembali(paymentMethod, grandTotal, transfer, cash) {
+            var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+            if (paymentMethod === 'transfer' || paymentMethod === 'cash') {
+                // For "Transfer" or "Cash," calculate the change as (transfer or cash) - grand total
+                return Math.max((paymentMethod === 'transfer' ? transfer : cash) - grandTotal, 0);
+            } else if (paymentMethod === 'split') {
+                // For "Split Payment," calculate the change as (transfer + cash) - grand total
+                return Math.max(transfer + cash - grandTotal, 0);
+            } else {
+                // Handle other payment methods, if any, here
+                return Math.max(bayar - grandTotal, 0);
+            }
         }
+
+        function togglePaymentFields() {
+            const paymentMethod = document.getElementsByName('payment_method')[0].value;
+            const bayarDiv = document.getElementById('bayarDiv');
+            const transferDiv = document.getElementById('transferDiv');
+            const cashDiv = document.getElementById('cashDiv');
+
+            bayarDiv.style.display = 'none';
+            transferDiv.style.display = 'none';
+            cashDiv.style.display = 'none';
+
+            if (paymentMethod === 'transfer') {
+                transferDiv.style.display = 'block';
+            } else if (paymentMethod === 'cash') {
+                cashDiv.style.display = 'block';
+            } else if (paymentMethod === 'split') {
+                transferDiv.style.display = 'block';
+                cashDiv.style.display = 'block';
+            }
+
+            // Recalculate grand total when payment method changes
+            calculateTotal();
+        }
+
+        // Call the function initially to handle the default state of the form
+        togglePaymentFields();
+
+        // Attach event listeners to the input fields to trigger the calculation
+        document.getElementById('bayar').addEventListener('input', calculateTotal);
+        document.getElementById('transfer').addEventListener('input', calculateTotal);
+        document.getElementById('cash').addEventListener('input', calculateTotal);
 
         function submitForms() {
             // Copy values from form1 to form2 hidden inputs
@@ -247,7 +318,6 @@
             document.getElementById('form2').submit();
         }
     </script>
-
 
     {{-- Datepicker --}}
     <script>

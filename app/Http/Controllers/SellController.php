@@ -61,8 +61,13 @@ class SellController extends Controller
         // dd($request->all());
         $sellCart = SellCart::where('cashier_id', auth()->id())->get();
 
-        if ($request->pay < $request->grand_total) {
-            $status = 'hutang';
+        $transfer = $request->transfer ?? 0;
+        $cash = $request->cash ?? 0;
+
+        $pay = $transfer + $cash;
+
+        if ($pay < $request->grand_total) {
+            $status = 'piutang';
         } else {
             $status = 'lunas';
         }
@@ -74,7 +79,9 @@ class SellController extends Controller
             'customer_id' => $request->customer,
             'subtotal' => $request->subtotal,
             'grand_total' => $request->grand_total,
-            'pay' => $request->pay,
+            'cash' => $cash,
+            'transfer' => $transfer,
+            'pay' => $pay,
             'change' => $request->change ?? 0,
             'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
             'payment_method' => $request->payment_method,
