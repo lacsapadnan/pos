@@ -14,6 +14,13 @@
             -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
             background-color: #818B99;
         }
+        /* diputer-puter biar scroll diatas */
+        .dataTables_scrollBody {
+            transform:rotateX(180deg);
+        }
+        .dataTables_scrollBody table {
+            transform:rotateX(180deg);
+        }
     </style>
 @endpush
 
@@ -382,6 +389,8 @@
                         },
                         {
                             data: "product.barcode_dus",
+                            searchable: true,
+                            visible: false,
                             render: function(data, type, row) {
                                 if (data == null) {
                                     return "Tidak ada barcode";
@@ -392,6 +401,9 @@
                         },
                         {
                             data: "product.barcode_eceran",
+                            // biar bisa dihide and search
+                            searchable: true, 
+                            visible: false,
                             render: function(data, type, row) {
                                 if (data == null) {
                                     return "Tidak ada barcode";

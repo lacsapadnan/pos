@@ -41,8 +41,16 @@ class InventoryController extends Controller
             ->where('warehouse_id', auth()->user()->warehouse_id);
 
         if ($searchQuery) {
-            $query->whereHas('product', function ($query) use ($searchQuery) {
-                $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+            // Search hanya by field name doangan
+            // $query->whereHas('product', function ($query) use ($searchQuery) {
+            //     $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+            // });
+
+            $query->where(function ($query) use ($searchQuery) {
+                $query->whereHas('product', function ($query) use ($searchQuery) {
+                    $query->where('name', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%');
+                });
             });
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided
