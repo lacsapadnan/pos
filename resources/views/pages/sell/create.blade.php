@@ -155,7 +155,7 @@
                                         <td>{{ $cart->unit->name }}</td>
                                         <td>{{ $cart->diskon ?? 0 }}</td>
                                         <td>
-                                            {{ number_format($subtotal) }}
+                                            {{ number_format(($cart->price * $cart->quantity) - $cart->diskon) }}
                                         </td>
                                         <td>
                                             <form action="{{ route('penjualan.destroyCart', $cart->id) }}"
