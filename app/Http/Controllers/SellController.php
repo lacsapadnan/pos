@@ -11,6 +11,8 @@ use App\Models\SellDetail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SellController extends Controller
 {
@@ -48,7 +50,7 @@ class SellController extends Controller
         $cart = SellCart::with('product', 'unit')->get();
         $subtotal = 0;
         foreach ($cart as $c) {
-            $subtotal += $c->price * $c->quantity;
+            $subtotal += ($c->price * $c->quantity) - $c->diskon;
         }
         return view('pages.sell.create', compact('inventories', 'products', 'cart', 'subtotal', 'customers', 'orderNumber'));
     }
@@ -139,115 +141,104 @@ class SellController extends Controller
 
     public function addCart(Request $request)
     {
+        $inputRequests = $request->input('requests');
+
+        if (is_null($inputRequests)) {
+            // Log the received data for debugging purposes
+            Log::error('Invalid input data: requests key is null or not present.');
+            return response()->json(['error' => 'Invalid input data.'], 400);
+        }
+
+        if (!is_array($inputRequests)) {
+            // Log the received data for debugging purposes
+            Log::error('Invalid input data: requests key is not an array.');
+            return response()->json(['error' => 'Invalid input data.'], 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($inputRequests as $inputRequest) {
+                // Ensure $inputRequest is an array before proceeding
+                if (!is_array($inputRequest)) {
+                    continue;
+                }
+
+                $productId = $inputRequest['product_id'];
+
+                $quantityDus = isset($inputRequest['quantity_dus']) ? intval($inputRequest['quantity_dus']) : 0;
+                $quantityPak = isset($inputRequest['quantity_pak']) ? intval($inputRequest['quantity_pak']) : 0;
+                $quantityEceran = isset($inputRequest['quantity_eceran']) ? intval($inputRequest['quantity_eceran']) : 0;
+
+                if (!isset($inputRequest['unit_dus'])) {
+                    Log::error('Invalid input data: unit_dus key is missing for product_id ' . $productId);
+                    continue;
+                }
+
+                if (!isset($inputRequest['unit_pak'])) {
+                    Log::error('Invalid input data: unit_pak key is missing for product_id ' . $productId);
+                    continue;
+                }
+
+                if (!isset($inputRequest['unit_eceran'])) {
+                    Log::error('Invalid input data: unit_eceran key is missing for product_id ' . $productId);
+                    continue;
+                }
+
+                // Process quantity_dus if it exists
+                if ($quantityDus) {
+                    $this->processCartItem($productId, $quantityDus, $inputRequest['unit_dus'], $inputRequest['price_dus'], $inputRequest['diskon_dus'] ?? 0);
+                }
+
+                // Process quantity_pak if it exists
+                if ($quantityPak) {
+                    $this->processCartItem($productId, $quantityPak, $inputRequest['unit_pak'], $inputRequest['price_pak'], $inputRequest['diskon_pak'] ?? 0);
+                }
+
+                // Process quantity_eceran if it exists
+                if ($quantityEceran) {
+                    $this->processCartItem($productId, $quantityEceran, $inputRequest['unit_eceran'], $inputRequest['price_eceran'], $inputRequest['diskon_eceran'] ?? 0);
+                }
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Exception occurred while processing data: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to add items to cart.'], 500);
+        }
+
+        return response()->json(['success' => 'Items added to cart successfully.'], 200);
+    }
+
+    private function processCartItem($productId, $quantity, $unitId, $price, $discount)
+    {
+        // Calculate the total price based on the unit price and quantity
+        $totalPrice = $price * $quantity;
+
+        // Apply the discount to the total price if the discount is provided
+        if ($discount > 0) {
+            $totalPrice -= $discount;
+        }
+
         $existingCart = SellCart::where('cashier_id', auth()->id())
-            ->where('product_id', $request->product_id)
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
             ->first();
-
-        $inventory = Inventory::where('product_id', $request->product_id)
-            ->where('warehouse_id', auth()->user()->warehouse_id)
-            ->first();
-
-        $product = Product::find($request->product_id);
-
-        if ($request->has('quantity_dus')) {
-            $quantityDus = $request->quantity_dus;
-        } else {
-            $quantityDus = 0;
-        }
-
-        if ($request->has('quantity_pak')) {
-            $quantityPak = $request->quantity_pak;
-        } else {
-            $quantityPak = 0;
-        }
-
-        if ($request->has('quantity_eceran')) {
-            $quantityEceran = $request->quantity_eceran;
-        } else {
-            $quantityEceran = 0;
-        }
-
-        $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
-
-        $quantityInventoryDus = 0;
-        $quantityInventoryPak = 0;
-        $quantityInventoryEceran = 0;
 
         if ($existingCart) {
-            $existingCart->quantity += $totalQuantity;
+            $existingCart->quantity += $quantity;
             $existingCart->save();
-
-            $quantityInventoryDus = $quantityDus * $product->dus_to_eceran;
-            $quantityInventoryPak = $quantityPak * $product->pak_to_eceran;
-            $quantityInventoryEceran = $quantityEceran;
-
-            $inventory->quantity -= $quantityInventoryDus + $quantityInventoryPak + $quantityInventoryEceran;
-            $inventory->save();
         } else {
-            $priceDus = $product->price_dus;
-            $pricePak = $product->price_pak;
-            $priceEceran = $product->price_eceran;
-
-            if ($request->has('diskon_dus') && $request->diskon_dus != null) {
-                $discountDus = $request->diskon_dus;
-                $priceDus -= $discountDus;
-            }
-
-            if ($request->has('diskon_pak') && $request->diskon_pak != null) {
-                $discountPak = $request->diskon_pak;
-                $pricePak -= $discountPak;
-            }
-
-            if ($request->has('diskon_eceran') && $request->diskon_eceran != null) {
-                $discountEceran = $request->diskon_eceran;
-                $priceEceran -= $discountEceran;
-            }
-
-            $unitIdDus = $product->unit_dus;
-            $unitIdPak = $product->unit_pak;
-            $unitIdEceran = $product->unit_eceran;
-
-            if ($quantityDus > 0) {
-                SellCart::create([
-                    'cashier_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdDus,
-                    'quantity' => $quantityDus,
-                    'price' => $priceDus,
-                ]);
-
-                $quantityInventoryDus = $quantityDus * $product->dus_to_eceran;
-            }
-
-            if ($quantityPak > 0) {
-                SellCart::create([
-                    'cashier_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdPak,
-                    'quantity' => $quantityPak,
-                    'price' => $pricePak,
-                ]);
-
-                $quantityInventoryPak = $quantityPak * $product->pak_to_eceran;
-            }
-
-            if ($quantityEceran > 0) {
-                SellCart::create([
-                    'cashier_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdEceran,
-                    'quantity' => $quantityEceran,
-                    'price' => $priceEceran,
-                ]);
-
-                $quantityInventoryEceran = $quantityEceran;
-            }
-
-            $inventory->quantity -= $quantityInventoryDus + $quantityInventoryPak + $quantityInventoryEceran;
-            $inventory->save();
+            SellCart::create([
+                'cashier_id' => auth()->id(),
+                'product_id' => $productId,
+                'unit_id' => $unitId,
+                'quantity' => $quantity,
+                'price' => $price,
+                'diskon' => $discount,
+            ]);
         }
-
-        return redirect()->back();
     }
 
     public function destroyCart($id)

@@ -16,10 +16,11 @@
         }
 
         .dataTables_scrollBody {
-            transform:rotateX(180deg);
+            transform: rotateX(180deg);
         }
+
         .dataTables_scrollBody table {
-            transform:rotateX(180deg);
+            transform: rotateX(180deg);
         }
     </style>
 @endpush
@@ -154,7 +155,7 @@
                                         <td>{{ $cart->unit->name }}</td>
                                         <td>{{ $cart->diskon ?? 0 }}</td>
                                         <td>
-                                            {{ number_format($cart->price * $cart->quantity) }}
+                                            {{ number_format($subtotal) }}
                                         </td>
                                         <td>
                                             <form action="{{ route('penjualan.destroyCart', $cart->id) }}"
@@ -419,7 +420,12 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="text" name="quantity_dus" class="form-control">`;
+                                return `
+                                <input type="text" name="quantity_dus" class="form-control">
+                                <input type="hidden" name="unit_dus" value="${row.product.unit_dus}">
+                                <input type="hidden" name="price_dus" value="${row.product.price_dus}">
+                                `;
+
                             }
                         },
                         {
@@ -442,7 +448,11 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="text" name="quantity_pak" class="form-control">`;
+                                return `
+                                <input type="text" name="quantity_pak" class="form-control">
+                                <input type="hidden" name="unit_pak" value="${row.product.unit_pak}">
+                                <input type="hidden" name="price_pak" value="${row.product.price_pak}">
+                                `;
                             }
                         },
                         {
@@ -465,7 +475,11 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<input type="text" name="quantity_eceran" class="form-control">`;
+                                return `
+                                <input type="text" name="quantity_eceran" class="form-control">
+                                <input type="hidden" name="unit_eceran" value="${row.product.unit_eceran}">
+                                <input type="hidden" name="price_eceran" value="${row.product.price_eceran}">
+                                `;
                             }
                         },
                         {
@@ -533,32 +547,53 @@
                 });
 
                 $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-                    var quantityDus = $(this).closest('tr').find('input[name="quantity_dus"]').val();
-                    var quantityPak = $(this).closest('tr').find('input[name="quantity_pak"]').val();
-                    var quantityEceran = $(this).closest('tr').find('input[name="quantity_eceran"]').val();
-                    var diskonDus = $(this).closest('tr').find('input[name="diskon_dus"]').val();
-                    var diskonPak = $(this).closest('tr').find('input[name="diskon_pak"]').val();
-                    var diskonEceran = $(this).closest('tr').find('input[name="diskon_eceran"]').val();
+                    var rows = $(table).find('tbody tr');
+                    var inputRequests = [];
 
-                    var inputRequest = {
-                        product_id: productId,
-                        quantity_dus: quantityDus,
-                        quantity_pak: quantityPak,
-                        quantity_eceran: quantityEceran,
-                        diskon_dus: diskonDus,
-                        diskon_pak: diskonPak,
-                        diskon_eceran: diskonEceran,
-                    };
+                    rows.each(function() {
+                        var rowData = datatable.row($(this)).data();
+                        var productId = $(this).find('.btn-submit').data('product-id');
+                        var quantityDus = $(this).find('input[name="quantity_dus"]').val();
+                        var quantityPak = $(this).find('input[name="quantity_pak"]').val();
+                        var quantityEceran = $(this).find('input[name="quantity_eceran"]').val();
+                        var diskonDus = $(this).find('input[name="diskon_dus"]').val();
+                        var diskonPak = $(this).find('input[name="diskon_pak"]').val();
+                        var diskonEceran = $(this).find('input[name="diskon_eceran"]').val();
+                        var unitDus = $(this).find('input[name="unit_dus"]').val();
+                        var unitPak = $(this).find('input[name="unit_pak"]').val();
+                        var unitEceran = $(this).find('input[name="unit_eceran"]').val();
+                        var priceDus = $(this).find('input[name="price_dus"]').val();
+                        var pricePak = $(this).find('input[name="price_pak"]').val();
+                        var priceEceran = $(this).find('input[name="price_eceran"]').val();
 
-                    console.log(inputRequest);
+                        var inputRequest = {
+                            product_id: productId,
+                            quantity_dus: quantityDus,
+                            quantity_pak: quantityPak,
+                            quantity_eceran: quantityEceran,
+                            diskon_dus: diskonDus,
+                            diskon_pak: diskonPak,
+                            diskon_eceran: diskonEceran,
+                            unit_dus: unitDus,
+                            unit_pak: unitPak,
+                            unit_eceran: unitEceran,
+                            price_dus: priceDus,
+                            price_pak: pricePak,
+                            price_eceran: priceEceran,
+                        };
+
+                        inputRequests.push(inputRequest);
+                    });
+
+                    console.log(inputRequests);
 
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('penjualan.addCart') }}',
                         type: 'POST',
-                        data: inputRequest,
+                        data: {
+                            requests: inputRequests
+                        }, // Ensure that 'requests' key is included
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
@@ -566,7 +601,10 @@
                             // reload page
                             location.reload();
                         },
-                        error: function(xhr, status, error) {}
+                        error: function(xhr, status, error) {
+                            var err = eval("(" + xhr.responseText + ")");
+                            console.log(err);
+                        }
                     });
                 });
             }
