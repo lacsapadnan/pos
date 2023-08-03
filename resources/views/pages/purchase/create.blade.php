@@ -14,6 +14,13 @@
             -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
             background-color: #818B99;
         }
+
+        .dataTables_scrollBody {
+            transform:rotateX(180deg);
+        }
+        .dataTables_scrollBody table {
+            transform:rotateX(180deg);
+        }
     </style>
 @endpush
 
