@@ -42,19 +42,26 @@ class InventoryController extends Controller
 
         if ($searchQuery) {
             $query->whereHas('product', function ($query) use ($searchQuery) {
-                $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+                $query->where('name', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
             });
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided
         }
 
-        $inventory = $query->paginate(10); // Adjust the pagination as per your requirements
+        $recordsFiltered = $query->count();
+
+        // Apply pagination using Laravel's paginate() method
+        $pageSize = $request->input('length', 10); // Number of records per page, defaults to 10
+        $currentPage = $request->input('start', 0) / $pageSize + 1;
+        $inventory = $query->paginate($pageSize, ['*'], 'page', $currentPage);
 
         // Prepare the JSON response
         $response = [
             'draw' => $request->input('draw', 1),
-            'recordsTotal' => $inventory->total(),
-            'recordsFiltered' => $inventory->total(),
+            'recordsTotal' => Inventory::count(), // Total count of all records in the table
+            'recordsFiltered' => $recordsFiltered,
             'data' => $inventory->items(),
         ];
 

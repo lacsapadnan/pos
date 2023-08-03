@@ -33,18 +33,26 @@ class ProductController extends Controller
         $query = Product::with('unit_dus', 'unit_pak', 'unit_eceran');
 
         if ($searchQuery) {
-            $query->where('name', 'LIKE', '%' . $searchQuery . '%');
+            $query
+                ->where('name', 'LIKE', '%' . $searchQuery . '%')
+                ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided
         }
 
-        $product = $query->paginate(10); // Adjust the pagination as per your requirements
+        $recordsFiltered = $query->count();
+
+        // Apply pagination using Laravel's paginate() method
+        $pageSize = $request->input('length', 10); // Number of records per page, defaults to 10
+        $currentPage = $request->input('start', 0) / $pageSize + 1;
+        $product = $query->paginate($pageSize, ['*'], 'page', $currentPage);
 
         // Prepare the JSON response
         $response = [
             'draw' => $request->input('draw', 1),
-            'recordsTotal' => $product->total(),
-            'recordsFiltered' => $product->total(),
+            'recordsTotal' => Product::count(), // Total count of all records in the table
+            'recordsFiltered' => $recordsFiltered,
             'data' => $product->items(),
         ];
 
@@ -65,7 +73,9 @@ class ProductController extends Controller
     public function store(ProductRequest $request)
     {
         Product::create($request->validated());
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan');
+        return redirect()
+            ->back()
+            ->with('success', 'Produk berhasil ditambahkan');
     }
 
     /**
@@ -93,7 +103,9 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->update($request->all());
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil diubah');
+        return redirect()
+            ->route('produk.index')
+            ->with('success', 'Produk berhasil diubah');
     }
 
     /**
@@ -103,7 +115,9 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $product->delete();
-        return redirect()->back()->with('success', 'Produk berhasil dihapus');
+        return redirect()
+            ->back()
+            ->with('success', 'Produk berhasil dihapus');
     }
 
     public function import(Request $request)
@@ -112,7 +126,7 @@ class ProductController extends Controller
             'file' => 'required|mimes:csv,xlsx',
         ]);
 
-        Excel::import(new ProductImport, $request->file('file'));
+        Excel::import(new ProductImport(), $request->file('file'));
         return redirect()
             ->back()
             ->with('success', 'Produk berhasil diimport');
