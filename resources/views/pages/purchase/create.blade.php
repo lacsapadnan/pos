@@ -16,10 +16,11 @@
         }
 
         .dataTables_scrollBody {
-            transform:rotateX(180deg);
+            transform: rotateX(180deg);
         }
+
         .dataTables_scrollBody table {
-            transform:rotateX(180deg);
+            transform: rotateX(180deg);
         }
     </style>
 @endpush
@@ -183,7 +184,8 @@
                         <div class="col">
                             <div class="mb-1">
                                 <label for="ppn" class="col-form-label">PPN</label>
-                                <input type="text" name="tax" class="form-control" id="ppn" />
+                                <input type="text" name="tax" class="form-control" id="ppn" value="0"
+                                    oninput="calculateTotal()" />
                             </div>
                         </div>
                     </div>
@@ -192,7 +194,7 @@
                             <div class="mb-1">
                                 <label for="bayar" class="col-form-label">Bayar</label>
                                 <input type="text" name="pay" class="form-control" id="bayar"
-                                    oninput="calculateTotal()" />
+                                    oninput="calculateTotal()" value="0" />
                             </div>
                         </div>
                     </div>
@@ -211,6 +213,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="mt-5 row">
                         <div class="mb-1">
                             <label for="inputEmail3" class="col-form-label">Metode Bayar</label>
@@ -250,17 +253,23 @@
 
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+            var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) || 0;
             var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) ||
-                0; // Retrieve the tax value from the input field
 
-            var grandTotal = subtotal + (subtotal * (tax / 100)); // Calculate the grand total by adding the tax amount
+            // If tax and bayar are not provided, set them to 0
+            tax = isNaN(tax) ? 0 : tax;
+            bayar = isNaN(bayar) ? 0 : bayar;
+
+            var grandTotal = subtotal + (subtotal * (tax / 100));
 
             var sisa = calculateSisa(grandTotal, bayar);
 
+            document.getElementById('ppn').value = tax.toFixed(0);
+            document.getElementById('bayar').value = bayar.toFixed(0);
             document.getElementById('grandTotal').value = grandTotal.toFixed(0);
             document.getElementById('sisa').value = sisa.toFixed(0);
         }
+        calculateTotal();
 
 
 
@@ -503,7 +512,7 @@
                         var diskonFixDus = $(this).find('input[name="discount_fix_dus"]').val();
                         var diskonFixPak = $(this).find('input[name="discount_fix_pak"]').val();
                         var diskonFixEceran = $(this).find('input[name="discount_fix_eceran"]')
-                        .val();
+                            .val();
                         var diskonPersenDus = $(this).find('input[name="discount_percent_dus"]')
                             .val();
                         var diskonPersenPak = $(this).find('input[name="discount_percent_pak"]')
