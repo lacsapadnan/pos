@@ -59,7 +59,7 @@
                             <label for="inputEmail3" class="col-form-label">Customer</label>
                             <select id="customer" class="form-select" name="customer_id" data-control="select2"
                                 data-placeholder="Pilih customer" data-allow-clear="true">
-                                <option value="1">CASH</option>
+                                <option readonly>Pilih Customer</option>
                                 @foreach ($customers as $customer)
                                     <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                                 @endforeach
