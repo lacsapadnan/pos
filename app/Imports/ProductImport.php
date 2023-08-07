@@ -5,8 +5,9 @@ namespace App\Imports;
 use App\Models\Inventory;
 use App\Models\Product;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class ProductImport implements ToModel
+class ProductImport implements ToModel, WithHeadingRow
 {
     /**
      * @param array $row
@@ -15,31 +16,32 @@ class ProductImport implements ToModel
      */
     public function model(array $row)
     {
+        // HeadingRowFormatter::default('none');
         $warehouseId = auth()->user()->warehouse_id;
         $products = Product::create([
-            'group' => $row[0],
-            'name' => $row[1],
-            'unit_dus' => $row[2],
-            'unit_pak' => $row[3],
-            'unit_eceran' => $row[4],
-            'barcode_dus' => $row[5],
-            'barcode_pak' => $row[6],
-            'barcode_eceran' => $row[7],
-            'price_dus' => $row[8],
-            'price_pak' => $row[9],
-            'price_eceran' => $row[10],
-            'sales_price' => $row[11],
-            'lastest_price_eceran' => $row[12],
-            'dus_to_eceran' => $row[13],
-            'pak_to_eceran' => $row[14],
-            'hadiah' => $row[15],
+            'group' => $row['kelompok'],
+            'name' => $row['nama_barang'],
+            'unit_dus' => $row['satuan_dus'],
+            'unit_pak' => $row['satuan_pak'],
+            'unit_eceran' => $row['satuan_eceran'],
+            'barcode_dus' => $row['barcode_dus'],
+            'barcode_pak' => $row['barcode_pak'],
+            'barcode_eceran' => $row['barcode_eceran'],
+            'price_dus' => $row['harga_dus'],
+            'price_pak' => $row['harga_pak'],
+            'price_eceran' => $row['harga_eceran'],
+            'sales_price' => $row['harga_sales'],
+            'lastest_price_eceran' => $row['harga_eceran_terakhir'],
+            'dus_to_eceran' => $row['dus_ke_eceran'],
+            'pak_to_eceran' => $row['pak_ke_eceran'],
+            'hadiah' => $row['hadiah'],
         ]);
 
         // Save inventory data for unit_dus if unit_dus is not null
         Inventory::create([
             'warehouse_id' => $warehouseId,
             'product_id' => $products->id,
-            'quantity' => $row[16] ?? 0,
+            'quantity' => $row['stok'] ?? 0,
         ]);
 
         return $products;
