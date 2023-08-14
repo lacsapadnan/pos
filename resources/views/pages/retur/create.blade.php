@@ -199,6 +199,7 @@
                                 <input type="number" name="quantity_retur" class="form-control">
                                 <input type="hidden" name="unit_retur" value="${row.unit.id}">
                                 <input type="hidden" name="price_retur" value="${row.price}">
+                                <input type="hidden" name="sell_id" value="${id}">
                                 `;
 
                             }
@@ -241,13 +242,15 @@
                         var unitRetur = $(this).find('input[name="unit_retur"]').val();
                         var priceRetur = $(this).find('input[name="price_retur"]').val();
                         var productId = $(this).closest('tr').find('.btn-submit').data('product-id');
+                        var sellId = $(this).find('input[name="sell_id"]').val();
 
                         // Create an input object for the current row
                         var inputRequest = {
                             product_id: productId,
                             quantity: quantityRetur,
                             unit_id: unitRetur,
-                            price: priceRetur
+                            price: priceRetur,
+                            sell_id: sellId
                         };
 
                         inputRequests.push(inputRequest); // Add the input object to the array

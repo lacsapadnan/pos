@@ -104,7 +104,10 @@ class SellReturController extends Controller
     {
         $sellId = $id;
         $penjualan = Sell::with('customer', 'warehouse', 'details.product', 'details.unit')->findOrFail($id);
-        $cart = SellReturCart::with('product', 'unit')->where('user_id', auth()->id())->get();
+        $cart = SellReturCart::with('product', 'unit')
+            ->where('user_id', auth()->id())
+            ->where('sell_id', $id)
+            ->get();
         $subtotal = 0;
         foreach ($cart as $c) {
             $subtotal += $c->price * $c->quantity;
@@ -145,10 +148,12 @@ class SellReturController extends Controller
         foreach ($inputRequests as $inputRequest) {
             $productId = $inputRequest['product_id'];
             $unitId = $inputRequest['unit_id'];
+            $sellId = $inputRequest['sell_id'];
 
             if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
                 $quantityRetur = $inputRequest['quantity'];
                 $existingCart = SellReturCart::where('user_id', $userId)
+                    ->where('sell_id', $sellId)
                     ->where('product_id', $productId)
                     ->where('unit_id', $unitId)
                     ->first();
@@ -158,6 +163,7 @@ class SellReturController extends Controller
                     $existingCart->save();
                 } else {
                     SellReturCart::create([
+                        'sell_id' => $sellId,
                         'user_id' => $userId,
                         'product_id' => $productId,
                         'unit_id' => $unitId,

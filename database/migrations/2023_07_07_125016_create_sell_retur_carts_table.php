@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('sell_retur_carts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('sell_id')->references('id')->on('sells')->onDelete('cascade');
             $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreignId('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreignId('unit_id')->references('id')->on('units')->onDelete('cascade');
