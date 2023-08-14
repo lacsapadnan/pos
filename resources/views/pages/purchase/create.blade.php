@@ -94,7 +94,6 @@
                         id="kt_datatable_example">
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th class="min-w-100px">Kelompok</th>
                                 <th class="min-w-100px">Nama Barang</th>
                                 <th>Stok</th>
                                 <th>Jml Per Dus</th>
@@ -340,7 +339,6 @@
                     serverSide: true,
                     fixedColumns: {
                         left: 2,
-                        right: 1
                     },
                     "ajax": {
                         url: '{{ route('api.data-all') }}',
@@ -349,9 +347,7 @@
                             d.searchQuery = $('#searchInput').val();
                         }
                     },
-                    "columns": [{
-                            data: "product.group"
-                        },
+                    "columns": [
                         {
                             data: "product.name"
                         },
@@ -637,7 +633,6 @@
                     }
 
                     initDatatable();
-                    handleSearchDatatable();
                 }
             };
         }();

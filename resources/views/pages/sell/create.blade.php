@@ -104,8 +104,6 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>Kelompok</th>
                                 <th>Nama Barang</th>
-                                <th>Barcode Dus</th>
-                                <th>Barcode Eceran</th>
                                 <th>Stok</th>
                                 <th>Jml Per Dus</th>
                                 <th>Jml Per Pak</th>
@@ -389,26 +387,6 @@
                             data: "product.name"
                         },
                         {
-                            data: "product.barcode_dus",
-                            render: function(data, type, row) {
-                                if (data == null) {
-                                    return "Tidak ada barcode";
-                                } else {
-                                    return data;
-                                }
-                            }
-                        },
-                        {
-                            data: "product.barcode_eceran",
-                            render: function(data, type, row) {
-                                if (data == null) {
-                                    return "Tidak ada barcode";
-                                } else {
-                                    return data;
-                                }
-                            }
-                        },
-                        {
                             data: "quantity"
                         },
                         {
@@ -677,7 +655,6 @@
                     }
 
                     initDatatable();
-                    handleSearchDatatable();
                 }
             };
         }();
