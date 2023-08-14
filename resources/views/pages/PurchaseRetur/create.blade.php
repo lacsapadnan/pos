@@ -192,8 +192,8 @@
                                 <input type="number" name="quantity_retur" class="form-control">
                                 <input type="hidden" name="unit_retur" value="${row.unit.id}">
                                 <input type="hidden" name="price_retur" value="${row.total_price}">
+                                <input type="hidden" name="purchase_id" value="${id}">
                                 `;
-
                             }
                         },
                         {
@@ -227,19 +227,19 @@
                 });
 
                 $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-
                     var inputRequests = [];
 
                     $(table).find('tbody tr').each(function() {
                         var quantityRetur = $(this).find('input[name="quantity_retur"]').val();
                         var unitRetur = $(this).find('input[name="unit_retur"]').val();
                         var priceRetur = $(this).find('input[name="price_retur"]').val();
+                        var purchaseId = $(this).find('input[name="purchase_id"]').val();
+                        var productId = $(this).find('.btn-submit').data('product-id');
 
                         // Create an input object for the current row
                         var inputRequest = {
                             product_id: productId,
+                            purchase_id: purchaseId,
                             quantity: quantityRetur,
                             unit_id: unitRetur,
                             price: priceRetur

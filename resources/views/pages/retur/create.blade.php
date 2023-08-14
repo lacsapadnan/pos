@@ -234,15 +234,13 @@
                 });
 
                 $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-
                     var inputRequests = [];
 
                     $(table).find('tbody tr').each(function() {
                         var quantityRetur = $(this).find('input[name="quantity_retur"]').val();
                         var unitRetur = $(this).find('input[name="unit_retur"]').val();
                         var priceRetur = $(this).find('input[name="price_retur"]').val();
+                        var productId = $(this).closest('tr').find('.btn-submit').data('product-id');
 
                         // Create an input object for the current row
                         var inputRequest = {
@@ -259,7 +257,9 @@
                     $.ajax({
                         url: '{{ route('penjualan-retur.addCart') }}',
                         type: 'POST',
-                        data: { input_requests: inputRequests },
+                        data: {
+                            input_requests: inputRequests
+                        },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },

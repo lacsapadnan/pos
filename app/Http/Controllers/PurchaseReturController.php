@@ -104,7 +104,9 @@ class PurchaseReturController extends Controller
     {
         $purchaseId = $id;
         $pembelian = Purchase::with('supplier', 'warehouse', 'details', 'details.unit')->findOrFail($id);
-        $cart = PurchaseReturCart::with('product', 'unit')->where('user_id', auth()->id())->get();
+        $cart = PurchaseReturCart::with('product', 'unit')
+            ->where('purchase_id', $id)
+            ->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
             $subtotal += $c->price * $c->quantity;
@@ -144,11 +146,13 @@ class PurchaseReturController extends Controller
         foreach ($inputRequests as $inputRequest) {
             $productId = $inputRequest['product_id'];
             $unitId = $inputRequest['unit_id'];
+            $purchaseId = $inputRequest['purchase_id'];
 
             // Save quantity if it exists
             if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
                 $quantityRetur = $inputRequest['quantity'];
                 $existingCart = PurchaseReturCart::where('user_id', $userId)
+                    ->where('purchase_id', $purchaseId)
                     ->where('product_id', $productId)
                     ->where('unit_id', $unitId)
                     ->first();
@@ -158,6 +162,7 @@ class PurchaseReturController extends Controller
                     $existingCart->save();
                 } else {
                     PurchaseReturCart::create([
+                        'purchase_id' => $purchaseId,
                         'user_id' => $userId,
                         'product_id' => $productId,
                         'unit_id' => $unitId,
