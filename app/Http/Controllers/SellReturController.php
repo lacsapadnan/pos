@@ -138,34 +138,39 @@ class SellReturController extends Controller
 
     public function addCart(Request $request)
     {
-        $productId = $request->product_id;
-        $unitId = $request->unit_id;
         $userId = auth()->id();
+        $inputRequests = $request->input_requests;
 
-        // Save quantity if it exists
-        if ($request->has('quantity') && $request->quantity) {
-            $quantityRetur = $request->quantity;
-            $existingCart = SellReturCart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->where('unit_id', $unitId)
-                ->first();
+        // Loop through each input request
+        foreach ($inputRequests as $inputRequest) {
+            $productId = $inputRequest['product_id'];
+            $unitId = $inputRequest['unit_id'];
 
-            if ($existingCart) {
-                $existingCart->quantity += $quantityRetur;
-                $existingCart->update();
-            } else {
-                SellReturCart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'unit_id' => $unitId,
-                    'quantity' => $request->quantity,
-                    'price' => $request->price,
-                ]);
+            if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
+                $quantityRetur = $inputRequest['quantity'];
+                $existingCart = SellReturCart::where('user_id', $userId)
+                    ->where('product_id', $productId)
+                    ->where('unit_id', $unitId)
+                    ->first();
+
+                if ($existingCart) {
+                    $existingCart->quantity += $quantityRetur;
+                    $existingCart->save();
+                } else {
+                    SellReturCart::create([
+                        'user_id' => $userId,
+                        'product_id' => $productId,
+                        'unit_id' => $unitId,
+                        'quantity' => $quantityRetur,
+                        'price' => $inputRequest['price'],
+                    ]);
+                }
             }
         }
 
         return redirect()->back();
     }
+
 
     public function destroyCart($id)
     {

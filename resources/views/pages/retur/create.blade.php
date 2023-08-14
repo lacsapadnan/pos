@@ -226,25 +226,40 @@
                     ],
                 });
 
+                $(table).on('keypress', 'input[name="quantity_retur"]', function(event) {
+                    if (event.keyCode === 13) {
+                        event.preventDefault();
+                        $(this).closest('tr').find('.btn-submit').click();
+                    }
+                });
+
                 $(table).on('click', '.btn-submit', function() {
                     var rowData = datatable.row($(this).closest('tr')).data();
                     var productId = $(this).data('product-id');
-                    var quantityRetur = $(this).closest('tr').find('input[name="quantity_retur"]').val();
-                    var unitRetur = $(this).closest('tr').find('input[name="unit_retur"]').val();
-                    var priceRetur = $(this).closest('tr').find('input[name="price_retur"]').val();
 
-                    var inputRequest = {
-                        product_id: productId,
-                        quantity: quantityRetur,
-                        unit_id: unitRetur,
-                        price: priceRetur
-                    };
+                    var inputRequests = [];
+
+                    $(table).find('tbody tr').each(function() {
+                        var quantityRetur = $(this).find('input[name="quantity_retur"]').val();
+                        var unitRetur = $(this).find('input[name="unit_retur"]').val();
+                        var priceRetur = $(this).find('input[name="price_retur"]').val();
+
+                        // Create an input object for the current row
+                        var inputRequest = {
+                            product_id: productId,
+                            quantity: quantityRetur,
+                            unit_id: unitRetur,
+                            price: priceRetur
+                        };
+
+                        inputRequests.push(inputRequest); // Add the input object to the array
+                    });
 
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('penjualan-retur.addCart') }}',
                         type: 'POST',
-                        data: inputRequest,
+                        data: { input_requests: inputRequests },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
@@ -274,7 +289,7 @@
                         return;
                     }
                     $(table).on('keydown', 'input[name^="quantity_"]', function(event) {
-                        if(event.which === 13) {
+                        if (event.which === 13) {
                             event.preventDefault();
                             var btnSubmit = $(this).closest('tr').find('.btn-submit');
                             btnSubmit.click();

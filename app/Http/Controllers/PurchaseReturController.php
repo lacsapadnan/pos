@@ -26,10 +26,10 @@ class PurchaseReturController extends Controller
         $userRoles = auth()->user()->getRoleNames();
 
         if ($userRoles[0] == 'superadmin') {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->get();
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->orderBy('id', 'desc')->get();
             return response()->json($retur);
         } else {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'desc')->get();
             return response()->json($retur);
         }
     }
@@ -138,29 +138,33 @@ class PurchaseReturController extends Controller
 
     public function addCart(Request $request)
     {
-        $productId = $request->product_id;
-        $unitId = $request->unit_id;
         $userId = auth()->id();
+        $inputRequests = $request->input_requests;
 
-        // Save quantity if it exists
-        if ($request->has('quantity') && $request->quantity) {
-            $quantityRetur = $request->quantity;
-            $existingCart = PurchaseReturCart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->where('unit_id', $unitId)
-                ->first();
+        foreach ($inputRequests as $inputRequest) {
+            $productId = $inputRequest['product_id'];
+            $unitId = $inputRequest['unit_id'];
 
-            if ($existingCart) {
-                $existingCart->quantity += $quantityRetur;
-                $existingCart->update();
-            } else {
-                PurchaseReturCart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'unit_id' => $unitId,
-                    'quantity' => $request->quantity,
-                    'price' => $request->price,
-                ]);
+            // Save quantity if it exists
+            if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
+                $quantityRetur = $inputRequest['quantity'];
+                $existingCart = PurchaseReturCart::where('user_id', $userId)
+                    ->where('product_id', $productId)
+                    ->where('unit_id', $unitId)
+                    ->first();
+
+                if ($existingCart) {
+                    $existingCart->quantity += $quantityRetur;
+                    $existingCart->save();
+                } else {
+                    PurchaseReturCart::create([
+                        'user_id' => $userId,
+                        'product_id' => $productId,
+                        'unit_id' => $unitId,
+                        'quantity' => $quantityRetur,
+                        'price' => $inputRequest['price'],
+                    ]);
+                }
             }
         }
 

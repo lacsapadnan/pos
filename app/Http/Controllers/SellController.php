@@ -28,10 +28,15 @@ class SellController extends Controller
     {
         $userRoles = auth()->user()->getRoleNames();
         if ($userRoles[0] == 'superadmin') {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')->get();
+            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
+                ->orderBy('id', 'desc')
+                ->get();
             return response()->json($sells);
         } else {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->orderBy('id', 'desc')
+                ->get();
             return response()->json($sells);
         }
     }
