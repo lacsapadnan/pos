@@ -74,6 +74,7 @@
                                 <th>Cabang</th>
                                 <th>Total Pembelian</th>
                                 <th>Terima Piutang</th>
+                                <th>Metode Bayar</th>
                                 <th>Terbayar</th>
                                 <th>Sisa Piutang</th>
                                 <th>Aksi</th>
@@ -139,6 +140,15 @@
                             data: null,
                             render: function(data, type, row) {
                                 return `<input type="text" name="pay_credit" class="form-control price-input">`;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<select class="form-select form-select-solid" aria-label="Default select example">
+                                            <option value="1">Transfer</option>
+                                            <option value="2">Cash</option>
+                                        </select>`;
                             }
                         },
                         {
