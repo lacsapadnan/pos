@@ -199,11 +199,10 @@
                         {
                             data: 'total_price',
                             render: function(data, type, row) {
-                                var total = row.quantity * data;
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
-                                }).format(total);
+                                }).format(data);
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             }
