@@ -26,6 +26,7 @@
 @endpush
 
 @section('content')
+    @include('components.alert');
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="mt-3">
             <form id="form1">
@@ -57,7 +58,7 @@
                         <div class="mb-3 row align-items-center">
                             <label for="inputEmail3" class="col-form-label">No. Faktur Supplier</label>
                             <input id="invoice" type="text" name="invoice" class="form-control"
-                                placeholder="Masukan nomor faktur" />
+                                placeholder="Masukan nomor faktur" value="{{ old('invoice') }}" />
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -65,7 +66,7 @@
                             <label for="inputEmail3" class="col-form-label">Supplier</label>
                             <select id="supplier_id" class="form-select" name="supplier_id" data-control="select2"
                                 data-placeholder="Pilih Supplier" data-allow-clear="true">
-                                <option></option>
+                                <option value="{{ old('supplier_id') }}"></option>
                                 @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                 @endforeach

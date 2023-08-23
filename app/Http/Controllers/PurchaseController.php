@@ -12,6 +12,7 @@ use App\Models\Treasury;
 use App\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
@@ -68,85 +69,88 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
-        $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
-        // check if pay less than grand total status is hutang
-        if ($request->pay < $request->grand_total) {
-            $status = 'hutang';
-        } else {
-            $status = 'lunas';
-        }
+        try {
+            $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
+            if ($request->pay < $request->grand_total) {
+                $status = 'hutang';
+            } else {
+                $status = 'lunas';
+            }
 
-
-        $purchase = Purchase::create([
-            'supplier_id' => $request->supplier_id,
-            'treasury_id' => $request->treasury_id,
-            'warehouse_id' => auth()->user()->warehouse_id,
-            'order_number' => $request->order_number,
-            'invoice' => $request->invoice,
-            'subtotal' => $request->subtotal,
-            'grand_total' => $request->grand_total,
-            'pay' => $request->pay,
-            'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
-            'description' => $request->description,
-            'tax' => $request->tax,
-            'status' => $status,
-        ]);
-
-        foreach ($existingCart as $cart) {
-            PurchaseDetail::create([
-                'purchase_id' => $purchase->id,
-                'product_id' => $cart->product_id,
-                'unit_id' => $cart->unit_id,
-                'quantity' => $cart->quantity,
-                'discount_fix' => $cart->discount_fix,
-                'discount_percent' => $cart->discount_percent,
-                'price_unit' => $cart->price_unit,
-                'total_price' => $cart->total_price,
+            $purchase = Purchase::create([
+                'supplier_id' => $request->supplier_id,
+                'treasury_id' => $request->treasury_id,
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'order_number' => $request->order_number,
+                'invoice' => $request->invoice,
+                'subtotal' => $request->subtotal,
+                'grand_total' => $request->grand_total,
+                'pay' => $request->pay,
+                'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
+                'description' => $request->description,
+                'tax' => $request->tax,
+                'status' => $status,
             ]);
 
-            // update product price
-            $product = Product::find($cart->product_id);
-            if ($cart->unit_id == $product->unit_dus) {
-                $product->price_dus = $cart->price_unit;
-                $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
-            } elseif ($cart->unit_id == $product->unit_pak) {
-                $product->price_pak = $cart->price_unit;
-            } elseif ($cart->unit_id == $product->unit_eceran) {
-                $product->price_eceran = $cart->price_unit;
-            }
-            $product->update();
-
-            // update inventory
-            $inventory = Inventory::where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('product_id', $cart->product_id)
-                ->first();
-
-            // check quantity is dus, pak, or eceran
-            $quantity = 0;
-            if ($cart->unit_id == $product->unit_dus) {
-                $quantity = $cart->quantity * $product->dus_to_eceran;
-            } elseif ($cart->unit_id == $product->unit_pak) {
-                $quantity = $cart->quantity * $product->pak_to_eceran;
-            } elseif ($cart->unit_id == $product->unit_eceran) {
-                $quantity = $cart->quantity * 1;
-            }
-
-            if ($inventory) {
-                $inventory->quantity += $quantity;
-                $inventory->update();
-            } else {
-                Inventory::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
+            foreach ($existingCart as $cart) {
+                PurchaseDetail::create([
+                    'purchase_id' => $purchase->id,
                     'product_id' => $cart->product_id,
-                    'quantity' => $quantity,
+                    'unit_id' => $cart->unit_id,
+                    'quantity' => $cart->quantity,
+                    'discount_fix' => $cart->discount_fix,
+                    'discount_percent' => $cart->discount_percent,
+                    'price_unit' => $cart->price_unit,
+                    'total_price' => $cart->total_price,
                 ]);
+
+                // update product price
+                $product = Product::find($cart->product_id);
+                if ($cart->unit_id == $product->unit_dus && $product->dus_to_eceran != 0) {
+                    $product->price_dus = $cart->price_unit;
+                    $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
+                } elseif ($cart->unit_id == $product->unit_pak) {
+                    $product->price_pak = $cart->price_unit;
+                } elseif ($cart->unit_id == $product->unit_eceran) {
+                    $product->price_eceran = $cart->price_unit;
+                }
+                $product->update();
+
+                // update inventory
+                $inventory = Inventory::where('warehouse_id', auth()->user()->warehouse_id)
+                    ->where('product_id', $cart->product_id)
+                    ->first();
+
+                // check quantity is dus, pak, or eceran
+                $quantity = 0;
+                if ($cart->unit_id == $product->unit_dus) {
+                    $quantity = $cart->quantity * $product->dus_to_eceran;
+                } elseif ($cart->unit_id == $product->unit_pak) {
+                    $quantity = $cart->quantity * $product->pak_to_eceran;
+                } elseif ($cart->unit_id == $product->unit_eceran) {
+                    $quantity = $cart->quantity * 1;
+                }
+
+                if ($inventory) {
+                    $inventory->quantity += $quantity;
+                    $inventory->update();
+                } else {
+                    Inventory::create([
+                        'warehouse_id' => auth()->user()->warehouse_id,
+                        'product_id' => $cart->product_id,
+                        'quantity' => $quantity,
+                    ]);
+                }
             }
+
+            // clear the cart
+            PurchaseCart::where('user_id', auth()->id())->delete();
+
+            return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil ditambahkan');
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage();
+            return redirect()->back()->withErrors(['error' => "Gagal menambahkan pembelian, silahkan cek ulang"]);
         }
-
-        // clear the cart
-        PurchaseCart::where('user_id', auth()->id())->delete();
-
-        return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil ditambahkan');
     }
 
     /**
@@ -163,7 +167,13 @@ class PurchaseController extends Controller
      */
     public function edit(string $id)
     {
-        abort(404);
+        $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')
+            ->orderBy('id', 'desc')
+            ->find($id);
+        $suppliers = Supplier::orderBy('id', 'asc')->get();
+        $products = Product::orderBy('id', 'asc')->get();
+        $units = Unit::orderBy('id', 'asc')->get();
+        return view('pages.purchase.edit', compact('purchases', 'suppliers', 'products', 'units'));
     }
 
     /**
@@ -171,15 +181,80 @@ class PurchaseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        abort(404);
+        try {
+            $product_id = $request->input('product_id', []);
+            $unit_id = $request->input('unit_id', []);
+            $qty = $request->input('qty', []);
+            $discount_fix = $request->input('discount_fix', []);
+            $discount_percent = $request->input('discount_percent', []);
+            $price_unit = $request->input('price_unit', []);
+            $tax = $request->tax;
+
+            $subtotal = 0;
+
+            foreach ($product_id as $key => $productIdValue) {
+                $formattedPriceUnit = $price_unit[$key];
+                $numericPriceUnit = str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
+
+                if (
+                    isset($unit_id[$key]) &&
+                    isset($qty[$key]) &&
+                    isset($discount_fix[$key]) &&
+                    isset($discount_percent[$key])
+                ) {
+                    $subtotal += ($numericPriceUnit - $discount_fix[$key]) * (1 - $discount_percent[$key] / 100) * $qty[$key];
+                } else {
+                    Log::error("Invalid data at index {$key} for purchase detail update.");
+                    throw new \Exception("Invalid data at index {$key} for purchase detail update.");
+                }
+            }
+
+            if ($tax == null) {
+                $tax = 0;
+            }
+            $grand_total = $subtotal + ($subtotal * $tax / 100);
+
+            $purchase = Purchase::with('details')->find($id);
+            $purchase->invoice = $request->invoice ?? $purchase->invoice;
+            $purchase->supplier_id = $request->supplier_id ?? $purchase->supplier_id;
+            $purchase->subtotal = $subtotal ?? $purchase->subtotal;
+            $purchase->tax = $tax ?? $purchase->tax;
+            $purchase->grand_total = $grand_total ?? $purchase->grand_total;
+            $purchase->update();
+
+            $purchaseDetail = PurchaseDetail::where('purchase_id', $id)->get();
+            foreach ($purchaseDetail as $key => $pd) {
+                $formattedPriceUnit = $price_unit[$key];
+                $numericPriceUnit = str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
+
+                $pd->product_id = $product_id[$key];
+                $pd->unit_id = $unit_id[$key];
+                $pd->quantity = $qty[$key];
+                $pd->discount_fix = $discount_fix[$key];
+                $pd->discount_percent = $discount_percent[$key];
+                $pd->price_unit = $numericPriceUnit;
+                $pd->total_price = ($price_unit[$key] - $discount_fix[$key]) * (1 - $discount_percent[$key] / 100) * $qty[$key];
+                $pd->update();
+            }
+
+
+            return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diupdate');
+        } catch (\Throwable $th) {
+            return redirect()->back()->withErrors(['error' => "Gagal mengupdate pembelian, silahkan cek ulang"]);
+        }
     }
+
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        abort(404);
+        $purchase = Purchase::find($id);
+        $purchase->delete();
+
+        return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil dihapus');
     }
 
     public function addCart(Request $request)

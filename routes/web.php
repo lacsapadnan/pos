@@ -47,7 +47,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('produk', ProductController::class)->except(['show', 'create']);
     Route::resource('inventori', InventoryController::class)->only(['store', 'index']);
     Route::resource('penjualan', SellController::class)->except(['destroy', 'edit', 'update']);
-    Route::resource('pembelian', PurchaseController::class)->except(['destroy', 'edit', 'update']);
+    Route::resource('pembelian', PurchaseController::class);
     Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
     Route::resource('pembelian-retur', PurchaseReturController::class);
     Route::resource('penjualan-retur', SellReturController::class);
