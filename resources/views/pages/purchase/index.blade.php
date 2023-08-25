@@ -212,16 +212,19 @@
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-                                <a href="/pembelian/${data}/edit" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="/pembelian/${data}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('delete')
-                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data?')">Hapus</button>
-                                </form>
-                                `;
+            <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+            @role('admin|master')
+            <a href="/pembelian/${data}/edit" class="btn btn-sm btn-warning">Edit</a>
+            <form action="/pembelian/${data}" method="POST" class="d-inline">
+                @csrf
+                @method('delete')
+                <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data?')">Hapus</button>
+            </form>
+            @endrole
+        `;
                             }
                         },
+
                     ],
                     columnDefs: [{
                         targets: -1,
@@ -342,7 +345,7 @@
                                 }
                             },
                             {
-                               data: 'discount_fix',
+                                data: 'discount_fix',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',

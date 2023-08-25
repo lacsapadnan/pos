@@ -239,7 +239,7 @@
                     </div>
                     <!--end:Menu item-->
                 @endcan
-                @can('simpan pembelian', 'baca pembelian', 'update pembelian', 'hapus pembelian')
+                @role('kasir')
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -282,7 +282,7 @@
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endcan
+                @endrole
                 @can('simpan penjualan', 'baca penjualan', 'update penjualan', 'hapus penjualan')
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
