@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
 use App\Imports\ProductImport;
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -72,7 +73,15 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
-        Product::create($request->validated());
+        $product = Product::create($request->validated());
+
+        // input produk to inventory
+        Inventory::create([
+            'product_id' => $product->id,
+            'warehouse_id' => auth()->user()->warehouse_id,
+            'quantity' => 0,
+        ]);
+
         return redirect()
             ->back()
             ->with('success', 'Produk berhasil ditambahkan');
