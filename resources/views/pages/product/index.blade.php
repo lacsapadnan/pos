@@ -127,7 +127,9 @@
                                 <th>Harga Pak</th>
                                 <th>Harga Eceran</th>
                                 <th>Harga Eceran Terakhir</th>
-                                <th>Harga Sales</th>
+                                <th>Harga Jual Dus</th>
+                                <th>Harga Jual Pak</th>
+                                <th>Harga Jual Eceran</th>
                                 <th>Hadiah</th>
                                 <th class="min-w-200px">Aksi</th>
                             </tr>
@@ -144,7 +146,6 @@
 @endsection
 
 @push('addon-script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
     <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script>
@@ -261,7 +262,29 @@
                             }
                         },
                         {
-                            data: 'sales_price',
+                            data: 'price_sell_dus',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'price_sell_dus',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'price_sell_dus',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -289,7 +312,7 @@
                         },
                         {
                             className: 'min-w-200px',
-                            targets: 16,
+                            targets: 18,
                             render: function(data, type, row) {
                                 var editUrl = "/produk/" + row.id + "/edit";
                                 var deleteUrl = "/produk/" + row.id;
@@ -378,6 +401,13 @@
         // On document ready
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#otherSelect').select2({
+                tags: true,
+            });
         });
     </script>
 @endpush

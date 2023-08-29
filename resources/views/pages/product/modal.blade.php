@@ -1,5 +1,5 @@
 <div class="modal fade" tabindex="-1" id="kt_modal_1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Tambah data produk</h3>
@@ -14,10 +14,15 @@
             <div class="modal-body">
                 <form action="{{ route('produk.store') }}" method="post">
                     @csrf
-                    <div class="mb-10">
-                        <label class="form-label" for="name">Kelompok</label>
-                        <input name="group" type="text" class="form-control"
-                            placeholder="Masukan kelompok produk" />
+                    <div id="otherSelectContainer" class="mb-4">
+                        <label class="form-label" for="otherSelect">Kelompok</label>
+                        <select id="otherSelect" name="category" class="form-select form-select-solid"
+                            data-control="select2" data-dropdown-parent="#kt_modal_1">
+                            <option disabled selected>Pilih Kelompok</option>
+                            @foreach ($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="mb-10">
                         <label class="form-label" for="name">Nama Produk</label>

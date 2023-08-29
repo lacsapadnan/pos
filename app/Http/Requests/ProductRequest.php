@@ -22,7 +22,6 @@ class ProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'group' => 'required',
             'name' => 'required',
             'unit_dus' => 'required|exists:units,id',
             'unit_pak' => 'required|exists:units,id',
@@ -48,7 +47,6 @@ class ProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'group.required' => 'Group harus diisi',
             'name.required' => 'Nama harus diisi',
             'unit_dus.required' => 'Unit dus harus diisi',
             'unit_pak.required' => 'Unit pak harus diisi',

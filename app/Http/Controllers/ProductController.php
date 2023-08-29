@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
 use App\Imports\ProductImport;
+use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Unit;
@@ -18,7 +19,8 @@ class ProductController extends Controller
     public function index()
     {
         $unit = Unit::all();
-        return view('pages.product.index', compact('unit'));
+        $categories = Category::all();
+        return view('pages.product.index', compact('unit', 'categories'));
     }
 
     public function data()
@@ -37,7 +39,9 @@ class ProductController extends Controller
             $query
                 ->where('name', 'LIKE', '%' . $searchQuery . '%')
                 ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
-                ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
+                ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%')
+                ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
+                ->orWhere('group', 'LIKE', '%' . $searchQuery . '%');
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided
         }
@@ -73,9 +77,18 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
+        $category = Category::where('name', $request->category)->first();
+        if (!$category) {
+            $category = Category::create([
+                'name' => $request->category,
+            ]);
+        } else {
+            $category = Category::where('name', $request->category)->first();
+        }
         $product = Product::create($request->validated());
+        $product->group = $category->name;
+        $product->save();
 
-        // input produk to inventory
         Inventory::create([
             'product_id' => $product->id,
             'warehouse_id' => auth()->user()->warehouse_id,

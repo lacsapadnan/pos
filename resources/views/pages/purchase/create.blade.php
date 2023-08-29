@@ -348,8 +348,7 @@
                             d.searchQuery = $('#searchInput').val();
                         }
                     },
-                    "columns": [
-                        {
+                    "columns": [{
                             data: "product.name"
                         },
                         {
@@ -460,8 +459,12 @@
                             className: 'min-w-100px',
                         },
                         {
+                            target: 4,
+                            className: 'min-w-80px',
+                        },
+                        {
                             target: 5,
-                            className: 'min-w-50px',
+                            className: 'min-w-150px',
                         },
                         {
                             target: 6,
@@ -477,11 +480,23 @@
                         },
                         {
                             target: 9,
-                            className: 'min-w-50px',
+                            className: 'min-w-150px',
                         },
                         {
                             target: 10,
                             className: 'min-w-100px',
+                        },
+                        {
+                            target: 12,
+                            className: 'min-w-80px',
+                        },
+                        {
+                            target: 13,
+                            className: 'min-w-150px',
+                        },
+                        {
+                            target: 14,
+                            className: 'min-w-80px',
                         },
                         {
                             targets: -1,

@@ -239,7 +239,7 @@
                     </div>
                     <!--end:Menu item-->
                 @endcan
-                @role('kasir')
+                @role('admin|kasir')
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -384,7 +384,7 @@
                         <!--end:Menu link-->
                     </div>
                 @endcan
-
+                @role('admin')
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                     class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                     <!--begin:Menu link-->
@@ -444,6 +444,7 @@
                     </div>
                     <!--end:Menu sub-->
                 </div>
+                @endrole
             </div>
             <!--end::Menu-->
         </div>

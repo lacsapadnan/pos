@@ -106,11 +106,12 @@ class PurchaseController extends Controller
 
                 // update product price
                 $product = Product::find($cart->product_id);
-                if ($cart->unit_id == $product->unit_dus && $product->dus_to_eceran != 0) {
+                if ($cart->unit_id == $product->unit_dus) {
                     $product->price_dus = $cart->price_unit;
                     $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
                 } elseif ($cart->unit_id == $product->unit_pak) {
                     $product->price_pak = $cart->price_unit;
+                    $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
                 } elseif ($cart->unit_id == $product->unit_eceran) {
                     $product->price_eceran = $cart->price_unit;
                 }
@@ -188,6 +189,10 @@ class PurchaseController extends Controller
             $discount_fix = $request->input('discount_fix', []);
             $discount_percent = $request->input('discount_percent', []);
             $price_unit = $request->input('price_unit', []);
+            $priceSellDus = $request->input('price_sell_dus', []);
+            $priceSellPak = $request->input('price_sell_pak', []);
+            $priceSellEceran = $request->input('price_sell_eceran', []);
+            $hadiah = $request->input('hadiah', []);
             $tax = $request->tax;
 
             $subtotal = 0;
@@ -207,6 +212,13 @@ class PurchaseController extends Controller
                     Log::error("Invalid data at index {$key} for purchase detail update.");
                     throw new \Exception("Invalid data at index {$key} for purchase detail update.");
                 }
+
+                $product = Product::find($productIdValue);
+                $product->price_sell_dus = $priceSellDus[$key] ?? $product->price_sell_dus;
+                $product->price_sell_pak = $priceSellPak[$key] ?? $product->price_sell_pak;
+                $product->price_sell_eceran = $priceSellEceran[$key] ?? $product->price_sell_eceran;
+                $product->hadiah = $hadiah[$key] ?? $product->hadiah;
+                $product->update();
             }
 
             if ($tax == null) {
@@ -236,7 +248,6 @@ class PurchaseController extends Controller
                 $pd->total_price = ($price_unit[$key] - $discount_fix[$key]) * (1 - $discount_percent[$key] / 100) * $qty[$key];
                 $pd->update();
             }
-
 
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diupdate');
         } catch (\Throwable $th) {

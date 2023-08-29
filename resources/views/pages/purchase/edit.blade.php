@@ -42,7 +42,7 @@
                     <h2 class="mt-10">List Produk</h2>
                 </div>
                 @foreach ($purchases->details as $key => $purchase_detail)
-                    <div class="row">
+                    <div class="row mb-5">
                         <div class="col-md-2">
                             <div class="mb-3 row">
                                 <label for="inputEmail3" class="col-form-label">Produk</label>
@@ -89,7 +89,7 @@
                         </div>
                         <div class="col-md-2 ms-4">
                             <div class="mb-3 row">
-                                <label for="inputEmail3" class="col-form-label">Diskon Persen</label>
+                                <label for="inputEmail3" class="col-form-label">Diskon %</label>
                                 <input type="text" name="discount_percent[]" class="form-control"
                                     placeholder="Masukan diskon persen" value="{{ $purchase_detail->discount_percent }}" />
                             </div>
@@ -99,6 +99,34 @@
                                 <label for="inputEmail3" class="col-form-label">Harga</label>
                                 <input id="price_unit" type="text" name="price_unit[]" class="form-control"
                                     placeholder="Masukan harga" value="{{ $purchase_detail->price_unit }}" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 ms-4">
+                            <div class="mb-3 row">
+                                <label for="inputEmail3" class="col-form-label">Harga Dus</label>
+                                <input id="price_sell_dus" type="text" name="price_sell_dus[]" class="form-control"
+                                    placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_dus }}" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 ms-4">
+                            <div class="mb-3 row">
+                                <label for="inputEmail3" class="col-form-label">Harga Pak</label>
+                                <input id="price_sell_pak" type="text" name="price_sell_pak[]" class="form-control"
+                                    placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_pak }}" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 ms-4">
+                            <div class="mb-3 row">
+                                <label for="inputEmail3" class="col-form-label">Harga Eceran</label>
+                                <input id="price_sell_eceran" type="text" name="price_sell_eceran[]" class="form-control"
+                                    placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_eceran }}" />
+                            </div>
+                        </div>
+                        <div class="col-md-2 ms-4">
+                            <div class="mb-3 row">
+                                <label for="inputEmail3" class="col-form-label">Hadiah</label>
+                                <input id="hadiah" type="text" name="hadiah[]" class="form-control"
+                                    placeholder="Masukan hadiah" value="{{ $purchase_detail->product->hadiah }}" />
                             </div>
                         </div>
                     </div>

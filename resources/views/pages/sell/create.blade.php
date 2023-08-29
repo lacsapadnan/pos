@@ -109,13 +109,13 @@
                                 <th>Jml Per Pak</th>
                                 <th>Jml Jual Dus</th>
                                 <th>Diskon Dus</th>
-                                <th>Harga Dus</th>
+                                <th>Harga Jual Dus</th>
                                 <th>Jml Jual Pak</th>
                                 <th>Diskon Pak</th>
-                                <th>Harga Pak</th>
+                                <th>Harga Jual Pak</th>
                                 <th>Jml Jual Eceran</th>
                                 <th>Diskon Eceran</th>
-                                <th>Harga Eceran</th>
+                                <th>Harga Jual Eceran</th>
                                 <th class="min-w-100px">Aksi</th>
                             </tr>
                         </thead>
@@ -371,7 +371,8 @@
                     processing: true,
                     serverSide: true,
                     fixedColumns: {
-                        left: 2
+                        left: 2,
+                        right: 1
                     },
                     "ajax": {
                         url: '{{ route('api.data-all') }}',
@@ -401,7 +402,7 @@
                                 return `
                                 <input type="text" name="quantity_dus" class="form-control">
                                 <input type="hidden" name="unit_dus" value="${row.product.unit_dus}">
-                                <input type="hidden" name="price_dus" value="${row.product.price_dus}">
+                                <input type="hidden" name="price_dus" value="${row.product.price_sell_dus}">
                                 `;
 
                             }
@@ -413,7 +414,7 @@
                             }
                         },
                         {
-                            data: "product.price_dus",
+                            data: "product.price_sell_dus",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -429,7 +430,7 @@
                                 return `
                                 <input type="text" name="quantity_pak" class="form-control">
                                 <input type="hidden" name="unit_pak" value="${row.product.unit_pak}">
-                                <input type="hidden" name="price_pak" value="${row.product.price_pak}">
+                                <input type="hidden" name="price_pak" value="${row.product.price_sell_pak}">
                                 `;
                             }
                         },
@@ -440,7 +441,7 @@
                             }
                         },
                         {
-                            data: "product.price_pak",
+                            data: "product.price_sell_pak",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -456,7 +457,7 @@
                                 return `
                                 <input type="text" name="quantity_eceran" class="form-control">
                                 <input type="hidden" name="unit_eceran" value="${row.product.unit_eceran}">
-                                <input type="hidden" name="price_eceran" value="${row.product.price_eceran}">
+                                <input type="hidden" name="price_eceran" value="${row.product.price_sell_eceran}">
                                 `;
                             }
                         },
@@ -467,7 +468,7 @@
                             }
                         },
                         {
-                            data: "product.price_eceran",
+                            data: "product.price_sell_eceran",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -494,8 +495,12 @@
                             className: 'min-w-100px',
                         },
                         {
+                            target: 5,
+                            className: 'min-w-80px',
+                        },
+                        {
                             target: 7,
-                            className: 'min-w-60px',
+                            className: 'min-w-100px',
                         },
                         {
                             target: 8,
@@ -503,7 +508,7 @@
                         },
                         {
                             target: 10,
-                            className: 'min-w-60px',
+                            className: 'min-w-100px',
                         },
                         {
                             target: 11,
@@ -511,7 +516,7 @@
                         },
                         {
                             target: 13,
-                            className: 'min-w-60px',
+                            className: 'min-w-100px',
                         },
                         {
                             target: 14,
