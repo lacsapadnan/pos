@@ -31,11 +31,6 @@ class ProductRequest extends FormRequest
             'barcode_eceran' => 'nullable',
             'dus_to_eceran' => 'required',
             'pak_to_eceran' => 'required',
-            'price_dus' => 'required',
-            'price_pak' => 'required',
-            'price_eceran' => 'required',
-            'sales_price' => 'required',
-            'lastest_price_eceran' => 'nullable',
             'hadiah' => 'nullable',
         ];
     }
@@ -53,10 +48,6 @@ class ProductRequest extends FormRequest
             'unit_eceran.required' => 'Unit eceran harus diisi',
             'dus_to_eceran.required' => 'Dus to eceran harus diisi',
             'pak_to_eceran.required' => 'Pak to eceran harus diisi',
-            'price_dus.required' => 'Harga dus harus diisi',
-            'price_pak.required' => 'Harga pak harus diisi',
-            'price_eceran.required' => 'Harga eceran harus diisi',
-            'sales_price.required' => 'Harga jual harus diisi',
         ];
     }
 }
