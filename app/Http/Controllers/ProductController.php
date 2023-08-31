@@ -115,7 +115,8 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
         $unit = Unit::orderBy('id', 'asc')->get();
-        return view('pages.product.edit', compact('product', 'unit'));
+        $categories = Category::all();
+        return view('pages.product.edit', compact('product', 'unit', 'categories'));
     }
 
     /**

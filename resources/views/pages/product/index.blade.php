@@ -123,9 +123,6 @@
                                 <th>Satuan Eceran</th>
                                 <th>Jml. Dus ke Eceran</th>
                                 <th>Jml. Pak ke Eceran</th>
-                                <th>Harga Dus</th>
-                                <th>Harga Pak</th>
-                                <th>Harga Eceran</th>
                                 <th>Harga Eceran Terakhir</th>
                                 <th>Harga Jual Dus</th>
                                 <th>Harga Jual Pak</th>
@@ -218,39 +215,6 @@
                             data: 'pak_to_eceran'
                         },
                         {
-                            data: 'price_dus',
-                            render: function(data, type, row) {
-                                var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
-                                return formattedPrice;
-                            }
-                        },
-                        {
-                            data: 'price_pak',
-                            render: function(data, type, row) {
-                                var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
-                                return formattedPrice;
-                            }
-                        },
-                        {
-                            data: 'price_eceran',
-                            render: function(data, type, row) {
-                                var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
-                                return formattedPrice;
-                            }
-                        },
-                        {
                             data: 'lastest_price_eceran',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -273,7 +237,7 @@
                             }
                         },
                         {
-                            data: 'price_sell_dus',
+                            data: 'price_sell_pak',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -284,7 +248,7 @@
                             }
                         },
                         {
-                            data: 'price_sell_dus',
+                            data: 'price_sell_eceran',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -311,8 +275,12 @@
                             targets: 1
                         },
                         {
+                            className: 'min-w-100px',
+                            targets: [11, 12, 13],
+                        },
+                        {
                             className: 'min-w-200px',
-                            targets: 18,
+                            targets: 15,
                             render: function(data, type, row) {
                                 var editUrl = "/produk/" + row.id + "/edit";
                                 var deleteUrl = "/produk/" + row.id;

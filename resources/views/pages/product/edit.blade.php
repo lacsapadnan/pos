@@ -11,11 +11,16 @@
                 @method('PUT')
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="mb-10">
-                            <label class="form-label" for="name">Kelompok</label>
-                            <input name="group" type="text" class="form-control" placeholder="Masukan kelompok produk"
-                                value="{{ $product->group }}" />
-                        </div>
+                        <div id="otherSelectContainer" class="mb-10">
+                        <label class="form-label" for="otherSelect">Kelompok</label>
+                        <select id="otherSelect" name="category" class="form-select form-select-solid"
+                            data-control="select2">
+                            <option selected>{{ $product->group }}</option>
+                            @foreach ($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-10">
@@ -113,35 +118,59 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="mb-10">
                             <label class="form-label" for="name">Jumlah DUS ke Eceran</label>
                             <input name="dus_to_eceran" type="number" class="form-control"
                                 placeholder="Masukan jumlah DUS ke eceran" value="{{ $product->dus_to_eceran }}" />
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Pak ke Eceran</label>
+                            <label class="form-label" for="name">Jumlah Pak ke Eceran</label>
                             <input name="pak_to_eceran" type="number" class="form-control"
                                 placeholder="Masukan jumlah pak ke eceran" value="{{ $product->pak_to_eceran }}" />
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Sales</label>
-                            <input name="sales_price" type="number" class="form-control"
-                                placeholder="Masukan harga sales" value="{{ $product->sales_price }}" />
+                            <label class="form-label" for="name">Hadiah</label>
+                            <input name="hadiah" type="text" class="form-control"
+                                placeholder="Masukan hadiah" value="{{ $product->hadiah }}" />
                         </div>
                     </div>
-                    <div class="col-md-6">
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
                         <div class="mb-10">
                             <label class="form-label" for="name">Harga Eceran Terakhir</label>
                             <input name="lastest_price_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga eceran terakhir"
                                 value="{{ $product->lastest_price_eceran }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-10">
+                            <label class="form-label" for="name">Harga Jual Dus</label>
+                            <input name="price_sell_dus" type="number" class="form-control"
+                                placeholder="Masukan harga jual dus"
+                                value="{{ $product->price_sell_dus }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-10">
+                            <label class="form-label" for="name">Harga Jual Pak</label>
+                            <input name="price_sell_pak" type="number" class="form-control"
+                                placeholder="Masukan harga jual pak"
+                                value="{{ $product->price_sell_pak }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-10">
+                            <label class="form-label" for="name">Harga Jual Eceran</label>
+                            <input name="price_sell_eceran" type="number" class="form-control"
+                                placeholder="Masukan harga jual eceran"
+                                value="{{ $product->price_sell_eceran }}" />
                         </div>
                     </div>
                 </div>
@@ -150,3 +179,12 @@
         </div>
     </div>
 @endsection
+@push('addon-script')
+    <script>
+        $(document).ready(function() {
+            $('#otherSelect').select2({
+                tags: true,
+            });
+        });
+    </script>s
+@endpush
