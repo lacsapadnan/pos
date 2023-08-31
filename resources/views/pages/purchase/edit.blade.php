@@ -108,27 +108,6 @@
                                     placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_dus }}" />
                             </div>
                         </div>
-                        <div class="col-md-2 ms-4">
-                            <div class="mb-3 row">
-                                <label for="inputEmail3" class="col-form-label">Harga Pak</label>
-                                <input id="price_sell_pak" type="text" name="price_sell_pak[]" class="form-control"
-                                    placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_pak }}" />
-                            </div>
-                        </div>
-                        <div class="col-md-2 ms-4">
-                            <div class="mb-3 row">
-                                <label for="inputEmail3" class="col-form-label">Harga Eceran</label>
-                                <input id="price_sell_eceran" type="text" name="price_sell_eceran[]" class="form-control"
-                                    placeholder="Masukan harga" value="{{ $purchase_detail->product->price_sell_eceran }}" />
-                            </div>
-                        </div>
-                        <div class="col-md-2 ms-4">
-                            <div class="mb-3 row">
-                                <label for="inputEmail3" class="col-form-label">Hadiah</label>
-                                <input id="hadiah" type="text" name="hadiah[]" class="form-control"
-                                    placeholder="Masukan hadiah" value="{{ $purchase_detail->product->hadiah }}" />
-                            </div>
-                        </div>
                     </div>
                 @endforeach
                 <button type="submit" class="btn btn-primary">Update Pembelian</button>

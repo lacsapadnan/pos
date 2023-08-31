@@ -189,10 +189,6 @@ class PurchaseController extends Controller
             $discount_fix = $request->input('discount_fix', []);
             $discount_percent = $request->input('discount_percent', []);
             $price_unit = $request->input('price_unit', []);
-            $priceSellDus = $request->input('price_sell_dus', []);
-            $priceSellPak = $request->input('price_sell_pak', []);
-            $priceSellEceran = $request->input('price_sell_eceran', []);
-            $hadiah = $request->input('hadiah', []);
             $tax = $request->tax;
 
             $subtotal = 0;
@@ -212,13 +208,6 @@ class PurchaseController extends Controller
                     Log::error("Invalid data at index {$key} for purchase detail update.");
                     throw new \Exception("Invalid data at index {$key} for purchase detail update.");
                 }
-
-                $product = Product::find($productIdValue);
-                $product->price_sell_dus = $priceSellDus[$key] ?? $product->price_sell_dus;
-                $product->price_sell_pak = $priceSellPak[$key] ?? $product->price_sell_pak;
-                $product->price_sell_eceran = $priceSellEceran[$key] ?? $product->price_sell_eceran;
-                $product->hadiah = $hadiah[$key] ?? $product->hadiah;
-                $product->update();
             }
 
             if ($tax == null) {
