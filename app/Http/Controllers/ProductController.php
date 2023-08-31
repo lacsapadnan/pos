@@ -32,18 +32,25 @@ class ProductController extends Controller
     public function dataSearch(Request $request)
     {
         $searchQuery = $request->input('searchQuery');
+        $selectedCategory = $request->input('category');
 
         $query = Product::with('unit_dus', 'unit_pak', 'unit_eceran');
 
         if ($searchQuery) {
-            $query
-                ->where('name', 'LIKE', '%' . $searchQuery . '%')
-                ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
-                ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%')
-                ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
-                ->orWhere('group', 'LIKE', '%' . $searchQuery . '%');
-        } else {
-            $query->whereRaw('1 = 0'); // Return no results when no search query is provided
+            $query->where(function ($innerQuery) use ($searchQuery) {
+                $innerQuery
+                    ->where('name', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('group', 'LIKE', '%' . $searchQuery . '%');
+            });
+        }
+
+        if ($selectedCategory) {
+            $query->where(function ($innerQuery) use ($selectedCategory) {
+                $innerQuery->where('group', 'LIKE', '%' . $selectedCategory . '%');
+            });
         }
 
         $recordsFiltered = $query->count();

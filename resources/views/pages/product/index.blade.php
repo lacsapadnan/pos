@@ -9,41 +9,7 @@
 @endpush
 
 @section('content')
-    {{-- session success --}}
-    @if (session()->has('success'))
-        <!--begin::Alert-->
-        <div class="p-5 mb-10 alert alert-primary d-flex align-items-center">
-            <i class="ki-duotone ki-shield-tick fs-2hx text-primary me-4"><span class="path1"></span><span
-                    class="path2"></span></i>
-            <div class="d-flex flex-column">
-                <h4 class="mb-1 text-primary">Sukses</h4>
-                <span>{{ session()->get('success') }}</span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-2x text-primary"><span class="path1"></span><span
-                        class="path2"></span></i>
-            </button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="p-5 mb-10 alert alert-dismissible bg-danger d-flex flex-column flex-sm-row">
-            <div class="d-flex flex-column text-light pe-0 pe-sm-10">
-                <h4 class="mb-2 text-light">Gagal Menyimpan data</h4>
-                <span>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-1 text-light"><span class="path1"></span><span class="path2"></span></i>
-            </button>
-        </div>
-    @endif
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -55,6 +21,12 @@
                         id="searchInput">
                 </div>
                 <!--end::Search-->
+                <select id="categoryFilter" class="form-select" aria-label="Category filter" data-control="select2">
+                    <option>All Categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->name }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
                 <!--begin::Export dropdown-->
@@ -175,8 +147,8 @@
                         type: 'GET',
                         data: function(d) {
                             d.searchQuery = $('#searchInput').val();
-                            console.log(d.searchQuery);
-                        }
+                            d.category = $('#categoryFilter').val();
+                        },
                     },
                     "columns": [{
                             data: 'group'
@@ -298,6 +270,10 @@
 
                         },
                     ]
+                });
+
+                $('#categoryFilter').on('change', function() {
+                    datatable.ajax.reload();
                 });
             }
 
