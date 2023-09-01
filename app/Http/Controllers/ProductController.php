@@ -45,9 +45,7 @@ class ProductController extends Controller
                     ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('group', 'LIKE', '%' . $searchQuery . '%');
             });
-        }
-
-        if ($selectedCategory) {
+        } elseif ($selectedCategory) {
             $query->where(function ($innerQuery) use ($selectedCategory) {
                 $innerQuery->where('group', 'LIKE', '%' . $selectedCategory . '%');
             });
