@@ -14,6 +14,7 @@ use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellReturController;
 use App\Http\Controllers\SendStockController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TreasuryMutationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +56,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
+    Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);
     Route::get('hutang', [PurchaseController::class, 'debt'])->name('hutang');
     Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
@@ -83,6 +85,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('kas-expense/api/data', [KasController::class, 'expense'])->name('api.kas-expense');
     Route::get('hutang/api/data', [PurchaseController::class, 'dataDebt'])->name('api.hutang');
     Route::get('piutang/api/data', [SellController::class, 'dataCredit'])->name('api.piutang');
+    Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');
 
 
     // Import

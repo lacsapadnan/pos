@@ -374,6 +374,16 @@
                     </div>
                     <!--end:Menu item-->
                 @endcan
+                <!--begin:Menu item-->
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('mutasi-kas.*') ? ' here' : '' }}">
+                        <!--begin:Menu link-->
+                        <a href="{{ route('mutasi-kas.index') }}" class="py-3 menu-link">
+                            <span class="menu-title">Mutasi Kas</span>
+                            <span class="menu-arrow d-lg-none"></span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                    <!--end:Menu item-->
                 @can('baca laporan')
                     <div class="menu-item me-0 me-lg-2">
                         <!--begin:Menu link-->
