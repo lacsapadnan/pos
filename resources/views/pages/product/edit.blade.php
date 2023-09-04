@@ -11,16 +11,16 @@
                 @method('PUT')
                 <div class="row">
                     <div class="col-md-6">
-                        <div id="otherSelectContainer" class="mb-10">
-                        <label class="form-label" for="otherSelect">Kelompok</label>
-                        <select id="otherSelect" name="category" class="form-select form-select-solid"
-                            data-control="select2">
-                            <option selected>{{ $product->group }}</option>
-                            @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div id="otherSelectContainer" class="mb-4">
+                            <label class="form-label" for="otherSelect">Kelompok</label>
+                            <select id="otherSelect" name="category" class="form-select form-select-solid"
+                                data-control="select2" >
+                                <option selected>{{ $product->group }}</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-10">
@@ -83,7 +83,9 @@
                             <select name="unit_dus" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan dus</option>
                                 @forelse($unit as $item)
-                                    <option value="{{ $item->id }}" {{ $item->id == $product->unit_dus ? 'selected' : '' }}>{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}"
+                                        {{ $item->id == $product->unit_dus ? 'selected' : '' }}>{{ $item->name }}
+                                    </option>
                                 @empty
                                     <option readonly>Belum ada satuan</option>
                                 @endforelse
@@ -96,7 +98,9 @@
                             <select name="unit_pak" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan pak</option>
                                 @forelse($unit as $item)
-                                    <option value="{{ $item->id }}" {{ $item->id == $product->unit_pak ? 'selected' : '' }}>{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}"
+                                        {{ $item->id == $product->unit_pak ? 'selected' : '' }}>{{ $item->name }}
+                                    </option>
                                 @empty
                                     <option readonly>Belum ada satuan</option>
                                 @endforelse
@@ -109,7 +113,9 @@
                             <select name="unit_eceran" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan eceran</option>
                                 @forelse($unit as $item)
-                                    <option value="{{ $item->id }}" {{ $item->id == $product->unit_eceran ? 'selected' : '' }}>{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}"
+                                        {{ $item->id == $product->unit_eceran ? 'selected' : '' }}>{{ $item->name }}
+                                    </option>
                                 @empty
                                     <option readonly>Belum ada satuan</option>
                                 @endforelse
@@ -135,8 +141,8 @@
                     <div class="col-md-4">
                         <div class="mb-10">
                             <label class="form-label" for="name">Hadiah</label>
-                            <input name="hadiah" type="text" class="form-control"
-                                placeholder="Masukan hadiah" value="{{ $product->hadiah }}" />
+                            <input name="hadiah" type="text" class="form-control" placeholder="Masukan hadiah"
+                                value="{{ $product->hadiah }}" />
                         </div>
                     </div>
                 </div>
@@ -153,24 +159,21 @@
                         <div class="mb-10">
                             <label class="form-label" for="name">Harga Jual Dus</label>
                             <input name="price_sell_dus" type="number" class="form-control"
-                                placeholder="Masukan harga jual dus"
-                                value="{{ $product->price_sell_dus }}" />
+                                placeholder="Masukan harga jual dus" value="{{ $product->price_sell_dus }}" />
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="mb-10">
                             <label class="form-label" for="name">Harga Jual Pak</label>
                             <input name="price_sell_pak" type="number" class="form-control"
-                                placeholder="Masukan harga jual pak"
-                                value="{{ $product->price_sell_pak }}" />
+                                placeholder="Masukan harga jual pak" value="{{ $product->price_sell_pak }}" />
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="mb-10">
                             <label class="form-label" for="name">Harga Jual Eceran</label>
                             <input name="price_sell_eceran" type="number" class="form-control"
-                                placeholder="Masukan harga jual eceran"
-                                value="{{ $product->price_sell_eceran }}" />
+                                placeholder="Masukan harga jual eceran" value="{{ $product->price_sell_eceran }}" />
                         </div>
                     </div>
                 </div>

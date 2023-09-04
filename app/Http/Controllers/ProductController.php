@@ -130,7 +130,16 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
         $product = Product::findOrFail($id);
-        $product->update($request->all());
+        $category = Category::where('name', $request->category)->first();
+        if (!$category) {
+            $category = Category::create([
+                'name' => $request->category,
+            ]);
+        } else {
+            $category = Category::where('name', $request->category)->first();
+        }
+        $product->group = $category->name;
+        $product->update();
         return redirect()
             ->route('produk.index')
             ->with('success', 'Produk berhasil diubah');
