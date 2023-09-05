@@ -90,9 +90,9 @@ class ProductController extends Controller
         } else {
             $category = Category::where('name', $request->category)->first();
         }
-        $product = Product::create($request->validated());
-        $product->group = $category->name;
-        $product->save();
+        $data = $request->validated();
+        $data['group'] = $category->name;
+        $product = Product::create($data);
 
         Inventory::create([
             'product_id' => $product->id,
@@ -139,6 +139,24 @@ class ProductController extends Controller
             $category = Category::where('name', $request->category)->first();
         }
         $product->group = $category->name;
+        $product->name = $request->name ?? $product->name;
+        $product->barcode_dus = $request->barcode_dus ?? $product->barcode_dus;
+        $product->barcode_pak = $request->barcode_pak ?? $product->barcode_pak;
+        $product->barcode_eceran = $request->barcode_eceran ?? $product->barcode_eceran;
+        $product->unit_dus = $request->unit_dus ?? $product->unit_dus;
+        $product->unit_pak = $request->unit_pak ?? $product->unit_pak;
+        $product->unit_eceran = $request->unit_eceran ?? $product->unit_eceran;
+        $product->price_dus = $request->price_dus ?? $product->price_dus;
+        $product->price_pak = $request->price_pak ?? $product->price_pak;
+        $product->price_eceran = $request->price_eceran ?? $product->price_eceran;
+        $product->sales_price = $request->sales_price ?? $product->sales_price;
+        $product->lastest_price_eceran = $request->lastest_price_eceran ?? $product->lastest_price_eceran;
+        $product->hadiah = $request->hadiah ?? $product->hadiah;
+        $product->price_sell_dus = $request->price_sell_dus ?? $product->price_sell_dus;
+        $product->price_sell_pak = $request->price_sell_pak ?? $product->price_sell_pak;
+        $product->price_sell_eceran = $request->price_sell_eceran ?? $product->price_sell_eceran;
+        $product->dus_to_eceran = $request->dus_to_eceran ?? $product->dus_to_eceran;
+        $product->pak_to_eceran = $request->pak_to_eceran ?? $product->pak_to_eceran;
         $product->update();
         return redirect()
             ->route('produk.index')

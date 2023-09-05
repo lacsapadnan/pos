@@ -17,7 +17,7 @@
                                 data-control="select2" >
                                 <option selected>{{ $product->group }}</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    <option value="{{ $category->name }}">{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
