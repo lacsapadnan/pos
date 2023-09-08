@@ -13,6 +13,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellReturController;
 use App\Http\Controllers\SendStockController;
+use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TreasuryMutationController;
 use App\Http\Controllers\UserController;
@@ -57,6 +58,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
     Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);
+    Route::resource('settlement', SettlementController::class);
     Route::get('hutang', [PurchaseController::class, 'debt'])->name('hutang');
     Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
@@ -86,6 +88,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('hutang/api/data', [PurchaseController::class, 'dataDebt'])->name('api.hutang');
     Route::get('piutang/api/data', [SellController::class, 'dataCredit'])->name('api.piutang');
     Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');
+    Route::get('settlement/api/data', [SettlementController::class, 'data'])->name('api.settlement');
+    Route::get('combined-data/api/data', [SettlementController::class, 'combinedData'])->name('api.combined-data');
 
 
     // Import
