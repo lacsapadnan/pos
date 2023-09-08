@@ -163,7 +163,7 @@
                         {
                             data: "amount",
                             render: function(data, type, row) {
-                                return 'Rp. ' + data.toString().replace(/\B(?=(\d{3})+(?!\d))/g,
+                                return 'Rp' + data.toString().replace(/\B(?=(\d{3})+(?!\d))/g,
                                     ".");
                             }
                         },
@@ -199,6 +199,10 @@
                             }
                         }
                     ],
+                    columnDefs: [{
+                        target: 7,
+                        className: 'min-w-100px'
+                    }],
                 });
             }
 

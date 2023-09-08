@@ -69,11 +69,15 @@
                                     <label class="form-label" for="from_treasury">Keluar Dari</label>
                                     <select name="from_treasury" class="form-select form-select-solid" data-control="select2"
                                         id="fromTreasurySelect" data-dropdown-parent="#kt_modal_1">
+                                        @if($roles === 'admin')
                                         <option disabled selected>Pilih Dana</option>
                                         <option value="Kas Bank 1">Kas Bank 1</option>
                                         <option value="Kas Bank 2">Kas Bank 2</option>
                                         <option value="Kas Besar">Kas Besar</option>
                                         <option value="Kas Kecil">Kas Kecil</option>
+                                        @else
+                                        <option value="Kas Kecil">Kas Kecil</option>
+                                        @endif
                                     </select>
                                 </div>
                             </div>
@@ -83,7 +87,7 @@
                                 <div class="mb-4">
                                     <label class="form-label" for="output_cashier">Kasir Pengeluaran</label>
                                     <select name="output_cashier" class="form-select form-select-solid" data-control="select2"
-                                        id="toTreasurySelect" data-dropdown-parent="#kt_modal_1">
+                                        id="toCashierSelect" data-dropdown-parent="#kt_modal_1">
                                         @if($roles === 'admin')
                                         <option disabled selected>Pilih kasir</option>
                                         @foreach ($cashiers as $cashier)
@@ -103,7 +107,7 @@
                                 <div class="mb-4">
                                     <label class="form-label" for="to_treasury">Masuk ke</label>
                                     <select name="to_treasury" class="form-select form-select-solid" data-control="select2"
-                                        id="fromTreasurySelect" data-dropdown-parent="#kt_modal_1">
+                                        id="toTreasurySelect" data-dropdown-parent="#kt_modal_1">
                                         <option disabled selected>Pilih Dana</option>
                                         <option value="Kas Bank 1">Kas Bank 1</option>
                                         <option value="Kas Bank 2">Kas Bank 2</option>
@@ -118,7 +122,7 @@
                                 <div class="mb-4">
                                     <label class="form-label" for="input_cashier">Kasir Pemasukan</label>
                                     <select name="input_cashier" class="form-select form-select-solid" data-control="select2"
-                                        id="toTreasurySelect" data-dropdown-parent="#kt_modal_1">
+                                        id="fromCashierSelect" data-dropdown-parent="#kt_modal_1">
                                         @if($roles === 'admin')
                                         <option disabled selected>Pilih kasir</option>
                                         @foreach ($cashiers as $cashier)
