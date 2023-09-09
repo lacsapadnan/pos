@@ -384,6 +384,8 @@
                         <!--end:Menu link-->
                     </div>
                 <!--end:Menu item-->
+
+                @role('admin')
                 <!--begin:Menu item-->
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('settlement.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
@@ -394,16 +396,15 @@
                         <!--end:Menu link-->
                     </div>
                 <!--end:Menu item-->
-                @can('baca laporan')
-                    <div class="menu-item me-0 me-lg-2">
+                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('laporan.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
-                        <span class="py-3 menu-link">
+                        <a href="{{ route('laporan') }}" class="py-3 menu-link">
                             <span class="menu-title">Laporan</span>
                             <span class="menu-arrow d-lg-none"></span>
-                        </span>
+                        </a>
                         <!--end:Menu link-->
                     </div>
-                @endcan
+                @endrole
                 @role('admin')
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                     class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">

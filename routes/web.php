@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseReturController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellReturController;
@@ -61,6 +62,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('settlement', SettlementController::class);
     Route::get('hutang', [PurchaseController::class, 'debt'])->name('hutang');
     Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
+    Route::get('laporan', [ReportController::class, 'index'])->name('laporan');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
 
@@ -90,6 +92,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');
     Route::get('settlement/api/data', [SettlementController::class, 'data'])->name('api.settlement');
     Route::get('combined-data/api/data', [SettlementController::class, 'combinedData'])->name('api.combined-data');
+    Route::get('report/api/data', [ReportController::class, 'data'])->name('api.report');
 
 
     // Import
