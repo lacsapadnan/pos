@@ -25,10 +25,11 @@ class ReportController extends Controller
         if ($warehouse) {
             // Fetch data for the specified warehouse
             $purchase = Purchase::where('warehouse_id', $warehouse)
+                ->where('status', '!=', 'hutang')
                 ->orderBy('created_at', 'desc')
                 ->get();
             $sell = Sell::where('warehouse_id', $warehouse)
-                ->where('status', '=', 'lunas')
+                ->where('status', '!=', 'hutang')
                 ->orderBy('created_at', 'desc')
                 ->get();
             $kas = Kas::where('warehouse_id', $warehouse)
@@ -36,8 +37,8 @@ class ReportController extends Controller
                 ->get();
             // Fetch data for all warehouses
         } else {
-            $purchase = Purchase::orderBy('created_at', 'desc')->get();
-            $sell = Sell::orderBy('created_at', 'desc')->where('status', '=', 'lunas')->get();
+            $purchase = Purchase::orderBy('created_at', 'desc')->where('status', '!=', 'hutang')->get();
+            $sell = Sell::orderBy('created_at', 'desc')->where('status', '!=', 'hutang')->get();
             $kas = Kas::orderBy('created_at', 'desc')->get();
         }
 
