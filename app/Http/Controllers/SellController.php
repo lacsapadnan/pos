@@ -52,7 +52,7 @@ class SellController extends Controller
         $products = Product::all();
         $customers = Customer::all();
         $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad(Sell::count() + 1, 4, '0', STR_PAD_LEFT);
-        $cart = SellCart::with('product', 'unit')->get();
+        $cart = SellCart::with('product', 'unit')->orderBy('id', 'desc')->get();
         $subtotal = 0;
         foreach ($cart as $c) {
             $subtotal += ($c->price * $c->quantity) - $c->diskon;
@@ -299,11 +299,11 @@ class SellController extends Controller
 
         if ($userRoles[0] == 'superadmin') {
             $sell = Sell::with('warehouse', 'customer')
-                ->where('status', 'hutang')
+                ->where('status', 'piutang')
                 ->get();
         } else {
             $sell = Sell::with('warehouse', 'customer')
-                ->where('status', 'hutang')
+                ->where('status', 'piutang')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->get();
         }
