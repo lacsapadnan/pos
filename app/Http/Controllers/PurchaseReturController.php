@@ -68,10 +68,18 @@ class PurchaseReturController extends Controller
                 'qty' => $rc->quantity,
             ]);
 
+            $purchase = Purchase::where('id', $request->purchase_id)->first();
+            $purchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
+
+            // update the purchase grand total
+            $purchase->subtotal -= $rc->quantity * $purchaseDetail->price_unit;
+            $purchase->grand_total -= $rc->quantity * $purchaseDetail->price_unit;
+            $purchase->update();
+
             // update the purchase
-            $pruchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
-            $pruchaseDetail->quantity -= $rc->quantity;
-            $pruchaseDetail->update();
+            $purchaseDetail->quantity -= $rc->quantity;
+            $purchaseDetail->total_price -= $rc->quantity * $purchaseDetail->price_unit;
+            $purchaseDetail->update();
         }
 
         // bring back the stock

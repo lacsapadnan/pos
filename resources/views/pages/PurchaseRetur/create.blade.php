@@ -191,7 +191,7 @@
                                 return `
                                 <input type="number" name="quantity_retur" class="form-control">
                                 <input type="hidden" name="unit_retur" value="${row.unit.id}">
-                                <input type="hidden" name="price_retur" value="${row.total_price}">
+                                <input type="hidden" name="price_retur" value="${row.price_unit}">
                                 <input type="hidden" name="purchase_id" value="${id}">
                                 `;
                             }
