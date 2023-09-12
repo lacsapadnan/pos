@@ -68,10 +68,18 @@ class SellReturController extends Controller
                 'qty' => $rc->quantity,
             ]);
 
-            // update the sell
-            $sell = SellDetail::where('sell_id', $request->sell_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
-            $sell->quantity -= $rc->quantity;
+            $sell = Sell::where('id', $request->sell_id)->first();
+            $sellDetail = SellDetail::where('sell_id', $request->sell_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
+            $priceUnit = $sellDetail->price / $sellDetail->quantity;
+
+            // update grand total
+            $sell->grand_total = $sell->grand_total - ($rc->quantity * $sellDetail->price);
             $sell->update();
+
+            // update the sell detail
+            $sellDetail->quantity -= $rc->quantity;
+            $sellDetail->price = $rc->quantity * $priceUnit;
+            $sellDetail->update();
         }
 
         // bring back the stock
