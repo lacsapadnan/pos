@@ -40,9 +40,10 @@
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No</th>
-                                <th>Tanggal</th>
+                                <th class="w-150px">Tanggal</th>
                                 <th>Untuk</th>
-                                <th>Keterangan</th>
+                                <th class="w-350px">Keterangan</th>
+                                <th>Metode Bayar</th>
                                 <th>Masuk</th>
                                 <th>Keluar</th>
                             </tr>
@@ -90,16 +91,23 @@
                             }
                         },
                         {
-                            data: "tanggal"
+                            data: "created_at",
+                            render: function(data, type, row) {
+                                return moment(data).format('DD MMMM YYYY');
+                            }
                         },
                         {
-                            data: "untuk"
+                            data: "for"
                         },
                         {
-                            data: "keterangan"
+                            data: "description"
                         },
                         {
-                            data: "masuk",
+                            data: "payment_method",
+                            defaultContent: '-'
+                        },
+                        {
+                            data: "in",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -110,7 +118,7 @@
                             }
                         },
                         {
-                            data: "keluar",
+                            data: "out",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',

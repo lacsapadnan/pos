@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Sell;
@@ -53,7 +54,10 @@ class SellReturController extends Controller
      */
     public function store(Request $request)
     {
-        $returCart = SellReturCart::where('user_id', auth()->id())->get();
+        $returCart = SellReturCart::where('user_id', auth()->id())
+            ->where('sell_id', $request->sell_id)
+            ->get();
+        $totalPrice = 0;
         foreach ($returCart as $rc) {
             $sellRetur = SellRetur::create([
                 'sell_id' => $request->sell_id,
@@ -70,7 +74,7 @@ class SellReturController extends Controller
 
             $sell = Sell::where('id', $request->sell_id)->first();
             $sellDetail = SellDetail::where('sell_id', $request->sell_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
-            $priceUnit = $sellDetail->price / $sellDetail->quantity;
+
 
             // update grand total
             $sell->grand_total = $sell->grand_total - ($rc->quantity * $sellDetail->price);
@@ -78,8 +82,10 @@ class SellReturController extends Controller
 
             // update the sell detail
             $sellDetail->quantity -= $rc->quantity;
-            $sellDetail->price = $rc->quantity * $priceUnit;
             $sellDetail->update();
+
+            // total price
+            $totalPrice += $rc->quantity * $sellDetail->price;
         }
 
         // bring back the stock
@@ -101,6 +107,15 @@ class SellReturController extends Controller
 
         // delete the cart
         SellReturCart::where('user_id', auth()->id())->delete();
+
+        Cashflow::create([
+            'warehouse_id' => $sell->warehouse_id,
+            'for' => 'Retur penjualan',
+            'description' => 'Return penjualan ' . $sell->order_number,
+            'in' => 0,
+            'out' => $totalPrice,
+            'payment_method' => null,
+        ]);
 
         return redirect()->route('penjualan-retur.index')->with('success', 'Retur berhasil disimpan');
     }

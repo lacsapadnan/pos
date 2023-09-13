@@ -145,10 +145,10 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<select class="form-select form-select-solid" aria-label="Default select example">
-                                            <option value="1">Transfer</option>
-                                            <option value="2">Cash</option>
-                                        </select>`;
+                                return `<select name="payment" class="form-select form-select-solid" aria-label="Default select example">
+                                <option value="transfer">Transfer</option>
+                                    <option value="cash">Cash</option>
+                                </select>`;
                             }
                         },
                         {
@@ -187,13 +187,13 @@
                     var rowData = datatable.row($(this).closest('tr')).data();
                     var sellId = rowData.id;
                     var payCredit = $(this).closest('tr').find('input[name="pay_credit"]').val();
+                    var selectedPayment = $(this).closest('tr').find('select[name="payment"]').val();
 
                     var inputRequest = {
                         sell_id: sellId,
-                        pay: payCredit
+                        pay: payCredit,
+                        payment: selectedPayment,
                     };
-
-                    console.log(inputRequest);
 
                     // Send AJAX request with the POST method
                     $.ajax({

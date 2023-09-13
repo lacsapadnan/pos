@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cashflow;
 use App\Models\Customer;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -108,6 +109,50 @@ class SellController extends Controller
 
         // delete all purchase cart
         SellCart::where('cashier_id', auth()->id())->delete();
+
+        if ($request->payment_method == 'transfer') {
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Penjualan',
+                'description' => 'Penjualan ' . $request->order_number,
+                'in' => $transfer,
+                'out' => 0,
+                'payment_method' => 'transfer',
+            ]);
+            // save to cashflow
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Penjualan',
+                'description' => 'Penjualan ' . $request->order_number,
+                'in' => 0,
+                'out' => $transfer,
+                'payment_method' => 'transfer',
+            ]);
+        } elseif ($request->payment_method == 'cash') {
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Penjualan',
+                'description' => 'Penjualan ' . $request->order_number,
+                'in' => $cash - $sell->change,
+                'out' => 0,
+                'payment_method' => 'cash',
+            ]);
+        } else {
+            // format transfer and cash to currency
+            $cashFinal = $cash - $sell->change;
+            $transferFormat = number_format($transfer, 0, ',', '.');
+            $cashFormat = number_format($cashFinal, 0, ',', '.');
+
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Penjualan',
+                'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
+                'in' => $cashFinal + $transfer,
+                'out' => 0,
+                'payment_method' => 'split payment',
+            ]);
+        }
+
         return redirect()->route('penjualan.index')->with('success', 'penjualan berhasil ditambahkan');
     }
 
@@ -329,6 +374,35 @@ class SellController extends Controller
             }
 
             $sell->save();
+
+            if ($request->payment == 'transfer') {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'for' => 'Bayar piutang',
+                    'description' => 'Bayar piutang ' . $sell->order_number,
+                    'in' => $request->pay,
+                    'out' => 0,
+                    'payment_method' => 'transfer',
+                ]);
+                // save to cashflow
+                Cashflow::create([
+                    'warehouse_id' =>  $sell->warehouse_id,
+                    'for' => 'Bayar piutang',
+                    'description' => 'Bayar piutang ' . $sell->order_number,
+                    'in' => 0,
+                    'out' => $request->pay,
+                    'payment_method' => 'transfer',
+                ]);
+            } else {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'for' => 'Bayar piutang',
+                    'description' => 'Bayar piutang ' . $sell->order_number,
+                    'in' => $request->pay,
+                    'out' => 0,
+                    'payment_method' => 'cash',
+                ]);
+            }
 
             return redirect()->back()->with('success', 'Pembayaran piutang berhasil');
         }
