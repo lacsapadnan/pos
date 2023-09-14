@@ -51,6 +51,12 @@
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
                         class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori">
                 </div>
+                <select id="categoryFilter" class="form-select ms-3" aria-label="Category filter" data-control="select2">
+                    <option value="">All Kelompok</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->name }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
                 <!--end::Search-->
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -168,6 +174,11 @@
                             data: 'quantity'
                         },
                     ],
+                });
+
+                $('#categoryFilter').on('change', function() {
+                    var category = this.value;
+                    datatable.ajax.url('{{ route('api.inventori') }}?category=' + category).load();
                 });
             }
 

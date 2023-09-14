@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InventoryRequest;
+use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Warehouse;
@@ -17,19 +18,36 @@ class InventoryController extends Controller
     {
         $product = Product::orderBy('id', 'asc')->get();
         $warehouse = Warehouse::orderBy('id', 'asc')->get();
-        return view('pages.inventory.index', compact('product', 'warehouse'));
+        $categories = Category::all();
+        return view('pages.inventory.index', compact('product', 'warehouse', 'categories'));
     }
 
-    public function data()
+    public function data(Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
+        $category = $request->input('category');
 
         if ($userRoles[0] == 'superadmin') {
-            $inventory = Inventory::with('product', 'warehouse')->get();
-            return response()->json($inventory);
+
+            if ($category) {
+                $inventory = Inventory::with('product', 'warehouse')->whereHas('product', function ($query) use ($category) {
+                    $query->where('group', 'LIKE', '%' . $category . '%');
+                })->get();
+                return response()->json($inventory);
+            } else {
+                $inventory = Inventory::with('product', 'warehouse')->get();
+                return response()->json($inventory);
+            }
         } else {
-            $inventory = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id)->get();
-            return response()->json($inventory);
+            if ($category) {
+                $inventory = Inventory::with('product', 'warehouse')->whereHas('product', function ($query) use ($category) {
+                    $query->where('group', 'LIKE', '%' . $category . '%');
+                })->where('warehouse_id', auth()->user()->warehouse_id)->get();
+                return response()->json($inventory);
+            } else {
+                $inventory = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id)->get();
+                return response()->json($inventory);
+            }
         }
     }
 
