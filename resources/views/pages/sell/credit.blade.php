@@ -146,7 +146,8 @@
                             data: null,
                             render: function(data, type, row) {
                                 return `<select name="payment" class="form-select form-select-solid" aria-label="Default select example">
-                                <option value="transfer">Transfer</option>
+                                    <option value="">Pilih Pembayaran</option>
+                                    <option value="transfer">Transfer</option>
                                     <option value="cash">Cash</option>
                                 </select>`;
                             }
