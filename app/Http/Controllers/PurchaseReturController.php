@@ -110,6 +110,7 @@ class PurchaseReturController extends Controller
 
         Cashflow::create([
             'warehouse_id' => $purchase->warehouse_id,
+            'user_id' => auth()->id(),
             'for' => 'Retur pembelian',
             'description' => 'Return pembelian ' . $purchase->order_number,
             'in' => $totalPrice,

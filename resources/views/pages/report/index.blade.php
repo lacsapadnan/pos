@@ -42,6 +42,7 @@
                                 <th>No</th>
                                 <th class="w-150px">Tanggal</th>
                                 <th>Untuk</th>
+                                <th>Kasir</th>
                                 <th class="w-350px">Keterangan</th>
                                 <th>Metode Bayar</th>
                                 <th>Masuk</th>
@@ -98,6 +99,10 @@
                         },
                         {
                             data: "for"
+                        },
+                        {
+                            data: "user.name",
+                            defaultContent: '-'
                         },
                         {
                             data: "description"

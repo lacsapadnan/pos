@@ -19,9 +19,9 @@ class ReportController extends Controller
         $warehouse = $request->input('warehouse');
 
         if ($warehouse) {
-            $cashflow = Cashflow::orderBy('created_at', 'desc')->where('warehouse_id', $warehouse)->get();
+            $cashflow = Cashflow::orderBy('created_at', 'desc')->with('user')->where('warehouse_id', $warehouse)->get();
         } else {
-            $cashflow = Cashflow::orderBy('created_at', 'desc')->get();
+            $cashflow = Cashflow::orderBy('created_at', 'desc')->with('user')->get();
         }
 
         return response()->json($cashflow);

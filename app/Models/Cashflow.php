@@ -10,6 +10,7 @@ class Cashflow extends Model
     use HasFactory;
     protected $fillable = [
         'warehouse_id',
+        'user_id',
         'for',
         'description',
         'in',
@@ -20,5 +21,10 @@ class Cashflow extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

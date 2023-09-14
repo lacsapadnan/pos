@@ -110,6 +110,7 @@ class SellReturController extends Controller
 
         Cashflow::create([
             'warehouse_id' => $sell->warehouse_id,
+            'user_id' => auth()->id(),
             'for' => 'Retur penjualan',
             'description' => 'Return penjualan ' . $sell->order_number,
             'in' => 0,

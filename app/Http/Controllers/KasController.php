@@ -107,6 +107,7 @@ class KasController extends Controller
         if ($type === 'Kas Masuk') {
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Kas Masuk',
                 'description' => $request->description,
                 'in' => $request->amount,
@@ -116,6 +117,7 @@ class KasController extends Controller
         } else {
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Kas Keluar',
                 'description' => $request->description,
                 'in' => 0,

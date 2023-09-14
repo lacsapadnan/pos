@@ -151,6 +151,7 @@ class PurchaseController extends Controller
             if ($request->payment_method == 2) {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Pembelian',
                     'description' => 'Pembelian ' . $request->order_number,
                     'in' => 0,
@@ -160,6 +161,7 @@ class PurchaseController extends Controller
             } else {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Penjualan',
                     'description' => 'Pembelian ' . $request->order_number,
                     'in' => 0,
@@ -394,6 +396,7 @@ class PurchaseController extends Controller
             if ($request->payment == 'transfer') {
                 Cashflow::create([
                     'warehouse_id' => $purchase->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
                     'description' => 'Bayar hutang ' . $purchase->order_number,
                     'in' => $request->pay,
@@ -403,6 +406,7 @@ class PurchaseController extends Controller
                 // save to cashflow
                 Cashflow::create([
                     'warehouse_id' =>  $purchase->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
                     'description' => 'Bayar hutang ' . $purchase->order_number,
                     'in' => 0,
@@ -412,6 +416,7 @@ class PurchaseController extends Controller
             } else {
                 Cashflow::create([
                     'warehouse_id' => $purchase->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
                     'description' => 'Bayar hutang ' . $purchase->order_number,
                     'in' => $request->pay,

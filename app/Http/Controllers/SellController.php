@@ -113,6 +113,7 @@ class SellController extends Controller
         if ($request->payment_method == 'transfer') {
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Penjualan',
                 'description' => 'Penjualan ' . $request->order_number,
                 'in' => $transfer,
@@ -122,6 +123,7 @@ class SellController extends Controller
             // save to cashflow
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Penjualan',
                 'description' => 'Penjualan ' . $request->order_number,
                 'in' => 0,
@@ -131,6 +133,7 @@ class SellController extends Controller
         } elseif ($request->payment_method == 'cash') {
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Penjualan',
                 'description' => 'Penjualan ' . $request->order_number,
                 'in' => $cash - $sell->change,
@@ -145,6 +148,7 @@ class SellController extends Controller
 
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Penjualan',
                 'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
                 'in' => $cashFinal + $transfer,
@@ -154,6 +158,7 @@ class SellController extends Controller
 
             Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
                 'for' => 'Penjualan',
                 'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
                 'in' => 0,
@@ -387,6 +392,7 @@ class SellController extends Controller
             if ($request->payment == 'transfer') {
                 Cashflow::create([
                     'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar piutang',
                     'description' => 'Bayar piutang ' . $sell->order_number,
                     'in' => $request->pay,
@@ -396,6 +402,7 @@ class SellController extends Controller
                 // save to cashflow
                 Cashflow::create([
                     'warehouse_id' =>  $sell->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar piutang',
                     'description' => 'Bayar piutang ' . $sell->order_number,
                     'in' => 0,
@@ -405,6 +412,7 @@ class SellController extends Controller
             } else {
                 Cashflow::create([
                     'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
                     'for' => 'Bayar piutang',
                     'description' => 'Bayar piutang ' . $sell->order_number,
                     'in' => $request->pay,
