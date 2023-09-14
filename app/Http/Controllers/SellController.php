@@ -151,6 +151,15 @@ class SellController extends Controller
                 'out' => 0,
                 'payment_method' => 'split payment',
             ]);
+
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Penjualan',
+                'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
+                'in' => 0,
+                'out' => $transfer,
+                'payment_method' => 'split payment',
+            ]);
         }
 
         return redirect()->route('penjualan.index')->with('success', 'penjualan berhasil ditambahkan');
