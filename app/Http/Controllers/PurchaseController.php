@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -147,10 +148,30 @@ class PurchaseController extends Controller
             // clear the cart
             PurchaseCart::where('user_id', auth()->id())->delete();
 
+            if ($request->payment_method == 2) {
+                Cashflow::create([
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                    'for' => 'Pembelian',
+                    'description' => 'Pembelian ' . $request->order_number,
+                    'in' => 0,
+                    'out' => $request->pay - $request->remaint,
+                    'payment_method' => 'kas besar',
+                ]);
+            } else {
+                Cashflow::create([
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                    'for' => 'Penjualan',
+                    'description' => 'Pembelian ' . $request->order_number,
+                    'in' => 0,
+                    'out' => $request->pay - $request->remaint,
+                    'payment_method' => 'kas kecil',
+                ]);
+            }
+
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil ditambahkan');
         } catch (\Exception $e) {
-            $errorMessage = $e->getMessage();
-            return redirect()->back()->withErrors(['error' => "Gagal menambahkan pembelian, silahkan cek ulang"]);
+            // show the error message
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -369,6 +390,35 @@ class PurchaseController extends Controller
             }
 
             $purchase->save();
+
+            if ($request->payment == 'transfer') {
+                Cashflow::create([
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $purchase->order_number,
+                    'in' => $request->pay,
+                    'out' => 0,
+                    'payment_method' => 'transfer',
+                ]);
+                // save to cashflow
+                Cashflow::create([
+                    'warehouse_id' =>  $purchase->warehouse_id,
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $purchase->order_number,
+                    'in' => 0,
+                    'out' => $request->pay,
+                    'payment_method' => 'transfer',
+                ]);
+            } else {
+                Cashflow::create([
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $purchase->order_number,
+                    'in' => $request->pay,
+                    'out' => 0,
+                    'payment_method' => 'cash',
+                ]);
+            }
 
             return redirect()->back()->with('success', 'Pembayaran hutang berhasil');
         }

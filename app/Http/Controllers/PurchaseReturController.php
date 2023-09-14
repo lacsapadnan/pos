@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -53,7 +54,10 @@ class PurchaseReturController extends Controller
      */
     public function store(Request $request)
     {
-        $returCart = PurchaseReturCart::where('user_id', auth()->id())->get();
+        $returCart = PurchaseReturCart::where('user_id', auth()->id())
+            ->where('purchase_id', $request->purchase_id)
+            ->get();
+        $totalPrice = 0;
         foreach ($returCart as $rc) {
             $purchaseRetur = PurchaseRetur::create([
                 'purchase_id' => $request->purchase_id,
@@ -80,6 +84,8 @@ class PurchaseReturController extends Controller
             $purchaseDetail->quantity -= $rc->quantity;
             $purchaseDetail->total_price -= $rc->quantity * $purchaseDetail->price_unit;
             $purchaseDetail->update();
+
+            $totalPrice += $rc->quantity * $purchaseDetail->price_unit;
         }
 
         // bring back the stock
@@ -101,6 +107,15 @@ class PurchaseReturController extends Controller
 
         // delete the cart
         PurchaseReturCart::where('user_id', auth()->id())->delete();
+
+        Cashflow::create([
+            'warehouse_id' => $purchase->warehouse_id,
+            'for' => 'Retur pembelian',
+            'description' => 'Return pembelian ' . $purchase->order_number,
+            'in' => $totalPrice,
+            'out' => 0,
+            'payment_method' => null,
+        ]);
 
         return redirect()->route('pembelian-retur.index')->with('success', 'Retur berhasil disimpan');
     }
