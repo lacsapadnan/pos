@@ -14,6 +14,7 @@
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
                 <!--begin::Search-->
+                <!-- Add user_id filter select -->
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
@@ -25,6 +26,13 @@
                     <option value="">All Cabang</option>
                     @foreach ($warehouses as $warehouse)
                         <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
+                <!-- Add user_id filter select -->
+                <select id="userFilter" class="form-select ms-3" aria-label="User filter" data-control="select2">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                        <option value="{{ $user->id }}">{{ $user->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -137,8 +145,45 @@
                 });
 
                 // change url if warehouse filter is changed
+                $('#userFilter').on('change', function() {
+                    var user_id = this.value;
+                    var warehouse_id = $('#warehouseFilter').val();
+
+                    if (user_id && warehouse_id) {
+                        // Both filters have values, so use both filters
+                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id + '&warehouse=' +
+                            warehouse_id).load();
+                    } else if (user_id) {
+                        // Only user filter has value, use user filter only
+                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id).load();
+                    } else if (warehouse_id) {
+                        // Only warehouse filter has value, use warehouse filter only
+                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id).load();
+                    } else {
+                        // Both filters are empty, load all data
+                        datatable.ajax.url('{{ route('api.report') }}').load();
+                    }
+                });
+
+                // Add event listener for warehouse filter
                 $('#warehouseFilter').on('change', function() {
-                    datatable.ajax.url('{{ route('api.report') }}?warehouse=' + this.value).load();
+                    var warehouse_id = this.value;
+                    var user_id = $('#userFilter').val();
+
+                    if (warehouse_id && user_id) {
+                        // Both filters have values, so use both filters
+                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id +
+                            '&user_id=' + user_id).load();
+                    } else if (warehouse_id) {
+                        // Only warehouse filter has value, use warehouse filter only
+                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id).load();
+                    } else if (user_id) {
+                        // Only user filter has value, use user filter only
+                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id).load();
+                    } else {
+                        // Both filters are empty, load all data
+                        datatable.ajax.url('{{ route('api.report') }}').load();
+                    }
                 });
             }
 
