@@ -217,6 +217,7 @@
                                 <label for="grandTotal" class="col-form-label">Metode Bayar</label>
                                 <select name="payment_method" class="form-select" aria-label="Select example"
                                     onchange="togglePaymentFields()">
+                                    <option value="">Pilih Pembayaran</option>
                                     <option value="transfer">Transfer</option>
                                     <option value="cash">Cash</option>
                                     <option value="split">Split Payment</option>
