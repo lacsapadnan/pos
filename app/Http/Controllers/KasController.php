@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\KasRequest;
+use App\Models\Cashflow;
 use App\Models\Kas;
 use App\Models\KasExpenseItem;
 use App\Models\KasIncomeItem;
@@ -102,6 +103,26 @@ class KasController extends Controller
             'amount' => $request->amount,
             'description' => $request->description,
         ]);
+
+        if ($type === 'Kas Masuk') {
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Kas Masuk',
+                'description' => $request->description,
+                'in' => $request->amount,
+                'out' => 0,
+                'payment_method' => null,
+            ]);
+        } else {
+            Cashflow::create([
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Kas Keluar',
+                'description' => $request->description,
+                'in' => 0,
+                'out' => $request->amount,
+                'payment_method' => null,
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Kas ' . $kas->invoice . ' berhasil ditambahkan.');
     }

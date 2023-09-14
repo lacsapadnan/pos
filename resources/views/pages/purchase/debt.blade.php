@@ -162,10 +162,10 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<select class="form-select form-select-solid" aria-label="Default select example">
-                                            <option value="1">Transfer</option>
-                                            <option value="2">Cash</option>
-                                        </select>`;
+                                return `<select name="payment" class="form-select form-select-solid" aria-label="Default select example">
+                                <option value="transfer">Transfer</option>
+                                    <option value="cash">Cash</option>
+                                </select>`;
                             }
                         },
                         {
@@ -204,10 +204,13 @@
                     var rowData = datatable.row($(this).closest('tr')).data();
                     var purchaseId = rowData.id;
                     var payDebt = $(this).closest('tr').find('input[name="pay_debt"]').val();
+                    var selectedPayment = $(this).closest('tr').find('select[name="payment"]').val();
 
                     var inputRequest = {
                         purchase_id: purchaseId,
-                        pay: payDebt
+                        pay: payDebt,
+                        payment: selectedPayment,
+
                     };
 
                     console.log(inputRequest);
