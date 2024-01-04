@@ -6,6 +6,27 @@
 @push('addon-style')
     <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <style>
+        ::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgba(192, 192, 192, 0.3);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            background-color: #818B99;
+        }
+
+        .dataTables_scrollBody {
+            transform: rotateX(180deg);
+        }
+
+        .dataTables_scrollBody::-webkit-scrollbar {
+            height: 16px;
+        }
+
+        .dataTables_scrollBody table {
+            transform: rotateX(180deg);
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -35,13 +56,17 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
-                    <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Import Data Data
-                </button>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
-                    Tambah Data
-                </button>
+                @can('import produk')
+                    <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
+                        <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
+                        Import Data Data
+                    </button>
+                @endcan
+                @can('simpan produk')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
+                        Tambah Data
+                    </button>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -133,15 +158,15 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    order: [],
-                    pageLength: 10,
-                    scrollX: true,
-                    fixedColumns: {
-                        left: 2
-                    },
+                    "order": [],
+                    "pageLength": 10,
+                    "scrollX": true,
                     deferRender: true,
                     processing: true,
                     serverSide: true,
+                    fixedColumns: {
+                        left: 2
+                    },
                     "ajax": {
                         url: '{{ route('api.produk-search') }}',
                         type: 'GET',
@@ -257,14 +282,18 @@
                                 var editUrl = "/produk/" + row.id + "/edit";
                                 var deleteUrl = "/produk/" + row.id;
 
-                                return '<a href="' + editUrl +
-                                    '" type="button" class="btn btn-sm btn-warning me-2">Edit</a>' +
-                                    '<form action="' + deleteUrl +
-                                    '" method="POST" class="d-inline">' +
-                                    '@csrf' +
-                                    '@method('delete')' +
-                                    '<button class="btn btn-sm btn-danger">Hapus</button>' +
-                                    '</form>';
+                                return `
+                                    @can('update produk')
+                                        <a href="${editUrl}" type="button" class="btn btn-sm btn-warning me-2">Edit</a>
+                                    @endcan
+                                    @can('hapus produk')
+                                        <form action="${deleteUrl}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('delete')
+                                            <button class="btn btn-sm btn-danger">Hapus</button>
+                                        </form>
+                                    @endcan
+                                `;
                             },
 
 

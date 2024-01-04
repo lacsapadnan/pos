@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdatePasswordRequest;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -23,7 +25,7 @@ class UserController extends Controller
 
     public function data()
     {
-        $users = User::with('roles', 'warehouse')->orderBy('id', 'asc')->get();
+        $users = User::with('roles', 'warehouse', 'permissions')->orderBy('id', 'asc')->get();
         return response()->json($users);
     }
 
@@ -94,9 +96,12 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        $user = User::with('roles')->where('id', $id)->first();
+        $user = User::with('roles', 'permissions')->where('id', $id)->first();
         $roles = Role::orderBy('id', 'asc')->get();
-        return view('pages.user.edit', compact('user', 'roles'));
+        $permissions = Permission::all();
+        $userPermissions = $user->permissions->pluck('id')->toArray();
+        $warehouses = Warehouse::orderBy('id', 'asc')->get();
+        return view('pages.user.edit', compact('user', 'roles', 'permissions', 'userPermissions', 'warehouses'));
     }
 
     /**
@@ -104,11 +109,11 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        // dd($request->all());
         $validasi = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'role' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:8',
             'warehouse_id' => 'nullable|exists:warehouses,id'
         ], [
             'name.required' => 'Nama harus diisi!',
@@ -122,8 +127,6 @@ class UserController extends Controller
             'email.email' => 'Email harus berupa email!',
             'email.max' => 'Email maksimal 255 karakter!',
             'email.unique' => 'Email sudah terdaftar!',
-            'password.string' => 'Password harus berupa string!',
-            'password.min' => 'Password minimal 8 karakter!',
             'warehouse_id.exists' => 'Cabang tidak ditemukan!',
         ]);
 
@@ -131,7 +134,7 @@ class UserController extends Controller
             return redirect()->back()->withErrors($validasi)->withInput();
         }
 
-        $role = Role::where('id', $request->role_id)->first();
+        $role = Role::where('id', $request->role)->first();
         $user = User::where('id', $id)->first();
         $user->update([
             'name' => $request->name ?? $user->name,
@@ -140,7 +143,12 @@ class UserController extends Controller
             'warehouse_id' => $request->warehouse_id ?? $user->warehouse_id,
         ]);
 
+        // Update the user roles or used current roles
         $user->roles()->sync($role);
+
+
+        $permissions = $request->input('permissions', []);
+        $user->syncPermissions($permissions);
         return redirect()->route('user.index')->with('success', 'User berhasil diubah!');
     }
 
@@ -148,9 +156,44 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        $user = User::where('id', $id)->first();
-        $user->delete();
+{
+    $user = User::where('id', $id)->first();
+
+    if ($user) {
+        // Delete related cashflows
+        $user->cashflows()->delete();
+        $user->sellReturs()->delete();
+
+        // Detach roles and permissions
+        $user->roles()->detach();
+        $user->permissions()->detach();
+        
+        // Force delete the user (ignoring foreign key constraints)
+        $user->forceDelete();
+
         return redirect()->back()->with('success', 'User berhasil dihapus!');
+    }
+
+    return redirect()->back()->with('error', 'User tidak ditemukan.');
+}
+
+
+
+    public function password()
+    {
+        return view('pages.user.password');
+    }
+
+    public function passwordUpdate(UpdatePasswordRequest $request, string $id)
+    {
+        $data = $request->validated();
+        $id = auth()->user()->id;
+
+        $user = User::where('id', $id)->first();
+        $user->update([
+            'password' => Hash::make($data['password']),
+        ]);
+
+        return redirect()->route('dashboard')->with('success', 'Password berhasil diubah!');
     }
 }

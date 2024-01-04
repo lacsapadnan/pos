@@ -251,7 +251,9 @@
                     $.ajax({
                         url: '{{ route('pembelian-retur.addCart') }}',
                         type: 'POST',
-                        data: { input_requests: inputRequests },
+                        data: {
+                            input_requests: inputRequests
+                        },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
@@ -260,8 +262,19 @@
                             location.reload();
                         },
                         error: function(xhr, status, error) {
-                            var err = eval("(" + xhr.responseText + ")");
-                            console.log(err);
+                            var response = xhr.responseJSON;
+                            if (response && response.errors) {
+                                // Handle validation errors and display alerts
+                                var errorMessage = '';
+                                for (var key in response.errors) {
+                                    errorMessage += response.errors[key];
+                                }
+                                alert(errorMessage); // Show validation error alert
+                            } else {
+                                alert(
+                                    'An error occurred while processing your request.'
+                                    ); // Show generic error alert
+                            }
                         }
                     });
                 });

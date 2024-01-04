@@ -8,38 +8,7 @@
 @endpush
 
 @section('content')
-    {{-- session success --}}
-    @if (session()->has('success'))
-        <!--begin::Alert-->
-        <div class="p-5 mb-10 alert alert-dismissible bg-primary d-flex flex-column flex-sm-row">
-            <div class="d-flex flex-column text-light pe-0 pe-sm-10">
-                <h4 class="mb-2 text-light">Sukses</h4>
-                <span>{{ session()->get('success') }}</span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-1 text-light"><span class="path1"></span><span class="path2"></span></i>
-            </button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="p-5 mb-10 alert alert-dismissible bg-danger d-flex flex-column flex-sm-row">
-            <div class="d-flex flex-column text-light pe-0 pe-sm-10">
-                <h4 class="mb-2 text-light">Gagal Menyimpan data</h4>
-                <span>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-1 text-light"><span class="path1"></span><span class="path2"></span></i>
-            </button>
-        </div>
-    @endif
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -109,6 +78,7 @@
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Cabang</th>
+                                <th>Hak Akses</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -160,14 +130,29 @@
                             data: 'email'
                         },
                         {
-                            data: 'roles.0.name'
+                            data: 'roles.0.name',
+                            defaultContent: '-'
                         },
                         {
                             data: 'warehouse.name',
                             defaultContent: '-'
                         },
                         {
+                            data: 'permissions',
+                            render: function(data, type, row, meta) {
+                                if (data.length === 0) {
+                                    return `<span class="badge badge-light-danger">Tidak ada akses</span>`;
+                                } else {
+                                    var badges = data.map(permission =>
+                                        `<span class="badge badge-primary">${permission.name}</span>`
+                                        );
+                                    return badges.join(' ');
+                                }
+                            }
+                        },
+                        {
                             data: "id",
+                            className: 'min-w-150px',
                             render: function(data, type, row) {
                                 var routeUrl = "{{ route('user.destroy', ':id') }}";
                                 routeUrl = routeUrl.replace(':id', data);
@@ -180,6 +165,10 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    <a href="{{ route('user.index') }}/${data}/edit" class="btn btn-warning btn-sm mt-2">
+                                        <i class="ki-solid ki-pencil"></i>
+                                        Edit
+                                    </a>
                                 `;
                             }
                         }

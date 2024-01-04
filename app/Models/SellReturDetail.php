@@ -13,11 +13,12 @@ class SellReturDetail extends Model
         'product_id',
         'unit_id',
         'qty',
+        'price',
     ];
 
     public function sellRetur()
     {
-        return $this->belongsTo(SellRetur::class);
+        return $this->belongsTo(SellRetur::class, 'sell_retur_id');
     }
 
     public function product()

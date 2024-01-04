@@ -71,6 +71,7 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>No. Order</th>
                                 <th>Customer</th>
+                                <th>Kasir</th>
                                 <th>Cabang</th>
                                 <th>Total Pembelian</th>
                                 <th>Terima Piutang</th>
@@ -121,6 +122,9 @@
                         },
                         {
                             "data": "customer.name"
+                        },
+                        {
+                            "data": "cashier.name"
                         },
                         {
                             "data": "warehouse.name"

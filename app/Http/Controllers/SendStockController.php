@@ -9,6 +9,7 @@ use App\Models\SendStockCart;
 use App\Models\SendStockDetail;
 use App\Models\Unit;
 use App\Models\Warehouse;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class SendStockController extends Controller
@@ -23,7 +24,7 @@ class SendStockController extends Controller
 
     public function data()
     {
-        $sendStok = SendStock::with('fromWarehouse', 'toWarehouse')->get();
+        $sendStok = SendStock::with('fromWarehouse', 'toWarehouse', 'user')->get();
         return response()->json($sendStok);
     }
 
@@ -44,16 +45,18 @@ class SendStockController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $fromWarehouse = auth()->user()->warehouse_id;
         $toWarehouse = $request->input('to_warehouse');
 
         $sendStock = SendStock::create([
+            'user_id' => auth()->id(),
             'from_warehouse' => $fromWarehouse,
             'to_warehouse' => $toWarehouse,
         ]);
 
-        $carts = SendStockCart::with('product', 'unit')->where('user_id', auth()->id())->get();
+        $carts = SendStockCart::with('product', 'unit')
+            ->where('user_id', auth()->id())
+            ->get();
         $productList = [];
         foreach ($carts as $cart) {
             $productId = $cart->product_id;
@@ -78,11 +81,40 @@ class SendStockController extends Controller
             $sendStockDetail->unit_id = $unit;
             $sendStockDetail->quantity = $quantity;
             $sendStockDetail->save();
+
+            $inventory = Inventory::where('product_id', $productId)
+                ->where('warehouse_id', $toWarehouse)
+                ->first();
+            $product = Product::find($productId);
+
+            if ($inventory) {
+                $quantityNew = 0; // Reset quantityNew
+                if ($unit == $product->unit_dus) {
+                    $quantityNew = $quantity * $product->dus_to_eceran;
+                } elseif ($unit == $product->unit_pak) {
+                    $quantityNew = $quantity * $product->pak_to_eceran;
+                } elseif ($unit == $product->unit_eceran) {
+                    $quantityNew = $quantity;
+                }
+
+                // Convert the incoming quantity to the unit of the product
+                if ($unit == $inventory->product->unit_dus) {
+                    $quantityNew = $quantityNew * $product->dus_to_eceran;
+                } elseif ($unit == $inventory->product->unit_pak) {
+                    $quantityNew = $quantityNew * $product->pak_to_eceran;
+                }
+
+                // Update the inventory quantity
+                $inventory->quantity += $quantityNew;
+                $inventory->save();
+            }
         }
 
         SendStockCart::where('user_id', auth()->id())->delete();
 
-        return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dikirim');
+        return redirect()
+            ->route('pindah-stok.index')
+            ->with('success', 'Stok berhasil dikirim');
     }
 
     /**
@@ -229,5 +261,23 @@ class SendStockController extends Controller
         $inventory->save();
 
         return redirect()->back();
+    }
+
+    public function print($id)
+    {
+        $sendStock = SendStock::with('fromWarehouse', 'toWarehouse')->where('id', $id)->first();
+        $sendStockDetail = SendStockDetail::with('product', 'unit')->where('send_stock_id', $id)->get();
+        $sendStockNumber = "PS-" . date('Ymd') . "-" . str_pad(SendStock::count() + 1, 4, '0', STR_PAD_LEFT);
+        $totalQuantity = 0;
+
+        $totalQuantity += $sendStockDetail->count();
+
+        $pdf = Pdf::loadView('pages.sendStok.print', compact('sendStock', 'sendStockDetail', 'totalQuantity', 'sendStockNumber'));
+        return response()->stream(function () use ($pdf) {
+            echo $pdf->output();
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Pindah-Stok-' . $sendStock->fromWarehouse->name . '-ke-' . $sendStock->toWarehouse->name . '.pdf"'
+        ]);
     }
 }

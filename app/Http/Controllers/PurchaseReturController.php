@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductReport;
 use App\Models\Purchase;
 use App\Models\PurchaseDetail;
 use App\Models\PurchaseRetur;
 use App\Models\PurchaseReturCart;
 use App\Models\PurchaseReturDetail;
+use App\Models\Unit;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PurchaseReturController extends Controller
 {
@@ -26,11 +30,11 @@ class PurchaseReturController extends Controller
     {
         $userRoles = auth()->user()->getRoleNames();
 
-        if ($userRoles[0] == 'superadmin') {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->orderBy('id', 'desc')->get();
+        if ($userRoles[0] == 'master') {
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')->orderBy('id', 'desc')->get();
             return response()->json($retur);
         } else {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details')->where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'desc')->get();
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')->where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'desc')->get();
             return response()->json($retur);
         }
     }
@@ -57,23 +61,31 @@ class PurchaseReturController extends Controller
         $returCart = PurchaseReturCart::where('user_id', auth()->id())
             ->where('purchase_id', $request->purchase_id)
             ->get();
-        $totalPrice = 0;
-        foreach ($returCart as $rc) {
-            $purchaseRetur = PurchaseRetur::create([
-                'purchase_id' => $request->purchase_id,
-                'warehouse_id' => auth()->user()->warehouse_id,
-                'retur_date' => date('Y-m-d'),
-            ]);
 
+        $totalPrice = 0;
+
+        $purchaseRetur = PurchaseRetur::create([
+            'purchase_id' => $request->purchase_id,
+            'warehouse_id' => auth()->user()->warehouse_id,
+            'user_id' => auth()->id(),
+            'retur_date' => date('Y-m-d'),
+        ]);
+
+        foreach ($returCart as $rc) {
             PurchaseReturDetail::create([
                 'purchase_retur_id' => $purchaseRetur->id,
                 'product_id' => $rc->product_id,
                 'unit_id' => $rc->unit_id,
+                'price' => $rc->price,
                 'qty' => $rc->quantity,
             ]);
 
             $purchase = Purchase::where('id', $request->purchase_id)->first();
-            $purchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)->where('product_id', $rc->product_id)->where('unit_id', $rc->unit_id)->first();
+            $purchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)
+                ->where('product_id', $rc->product_id)
+                ->where('unit_id', $rc->unit_id)
+                ->with('product')
+                ->first();
 
             // update the purchase grand total
             $purchase->subtotal -= $rc->quantity * $purchaseDetail->price_unit;
@@ -86,13 +98,38 @@ class PurchaseReturController extends Controller
             $purchaseDetail->update();
 
             $totalPrice += $rc->quantity * $purchaseDetail->price_unit;
+
+            $unit = Unit::find($rc->unit_id);
+
+            if ($rc->unit_id == $purchaseDetail->product->unit_dus) {
+                $unitType = 'DUS';
+            } elseif ($rc->unit_id == $purchaseDetail->product->unit_pak) {
+                $unitType = 'PAK';
+            } elseif ($rc->unit_id == $purchaseDetail->product->unit_eceran) {
+                $unitType = 'ECERAN';
+            }
+
+            ProductReport::create([
+                'product_id' => $rc->product_id,
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
+                'supplier_id' => $purchase->supplier_id,
+                'unit' => $unit->name,
+                'unit_type' => $unitType,
+                'qty' => $rc->quantity,
+                'price' => $purchaseDetail->price_unit,
+                'for' => 'KELUAR',
+                'type' => 'RETUR PEMBELIAN',
+                'description' => 'Retur Pembelian ' . $purchase->order_number,
+            ]);
         }
 
         // bring back the stock
         foreach ($returCart as $rc) {
-            // check the unit_id is unit_dus, unit_pak or unit_pcs in proudct
             $product = Product::where('id', $rc->product_id)->first();
-            $inventory = Inventory::where('product_id', $rc->product_id)->first();
+            $inventory = Inventory::where('product_id', $rc->product_id)
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->first();
 
             if ($product->unit_dus == $rc->unit_id) {
                 $inventory->quantity -= $rc->quantity * $product->dus_to_eceran;
@@ -109,10 +146,10 @@ class PurchaseReturController extends Controller
         PurchaseReturCart::where('user_id', auth()->id())->delete();
 
         Cashflow::create([
-            'warehouse_id' => $purchase->warehouse_id,
+            'warehouse_id' => auth()->user()->warehouse_id,
             'user_id' => auth()->id(),
             'for' => 'Retur pembelian',
-            'description' => 'Return pembelian ' . $purchase->order_number,
+            'description' => 'Retur Pembelian ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
             'in' => $totalPrice,
             'out' => 0,
             'payment_method' => null,
@@ -175,29 +212,54 @@ class PurchaseReturController extends Controller
             // Save quantity if it exists
             if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
                 $quantityRetur = $inputRequest['quantity'];
-                $existingCart = PurchaseReturCart::where('user_id', $userId)
-                    ->where('purchase_id', $purchaseId)
+
+                $purchaseDetail = PurchaseDetail::where('purchase_id', $purchaseId)
                     ->where('product_id', $productId)
                     ->where('unit_id', $unitId)
                     ->first();
 
-                if ($existingCart) {
-                    $existingCart->quantity += $quantityRetur;
-                    $existingCart->save();
+                if ($purchaseDetail) {
+                    $rules = [
+                        'quantity' => 'required|numeric|min:1|max:' . $purchaseDetail->quantity,
+                    ];
+
+                    $message = [
+                        'quantity.max' => 'Jumlah retur tidak boleh melebihi jumlah pembelian',
+                    ];
+
+                    $validator = Validator::make($inputRequest, $rules, $message);
+
+                    if ($validator->fails()) {
+                        return response()->json([
+                            'errors' => $validator->errors()->all(),
+                        ], 422);
+                    }
+
+                    $existingCart = PurchaseReturCart::where('user_id', $userId)
+                        ->where('purchase_id', $purchaseId)
+                        ->where('product_id', $productId)
+                        ->where('unit_id', $unitId)
+                        ->first();
+
+                    if ($existingCart) {
+                        $existingCart->quantity += $quantityRetur;
+                        $existingCart->save();
+                    } else {
+                        PurchaseReturCart::create([
+                            'purchase_id' => $purchaseId,
+                            'user_id' => $userId,
+                            'product_id' => $productId,
+                            'unit_id' => $unitId,
+                            'quantity' => $quantityRetur,
+                            'price' => $inputRequest['price'],
+                        ]);
+                    }
                 } else {
-                    PurchaseReturCart::create([
-                        'purchase_id' => $purchaseId,
-                        'user_id' => $userId,
-                        'product_id' => $productId,
-                        'unit_id' => $unitId,
-                        'quantity' => $quantityRetur,
-                        'price' => $inputRequest['price'],
-                    ]);
+                    return redirect()->back()->with('error', 'Sell detail not found for the specified product and unit');
                 }
             }
         }
-
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Berhasil menambahkan retur ke keranjang');
     }
 
     public function destroyCart($id)
@@ -206,5 +268,26 @@ class PurchaseReturController extends Controller
         $returCart->delete();
 
         return redirect()->back();
+    }
+
+    public function print($id)
+    {
+        $purchaseRetur = PurchaseRetur::with('purchase.supplier', 'purchase.details', 'warehouse', 'details', 'user')->findOrFail($id);
+        $purchaseReturDetail = PurchaseReturDetail::with('product', 'unit')->where('purchase_retur_id', $id)->get();
+        $returNumber = "PBR-" . date('Ymd') . "-" . str_pad(PurchaseRetur::count() + 1, 4, '0', STR_PAD_LEFT);
+        $totalQuantity = $purchaseReturDetail->count();
+        $totalPrice = 0;
+
+        foreach ($purchaseReturDetail as $prd) {
+            $totalPrice += $prd->price * $prd->qty;
+        }
+
+        $pdf = Pdf::loadView('pages.PurchaseRetur.print-retur', compact('purchaseRetur', 'purchaseReturDetail', 'totalQuantity', 'returNumber', 'totalPrice'));
+        return response()->stream(function () use ($pdf) {
+            echo $pdf->output();
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Retur-Pembelian-' . $purchaseRetur->purchase->order_number . '.pdf"'
+        ]);
     }
 }

@@ -22,25 +22,58 @@
                         id="searchInput">
                 </div>
                 <!--end::Search-->
-                <select id="warehouseFilter" class="form-select ms-3" aria-label="Warehouse filter" data-control="select2">
-                    <option value="">All Cabang</option>
-                    @foreach ($warehouses as $warehouse)
-                        <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                    @endforeach
-                </select>
-                <!-- Add user_id filter select -->
-                <select id="userFilter" class="form-select ms-3" aria-label="User filter" data-control="select2">
-                    <option value="">All Users</option>
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach
-                </select>
+                @role('master')
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div class="ms-2">
+                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
+                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+                    </div>
+                @endrole
+                @role('master')
+                    <div class="ms-3">
+                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                            <option value="">All Users</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div class="ms-3">
+                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
+                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+                    </div>
+                @endrole
+                <div class="my-1 d-flex align-items-center position-relative">
+                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Dari Tanggal">
+                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Ke Tanggal">
+                </div>
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
                 <div id="kt_datatable_example_buttons" class="d-none"></div>
             </div>
+
         </div>
         <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h2>Awal: <span id="awalValue">Calculating...</span></h2>
+                </div>
+                <div class="col-md-4">
+                    <h2>Akhir: <span id="akhirValue">Calculating...</span></h2>
+                </div>
+            </div>
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
                 <div class="table-responsive">
                     <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
@@ -55,6 +88,9 @@
                                 <th>Metode Bayar</th>
                                 <th>Masuk</th>
                                 <th>Keluar</th>
+                                @role('master')
+                                    <th>Aksi</th>
+                                @endrole
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
@@ -85,13 +121,28 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    info: false,
+                    info: true,
                     order: [],
                     pageLength: 10,
                     ajax: {
                         url: '{{ route('api.report') }}',
                         type: 'GET',
                         dataSrc: '',
+                        success: function(response) {
+                            const numberFormatter = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                            });
+
+                            // Update the elements with formatted values
+                            $('#awalValue').text(numberFormatter.format(response.awalValue));
+                            $('#akhirValue').text(numberFormatter.format(response.akhirValue));
+
+                            // Update your DataTable with cashflow data
+                            datatable.clear().rows.add(response.cashflow).draw();
+                        },
                     },
                     columns: [{
                             data: null,
@@ -141,49 +192,56 @@
                                 return formattedPrice;
                             }
                         },
+                        @role('master')
+                        {
+                            data: "id",
+                            render: function(data, type, row) {
+                                return `
+                                <form id="deleteForm_${data}" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="id" value="${data}">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
+                                        </form>
+                                `;
+                            }
+                        }
+                        @endrole
                     ],
                 });
 
-                // change url if warehouse filter is changed
-                $('#userFilter').on('change', function() {
-                    var user_id = this.value;
+                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
+                    var fromDate = $('#fromDateFilter').val();
+                    var toDate = $('#toDateFilter').val();
                     var warehouse_id = $('#warehouseFilter').val();
-
-                    if (user_id && warehouse_id) {
-                        // Both filters have values, so use both filters
-                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id + '&warehouse=' +
-                            warehouse_id).load();
-                    } else if (user_id) {
-                        // Only user filter has value, use user filter only
-                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id).load();
-                    } else if (warehouse_id) {
-                        // Only warehouse filter has value, use warehouse filter only
-                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id).load();
-                    } else {
-                        // Both filters are empty, load all data
-                        datatable.ajax.url('{{ route('api.report') }}').load();
-                    }
-                });
-
-                // Add event listener for warehouse filter
-                $('#warehouseFilter').on('change', function() {
-                    var warehouse_id = this.value;
                     var user_id = $('#userFilter').val();
 
-                    if (warehouse_id && user_id) {
-                        // Both filters have values, so use both filters
-                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id +
-                            '&user_id=' + user_id).load();
-                    } else if (warehouse_id) {
-                        // Only warehouse filter has value, use warehouse filter only
-                        datatable.ajax.url('{{ route('api.report') }}?warehouse=' + warehouse_id).load();
-                    } else if (user_id) {
-                        // Only user filter has value, use user filter only
-                        datatable.ajax.url('{{ route('api.report') }}?user_id=' + user_id).load();
-                    } else {
-                        // Both filters are empty, load all data
-                        datatable.ajax.url('{{ route('api.report') }}').load();
+                    // Update the URL based on selected filters
+                    var url = '{{ route('api.report') }}';
+                    var params = [];
+
+                    if (fromDate) {
+                        params.push('from_date=' + fromDate);
                     }
+
+                    if (toDate) {
+                        params.push('to_date=' + toDate);
+                    }
+
+                    if (warehouse_id) {
+                        params.push('warehouse=' + warehouse_id);
+                    }
+
+                    if (user_id) {
+                        params.push('user_id=' + user_id);
+                    }
+
+                    if (params.length > 0) {
+                        url += '?' + params.join('&');
+                    }
+
+                    // Load data with updated URL
+                    datatable.ajax.url(url).load();
                 });
             }
 
@@ -256,5 +314,50 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
+    </script>
+    <script>
+        function confirmDelete(id) {
+            Swal.fire({
+                title: 'Yakin menghapus data ini?',
+                text: 'Data yang terhapus tidak dapat dikembalikan',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus data!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteRecord(id);
+                    Swal.fire(
+                        'Terhapus!',
+                        'Data cashflow terhapus.',
+                        'success'
+                    ).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        }
+
+        function deleteRecord(id) {
+            // Use AJAX for asynchronous delete request
+            $.ajax({
+                url: "{{ url('laporan') }}/" + id,
+                type: 'DELETE',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id
+                },
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    // Handle error
+                    console.error(error);
+                }
+            });
+        }
     </script>
 @endpush

@@ -151,7 +151,7 @@ class ProductController extends Controller
         $product->price_eceran = $request->price_eceran ?? $product->price_eceran;
         $product->sales_price = $request->sales_price ?? $product->sales_price;
         $product->lastest_price_eceran = $request->lastest_price_eceran ?? $product->lastest_price_eceran;
-        $product->hadiah = $request->hadiah ?? $product->hadiah;
+        $product->hadiah = $request->hadiah ?? $product->hadiah ?? null;
         $product->price_sell_dus = $request->price_sell_dus ?? $product->price_sell_dus;
         $product->price_sell_pak = $request->price_sell_pak ?? $product->price_sell_pak;
         $product->price_sell_eceran = $request->price_sell_eceran ?? $product->price_sell_eceran;

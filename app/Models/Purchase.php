@@ -9,6 +9,7 @@ class Purchase extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'user_id',
         'supplier_id',
         'treasury_id',
         'warehouse_id',
@@ -23,8 +24,14 @@ class Purchase extends Model
         'reciept_date',
         'description',
         'tax',
-        'status'
+        'status',
+        'potongan',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function treasury()
     {

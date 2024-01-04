@@ -18,6 +18,43 @@
                         class="form-control form-control-solid w-250px ps-14" placeholder="Cari data penjualan">
                 </div>
                 <!--end::Search-->
+                @role('master')
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div class="ms-2">
+                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
+                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+                    </div>
+                @endrole
+                @role('master')
+                    <div class="ms-3">
+                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                            <option value="">All Users</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div class="ms-3">
+                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
+                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+                    </div>
+                @endrole
+                <div class="my-1 d-flex align-items-center position-relative">
+                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Dari Tanggal">
+                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Ke Tanggal">
+                </div>
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
                 <!--begin::Export dropdown-->
@@ -26,9 +63,11 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('penjualan.create') }}" type="button" class="btn btn-primary">
-                    Tambah Penjualan
-                </a>
+                @can('simpan penjualan')
+                    <a href="{{ route('penjualan.create') }}" type="button" class="btn btn-primary">
+                        Tambah Penjualan
+                    </a>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -73,12 +112,13 @@
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>No. Order</th>
+                                <th>Kasir</th>
                                 <th>Customer</th>
                                 <th>Cabang</th>
                                 <th>Metode Pembayaran</th>
                                 <th>Cash</th>
                                 <th>Transfer</th>
-                                <th>Total Pembelian</th>
+                                <th>Total Penjualan</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
@@ -91,10 +131,12 @@
         </div>
     </div>
     @includeIf('pages.sell.modal')
+    @includeIf('pages.sell.modal-password')
 @endsection
 
 @push('addon-script')
     <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+
     <script>
         "use strict";
 
@@ -121,6 +163,16 @@
                     },
                     "columns": [{
                             "data": "order_number"
+                        },
+                        {
+                            "data": "cashier.name",
+                            render: function(data, type, row) {
+                                if (data == null) {
+                                    return `<span class="badge badge-light-danger">Tidak ada datas</span>`;
+                                } else {
+                                    return data;
+                                }
+                            }
                         },
                         {
                             "data": "customer.name"
@@ -178,12 +230,54 @@
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-                                <a href="/penjualan/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
+                                    <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                    <button class="btn btn-sm btn-success" onclick="openPasswordModal(${data})">Print</button>
+                                    @role('master')
+                                        <form id="deleteForm_${data}" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="id" value="${data}">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
+                                        </form>
+                                    @endrole
                                 `;
                             }
-                        },
+                        }
                     ],
+                });
+
+                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
+                    var fromDate = $('#fromDateFilter').val();
+                    var toDate = $('#toDateFilter').val();
+                    var warehouse_id = $('#warehouseFilter').val();
+                    var user_id = $('#userFilter').val();
+
+                    // Update the URL based on selected filters
+                    var url = '{{ route('api.penjualan') }}';
+                    var params = [];
+
+                    if (fromDate) {
+                        params.push('from_date=' + fromDate);
+                    }
+
+                    if (toDate) {
+                        params.push('to_date=' + toDate);
+                    }
+
+                    if (warehouse_id) {
+                        params.push('warehouse=' + warehouse_id);
+                    }
+
+                    if (user_id) {
+                        params.push('user_id=' + user_id);
+                    }
+
+                    if (params.length > 0) {
+                        url += '?' + params.join('&');
+                    }
+
+                    // Load data with updated URL
+                    datatable.ajax.url(url).load();
                 });
             }
 
@@ -257,7 +351,87 @@
             KTDatatablesExample.init();
         });
     </script>
+    <script>
+        function confirmDelete(id) {
+            Swal.fire({
+                title: 'Yakin menghapus data ini?',
+                text: 'Data yang terhapus tidak dapat dikembalikan',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus data!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteRecord(id);
+                    Swal.fire(
+                        'Terhapus!',
+                        'Data penjualan terhapus.',
+                        'success'
+                    ).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        }
 
+        function deleteRecord(id) {
+            // Use AJAX for asynchronous delete request
+            $.ajax({
+                url: "{{ url('penjualan') }}/" + id,
+                type: 'DELETE',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id: id
+                },
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    // Handle error
+                    console.error(error);
+                }
+            });
+        }
+    
+        function openPasswordModal(data) {
+            $('#passwordModal').modal('show');
+            $('#submitPasswordBtn').attr('onclick', `checkMasterUserPassword(${data})`);
+        }
+
+        function checkMasterUserPassword(data) {
+            var userId = document.getElementById('user_master').value;
+            var masterUserPassword = document.getElementById('masterUserPassword').value;
+
+            // Make an AJAX request to validate the master user's password
+            $.ajax({
+                url: '/validate-master-password', // Update the URL to your Laravel route
+                method: 'POST',
+                data: {
+                    user_id: userId,
+                    password: masterUserPassword
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        var url = '/penjualan/print/' + data;
+                        window.open(url, '_blank');
+                    } else {
+                        // Password is incorrect, show an error message
+                        alert('Invalid Master User Password. Please try again.');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error validating master user password:', error);
+                    // Handle error (e.g., show an error message to the user)
+                }
+            });
+        }
+    </script>
     <script>
         var datatable;
 
@@ -288,6 +462,10 @@
                                 data: 'quantity'
                             },
                             {
+                                data: 'convert_unit',
+                                defaultContent: '-'
+                            },
+                            {
                                 data: 'price',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -299,12 +477,36 @@
                                 }
                             },
                             {
+                                data: null,
+                                render: function(data, type, row) {
+                                    var subtotal = data.quantity * data.price;
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(subtotal);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
                                 data: 'diskon',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
                                         currency: 'IDR'
                                     }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    var total = data.quantity * data.price - data.diskon;
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(total);
                                     formattedPrice = formattedPrice.replace(",00", "");
                                     return formattedPrice;
                                 }

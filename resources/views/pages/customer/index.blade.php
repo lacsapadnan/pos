@@ -8,24 +8,7 @@
 @endpush
 
 @section('content')
-    {{-- session success --}}
-    @if (session()->has('success'))
-        <!--begin::Alert-->
-        <div class="p-5 mb-10 alert alert-primary d-flex align-items-center">
-            <i class="ki-duotone ki-shield-tick fs-2hx text-primary me-4"><span class="path1"></span><span
-                    class="path2"></span></i>
-            <div class="d-flex flex-column">
-                <h4 class="mb-1 text-primary">Sukses</h4>
-                <span>{{ session()->get('success') }}</span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-2x text-primary"><span class="path1"></span><span
-                        class="path2"></span></i>
-            </button>
-        </div>
-    @endif
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -44,13 +27,17 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
+                @can('import customer')
+                    <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
                     <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Import Data
                 </button>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
+                @endcan
+                @can('simpan customer')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
                     Tambah Data
                 </button>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -156,18 +143,22 @@
                             "sortable": false,
                             "render": function (data, type, row, meta) {
                                 return `
-                                    <a href="{{ url('customer') }}/${row.id}/edit" type="button" class="btn btn-warning btn-sm">
-                                        <i class="ki-solid ki-pencil"></i>
-                                        Edit
-                                    </a>
-                                    <form action="{{ url('customer') }}/${row.id}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('delete')
-                                        <button class="btn btn-danger btn-sm">
-                                            <i class="ki-solid ki-trash"></i>
-                                            Hapus
-                                        </button>
-                                    </form>
+                                    @can('update customer')
+                                        <a href="{{ url('customer') }}/${row.id}/edit" type="button" class="btn btn-warning btn-sm">
+                                            <i class="ki-solid ki-pencil"></i>
+                                            Edit
+                                        </a>
+                                    @endcan
+                                    @can('hapus customer')
+                                        <form action="{{ url('customer') }}/${row.id}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('delete')
+                                            <button class="btn btn-danger btn-sm">
+                                                <i class="ki-solid ki-trash"></i>
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    @endcan
                                 `;
                             }
                         }

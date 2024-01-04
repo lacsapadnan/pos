@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TreasuryMutationRequest;
+use App\Models\Cashflow;
 use App\Models\TreasuryMutation;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -18,7 +19,7 @@ class TreasuryMutationController extends Controller
     {
         $warehouses = Warehouse::all();
         $roles = auth()->user()->roles->pluck('name')->implode(',');
-        $cashiers = User::role('kasir')->get();
+        $cashiers = User::orderBy('id', 'asc')->get();
         return view('pages.mutation.index', compact('warehouses', 'roles', 'cashiers'));
     }
 
@@ -44,6 +45,15 @@ class TreasuryMutationController extends Controller
         $data = $request->validated();
         $data['input_date'] = date('Y-m-d H:i:s', strtotime($data['input_date']));
         TreasuryMutation::create($data);
+
+        Cashflow::create([
+            'user_id' => $data['output_cashier'],
+            'warehouse_id' => $data['from_warehouse'],
+            'for' => 'Mutasi Kas',
+            'description' => $data['description'],
+            'out' => $data['amount'],
+            'in' => 0,
+        ]);
 
         return redirect()->back()->with('success', 'Mutasi kas berhasil ditambahkan');
     }
@@ -77,6 +87,9 @@ class TreasuryMutationController extends Controller
      */
     public function destroy(string $id)
     {
-        abort(404);
+        $treasuryMutation = TreasuryMutation::findOrFail($id);
+        $treasuryMutation->delete();
+
+        return redirect()->back()->with('success', 'Mutasi kas berhasil dihapus');
     }
 }

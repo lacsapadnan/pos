@@ -11,6 +11,7 @@ class SellRetur extends Model
     protected $fillable = [
         'sell_id',
         'warehouse_id',
+        'user_id',
         'retur_date'
     ];
 
@@ -37,5 +38,10 @@ class SellRetur extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

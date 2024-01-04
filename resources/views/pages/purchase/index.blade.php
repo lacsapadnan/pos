@@ -35,9 +35,11 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('pembelian.create') }}" type="button" class="btn btn-primary">
-                    Tambah Pembelian
-                </a>
+                @can('simpan pembelian')
+                    <a href="{{ route('pembelian.create') }}" type="button" class="btn btn-primary">
+                        Tambah Pembelian
+                    </a>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -83,12 +85,14 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>Faktur Supplier</th>
                                 <th>No. Order</th>
-                                <th>tanggal Terima</th>
+                                <th>Tanggal Terima</th>
+                                <th>Kasir</th>
                                 <th>Supplier</th>
                                 <th>Kas</th>
                                 <th>Cabang</th>
                                 <th>Subtotal</th>
                                 <th>PPN</th>
+                                <th>Potongan</th>
                                 <th>Grand Total</th>
                                 <th>Bayar</th>
                                 <th>Deskripsi</th>
@@ -145,6 +149,10 @@
                             "data": "reciept_date",
                         },
                         {
+                            "data": "user.name",
+                            defaultContent: '-'
+                        },
+                        {
                             "data": "supplier.name"
                         },
                         {
@@ -168,6 +176,17 @@
                             "data": "tax",
                             render: function(data, type, row) {
                                 return data + '%';
+                            }
+                        },
+                        {
+                            "data": "potongan",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
                             }
                         },
                         {
@@ -212,16 +231,18 @@
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-            <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-            @role('admin|master')
-            <a href="/pembelian/${data}/edit" class="btn btn-sm btn-warning">Edit</a>
-            <form action="/pembelian/${data}" method="POST" class="d-inline">
-                @csrf
-                @method('delete')
-                <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data?')">Hapus</button>
-            </form>
-            @endrole
-        `;
+                                    <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                    @can('update pembelian')
+                                        <a href="/pembelian/${data}/edit" class="btn btn-sm btn-warning">Edit</a>
+                                    @endcan
+                                    @can('hapus pembelian')
+                                    <form action="/pembelian/${data}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('delete')
+                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus data?')">Hapus</button>
+                                    </form>
+                                    @endcan
+                                `;
                             }
                         },
 
@@ -340,6 +361,18 @@
                                         style: 'currency',
                                         currency: 'IDR'
                                     }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    var subtotal = data.quantity * data.price_unit;
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(subtotal);
                                     formattedPrice = formattedPrice.replace(",00", "");
                                     return formattedPrice;
                                 }

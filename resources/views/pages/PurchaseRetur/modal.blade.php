@@ -20,7 +20,9 @@
                                 <tr class="text-start fw-bold text-uppercase">
                                     <th>Produk</th>
                                     <th>Unit</th>
+                                    <th>Price</th>
                                     <th>Quantity</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody class="fw-semibold">

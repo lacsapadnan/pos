@@ -21,8 +21,11 @@
                                     <th>Produk</th>
                                     <th>Unit</th>
                                     <th>Quantity</th>
+                                    <th>Quantity Eceran</th>
                                     <th>Harga</th>
+                                    <th>Subtotal</th>
                                     <th>Diskon</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody class="fw-semibold">

@@ -181,10 +181,11 @@
                         {
                             data: 'price',
                             render: function(data, type, row) {
+                                var totalPrice = row.price - (row.diskon / row.quantity);
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
-                                }).format(data);
+                                }).format(totalPrice);
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             }
@@ -198,7 +199,7 @@
                                 return `
                                 <input type="number" name="quantity_retur" class="form-control">
                                 <input type="hidden" name="unit_retur" value="${row.unit.id}">
-                                <input type="hidden" name="price_retur" value="${row.price}">
+                                <input type="hidden" name="price_retur" value="${row.price - (row.diskon / row.quantity)}">
                                 <input type="hidden" name="sell_id" value="${id}">
                                 `;
 
@@ -207,7 +208,7 @@
                         {
                             data: 'price',
                             render: function(data, type, row) {
-                                var total = row.quantity * data;
+                                var total = row.quantity * data - row.diskon;
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
@@ -241,7 +242,8 @@
                         var quantityRetur = $(this).find('input[name="quantity_retur"]').val();
                         var unitRetur = $(this).find('input[name="unit_retur"]').val();
                         var priceRetur = $(this).find('input[name="price_retur"]').val();
-                        var productId = $(this).closest('tr').find('.btn-submit').data('product-id');
+                        var productId = $(this).closest('tr').find('.btn-submit').data(
+                            'product-id');
                         var sellId = $(this).find('input[name="sell_id"]').val();
 
                         // Create an input object for the current row
@@ -270,7 +272,20 @@
                             // reload page
                             location.reload();
                         },
-                        error: function(xhr, status, error) {}
+                        error: function(xhr, status, error) {
+                            var response = xhr.responseJSON;
+                            if (response && response.errors) {
+                                // Handle validation errors and display alerts
+                                var errorMessage = '';
+                                for (var key in response.errors) {
+                                    errorMessage += response.errors[key];
+                                }
+                                alert(errorMessage); // Show validation error alert
+                            } else {
+                                alert(
+                                'An error occurred while processing your request.'); // Show generic error alert
+                            }
+                        }
                     });
                 });
             }

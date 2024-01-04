@@ -13,6 +13,7 @@ class PurchaseReturDetail extends Model
         'purchase_retur_id',
         'product_id',
         'unit_id',
+        'price',
         'qty',
     ];
 

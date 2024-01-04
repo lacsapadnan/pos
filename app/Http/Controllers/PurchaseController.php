@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductReport;
 use App\Models\Purchase;
 use App\Models\PurchaseCart;
 use App\Models\PurchaseDetail;
@@ -29,13 +30,13 @@ class PurchaseController extends Controller
     {
         $userRoles = auth()->user()->getRoleNames();
 
-        if ($userRoles[0] == 'superadmin') {
-            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')
+        if ($userRoles[0] == 'master') {
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                 ->orderBy('id', 'desc')
                 ->get();
             return response()->json($purchases);
         } else {
-            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->orderBy('id', 'desc')
                 ->get();
@@ -78,13 +79,28 @@ class PurchaseController extends Controller
                 $status = 'lunas';
             }
 
+            $lastOrder = Purchase::latest()->first();
+
+            if ($lastOrder) {
+                // Extract the numerical part of the order number and perform modulo operation
+                $lastOrderNumber = (int) preg_replace('/[^0-9]/', '', $lastOrder->order_number);
+                $newOrderNumber = ($lastOrderNumber % 9999) + 1;
+            } else {
+                // If there are no previous orders, set the order number to 1
+                $newOrderNumber = 1;
+            }
+
+            $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
+
             $purchase = Purchase::create([
+                'user_id' => auth()->id(),
                 'supplier_id' => $request->supplier_id,
                 'treasury_id' => $request->treasury_id,
                 'warehouse_id' => auth()->user()->warehouse_id,
-                'order_number' => $request->order_number,
+                'order_number' => $orderNumber,
                 'invoice' => $request->invoice,
                 'subtotal' => $request->subtotal,
+                'potongan' => $request->potongan,
                 'grand_total' => $request->grand_total,
                 'pay' => $request->pay,
                 'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
@@ -92,6 +108,8 @@ class PurchaseController extends Controller
                 'tax' => $request->tax,
                 'status' => $status,
             ]);
+
+            $supplier = Supplier::find($request->supplier_id);
 
             foreach ($existingCart as $cart) {
                 PurchaseDetail::create([
@@ -143,6 +161,30 @@ class PurchaseController extends Controller
                         'quantity' => $quantity,
                     ]);
                 }
+
+                $unit = Unit::find($cart->unit_id);
+
+                if ($cart->unit_id == $product->unit_dus) {
+                    $unitType = 'DUS';
+                } elseif ($cart->unit_id == $product->unit_pak) {
+                    $unitType = 'PAK';
+                } elseif ($cart->unit_id == $product->unit_eceran) {
+                    $unitType = 'ECERAN';
+                }
+
+                ProductReport::create([
+                    'product_id' => $cart->product_id,
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'supplier_id' => $request->supplier_id,
+                    'unit' => $unit->name,
+                    'unit_type' => $unitType,
+                    'qty' => $cart->quantity,
+                    'price' => $cart->price_unit,
+                    'for' => 'MASUK',
+                    'type' => 'PEMBELIAN',
+                    'description' => 'Pembelian ' . $orderNumber,
+                ]);
             }
 
             // clear the cart
@@ -153,7 +195,7 @@ class PurchaseController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Pembelian',
-                    'description' => 'Pembelian ' . $request->order_number,
+                    'description' => 'Pembelian ' . $orderNumber . ' Supplier ' . $supplier->name,
                     'in' => 0,
                     'out' => $request->pay - $request->remaint,
                     'payment_method' => 'kas besar',
@@ -163,7 +205,7 @@ class PurchaseController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Pembelian ' . $request->order_number,
+                    'description' => 'Pembelian ' . $orderNumber . ' Supplier ' . $supplier->name,
                     'in' => 0,
                     'out' => $request->pay - $request->remaint,
                     'payment_method' => 'kas kecil',
@@ -338,7 +380,7 @@ class PurchaseController extends Controller
                 'quantity' => $quantity,
                 'discount_fix' => $discountFix,
                 'discount_percent' => $discountPercent,
-                'price_unit' => $price,
+                'price_unit' => $totalPrice / $quantity,
                 'total_price' => $totalPrice,
             ]);
         }
@@ -376,7 +418,8 @@ class PurchaseController extends Controller
 
     public function payDebt(Request $request)
     {
-        $purchase = Purchase::find($request->purchase_id);
+        $purchase = Purchase::with('supplier')
+            ->find($request->purchase_id);
 
         if ($request->pay > $purchase->grand_total) {
             return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh lebih dari total hutang');
@@ -385,6 +428,12 @@ class PurchaseController extends Controller
         } elseif ($request->pay == 0) {
             return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh 0');
         } else {
+
+            if ($request->potongan) {
+                $purchase->potongan += $request->potongan;
+                $purchase->grand_total -= $request->potongan;
+            }
+
             $purchase->pay += $request->pay;
 
             if ($purchase->pay == $purchase->grand_total) {
@@ -398,7 +447,7 @@ class PurchaseController extends Controller
                     'warehouse_id' => $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
                     'in' => $request->pay,
                     'out' => 0,
                     'payment_method' => 'transfer',
@@ -408,7 +457,7 @@ class PurchaseController extends Controller
                     'warehouse_id' =>  $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
                     'in' => 0,
                     'out' => $request->pay,
                     'payment_method' => 'transfer',
@@ -418,9 +467,9 @@ class PurchaseController extends Controller
                     'warehouse_id' => $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number,
-                    'in' => $request->pay,
-                    'out' => 0,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
+                    'in' => 0,
+                    'out' => $request->pay,
                     'payment_method' => 'cash',
                 ]);
             }

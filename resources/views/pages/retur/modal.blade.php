@@ -21,6 +21,8 @@
                                     <th>Produk</th>
                                     <th>Unit</th>
                                     <th>Quantity</th>
+                                    <th>Harga</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody class="fw-semibold">

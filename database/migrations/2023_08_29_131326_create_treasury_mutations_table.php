@@ -14,11 +14,8 @@ return new class extends Migration
         Schema::create('treasury_mutations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('from_warehouse')->references('id')->on('warehouses')->onDelete('cascade');
-            $table->foreignId('to_warehouse')->references('id')->on('warehouses')->onDelete('cascade');
-            $table->foreignId('input_cashier')->references('id')->on('users')->onDelete('cascade');
             $table->foreignId('output_cashier')->references('id')->on('users')->onDelete('cascade');
             $table->string('from_treasury');
-            $table->string('to_treasury');
             $table->string('amount');
             $table->text('description')->nullable();
             $table->date('input_date');

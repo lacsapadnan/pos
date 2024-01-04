@@ -26,9 +26,11 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <a href="{{ route('pembelian-retur.create') }}" type="button" class="btn btn-primary">
-                    Tambah retur
-                </a>
+                @can('simpan retur')
+                    <a href="{{ route('pembelian-retur.create') }}" type="button" class="btn btn-primary">
+                        Tambah retur
+                    </a>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -74,7 +76,9 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>Invoice Penjualan</th>
                                 <th>Cabang</th>
+                                <th>Kasir</th>
                                 <th>Supplier</th>
+                                <th>Tanggal</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -121,13 +125,24 @@
                             "data": "warehouse.name"
                         },
                         {
+                            "data": "user.name",
+                            defaultContent: '-'
+                        },
+                        {
                             "data": "purchase.supplier.name"
+                        },
+                        {
+                            "data": "created_at",
+                            "render": function(data, type, row) {
+                                return moment(data).format('DD MMMM YYYY');
+                            }
                         },
                         {
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                <a href="/pembelian-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
                             }
                         },
@@ -233,7 +248,29 @@
                                 data: 'unit.name'
                             },
                             {
+                                data: 'price',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
                                 data: 'qty'
+                            },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data.price * data.qty);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
                             }
                         ]
                     });

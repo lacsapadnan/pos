@@ -6,12 +6,14 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\KasController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseReturController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SellController;
+use App\Http\Controllers\SellDraftController;
 use App\Http\Controllers\SellReturController;
 use App\Http\Controllers\SendStockController;
 use App\Http\Controllers\SettlementController;
@@ -48,8 +50,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('customer', CustomerController::class)->except(['show', 'create']);
     Route::resource('cabang', WarehouseController::class)->except(['show', 'create']);
     Route::resource('produk', ProductController::class)->except(['show', 'create']);
-    Route::resource('inventori', InventoryController::class)->only(['store', 'index']);
-    Route::resource('penjualan', SellController::class)->except(['destroy', 'edit', 'update']);
+    Route::resource('inventori', InventoryController::class);
+    Route::resource('penjualan', SellController::class);
     Route::resource('pembelian', PurchaseController::class);
     Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
     Route::resource('pembelian-retur', PurchaseReturController::class);
@@ -60,11 +62,15 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('kas', KasController::class)->except(['show', 'create']);
     Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);
     Route::resource('settlement', SettlementController::class);
+    Route::resource('penjualan-draft', SellDraftController::class);
     Route::get('hutang', [PurchaseController::class, 'debt'])->name('hutang');
     Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
     Route::get('laporan', [ReportController::class, 'index'])->name('laporan');
+    Route::delete('laporan/{id}', [ReportController::class, 'destroy'])->name('laporan.destroy');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
+    Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');
+    Route::get('produk/laporan', [ProductReportController::class, 'index'])->name('produk.laporan');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -79,8 +85,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pindah-stok/api/data', [SendStockController::class, 'data'])->name('api.pindah-stok');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
     Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');
-    Route::get('penjualan-retur/api/data-detail/{id}', [SellReturController::class, 'dataDetail'])->name('api.retur-detail');
-    Route::get('pembelian-retur/api/data-detail/{id}', [PurchaseReturController::class, 'dataDetail'])->name('api.retur-detail');
+    Route::get('penjualan-retur/api/data-detail/{id}', [SellReturController::class, 'dataDetail'])->name('api.retur-penjualan-detail');
+    Route::get('pembelian-retur/api/data-detail/{id}', [PurchaseReturController::class, 'dataDetail'])->name('api.retur-pembelian-detail');
     Route::get('data-all/api/data', [InventoryController::class, 'dataAll'])->name('api.data-all');
     Route::get('permission/api/data', [PermissionController::class, 'data'])->name('api.permission');
     Route::get('user/api/data', [UserController::class, 'data'])->name('api.user');
@@ -92,8 +98,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');
     Route::get('settlement/api/data', [SettlementController::class, 'data'])->name('api.settlement');
     Route::get('combined-data/api/data', [SettlementController::class, 'combinedData'])->name('api.combined-data');
+    Route::get('penjualan-draft/api/data', [SellDraftController::class, 'data'])->name('api.penjualan-draft');
     Route::get('report/api/data', [ReportController::class, 'data'])->name('api.report');
-
+    Route::get('penjualan/retur/api/data', [SellReturController::class, 'dataSell'])->name('api.penjualan-retur');
+    Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
@@ -111,14 +119,27 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('penjualan-retur/cart', [SellReturController::class, 'addCart'])->name('penjualan-retur.addCart');
     Route::post('pembelian-retur/cart', [PurchaseReturController::class, 'addCart'])->name('pembelian-retur.addCart');
     Route::post('pindah-stok/cart', [SendStockController::class, 'addCart'])->name('pindah-stok.addCart');
+    Route::post('penjualan-draft/cart', [SellDraftController::class, 'addCart'])->name('penjualan-draft.addCart');
     Route::delete('penjualan/cart/hapus/{id}', [SellController::class, 'destroyCart'])->name('penjualan.destroyCart');
     Route::delete('pembelian/cart/hapus/{id}', [PurchaseController::class, 'destroyCart'])->name('pembelian.destroyCart');
     Route::delete('penjualan-retur/cart/hapus/{id}', [SellReturController::class, 'destroyCart'])->name('penjualan-retur.destroyCart');
     Route::delete('pembelian-retur/cart/hapus/{id}', [PurchaseReturController::class, 'destroyCart'])->name('pembelian-retur.destroyCart');
     Route::delete('pindah-stok/cart/hapus/{id}', [SendStockController::class, 'destroyCart'])->name('pindah-stok.destroyCart');
+    Route::delete('penjualan-draft/cart/hapus/{id}', [SellDraftController::class, 'destroyCart'])->name('penjualan-draft.destroyCart');
 
     // Print
     Route::get('penjualan/print/{id}', [SellController::class, 'print'])->name('penjualan.print');
+    Route::get('pembelian-retur/print/{id}', [PurchaseReturController::class, 'print'])->name('pembelian-retur.print');
+    Route::get('penjualan-retur/print/{id}', [SellReturController::class, 'print'])->name('penjualan-retur.print');
+    Route::get('pindah-stok/print/{id}', [SendStockController::class, 'print'])->name('pindah-stok.print');
+
+    // Password
+    Route::get('password', [UserController::class, 'password'])->name('password.edit');
+    Route::put('password/{id}', [UserController::class, 'passwordUpdate'])->name('newpassword.update');
+
+    // Customer Check
+    Route::get('check-customer-status', [SellController::class, 'checkCustomerStatus'])->name('check-customer-status');
+    Route::post('validate-master-password', [SellController::class, 'validateMasterPassword'])->name('validate-master-password');
 });
 
 require __DIR__ . '/auth.php';

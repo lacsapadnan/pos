@@ -11,6 +11,7 @@ class PurchaseRetur extends Model
     protected $fillable = [
         'purchase_id',
         'warehouse_id',
+        'user_id',
         'retur_date',
     ];
 
@@ -27,5 +28,10 @@ class PurchaseRetur extends Model
     public function details()
     {
         return $this->hasMany(PurchaseReturDetail::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

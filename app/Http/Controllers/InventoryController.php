@@ -28,7 +28,6 @@ class InventoryController extends Controller
         $category = $request->input('category');
 
         if ($userRoles[0] == 'superadmin') {
-
             if ($category) {
                 $inventory = Inventory::with('product', 'warehouse')->whereHas('product', function ($query) use ($category) {
                     $query->where('group', 'LIKE', '%' . $category . '%');
@@ -62,6 +61,7 @@ class InventoryController extends Controller
             $query->whereHas('product', function ($query) use ($searchQuery) {
                 $query->where('name', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                    ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
             });
         } else {
@@ -116,7 +116,8 @@ class InventoryController extends Controller
      */
     public function edit(string $id)
     {
-        abort(404);
+        $inventory = Inventory::findOrFail($id);
+        return response()->json($inventory);
     }
 
     /**
@@ -124,7 +125,9 @@ class InventoryController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        abort(404);
+        $inventory = Inventory::findOrFail($id);
+        $inventory->update($request->all());
+        return redirect()->route('inventori.index')->with('success', 'Inventory berhasil diubah');
     }
 
     /**
@@ -132,6 +135,8 @@ class InventoryController extends Controller
      */
     public function destroy(string $id)
     {
-        abort(404);
+        $inventory = Inventory::findOrFail($id);
+        $inventory->delete();
+        return redirect()->route('inventori.index')->with('success', 'Inventory berhasil dihapus');
     }
 }

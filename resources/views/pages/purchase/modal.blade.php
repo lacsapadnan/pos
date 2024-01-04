@@ -22,6 +22,7 @@
                                     <th>Unit</th>
                                     <th>Quantity</th>
                                     <th>Harga Unit</th>
+                                    <th>Subtotal</th>
                                     <th>Diskon Fix</th>
                                     <th>Diskon Persen</th>
                                     <th>Total Harga</th>

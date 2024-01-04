@@ -61,7 +61,7 @@
         }
 
         body {
-            width: 3.5in;
+            width: 3.9in;
             height: 5.5in;
             margin: 0;
             padding: 0;
@@ -111,10 +111,13 @@
             @foreach ($details as $detail)
                 <tr>
                     <td width="15%">
-                        <p>{{ $detail->quantity }}{{ $detail->unit->name }} </p>
+                        <p>{{ $detail->quantity }}  {{ $detail->unit->name }} </p>
                     </td>
                     <td width="40%">
                         <p>{{ $detail->product->name }}</p>
+                        @if($detail->product->hadiah != null)
+                            <p>*{{ $detail->product->hadiah }}</p>
+                        @endif
                     </td>
                     <td width="15%">
                         <p>{{ number_format($detail->price) }}</p>
@@ -123,7 +126,7 @@
                         <p>{{ $detail->diskon }}</p>
                     </td>
                     <td width="20%" style="text-align:right">
-                        <p>{{ number_format($detail->price * $detail->quantity) }}</p>
+                        <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
                     </td>
                 </tr>
             @endforeach
@@ -150,7 +153,14 @@
                 <td width="30%"></td>
                 <td width="30%"></td>
                 <td width="50%" style="text-align:right">
-                    <p>Cash: {{ number_format($sell->pay) }}</p>
+                    @if($sell->payment_method == 'transfer')
+                        <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                    @elseif($sell->payment_method == 'cash')
+                        <p>Cash: {{ number_format($sell->cash) }}</p>
+                    @else
+                        <p>Cash: {{ number_format($sell->cash) }}</p>
+                        <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                    @endif
                 </td>
             </tr>
             <tr>
@@ -171,7 +181,7 @@
                 <p>Cara bayar: {{ $sell->payment_method }} *Nota: Copy, Tanggal cetak: {{ now() }}</p>
                 <br>
                 <p>Pembayaran transfer ke rekening <span style="font-weight: bold">BCA</span></p>
-                <p style="font-weight: bold">2785132827 a/n Andreas Jati Perkasa.</p>
+                <p style="font-weight: bold">7285132827 a/n Andreas Jati Perkasa.</p>
                 <p>Selain No. Rek tersebut dianggap belum bayar.</p>
             </div>
             <div class="alert">

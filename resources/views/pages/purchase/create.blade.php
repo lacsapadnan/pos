@@ -16,11 +16,15 @@
         }
 
         .dataTables_scrollBody {
-            transform: rotateX(180deg);
+            transform: rotateX(180deg) !important;
+        }
+
+        .dataTables_scrollBody::-webkit-scrollbar {
+            height: 16px !important;;
         }
 
         .dataTables_scrollBody table {
-            transform: rotateX(180deg);
+            transform: rotateX(180deg) !important;;
         }
     </style>
 @endpush
@@ -192,6 +196,15 @@
                     <div class="mb-5">
                         <div class="col">
                             <div class="mb-1">
+                                <label for="potongan" class="col-form-label">Potongan</label>
+                                <input type="text" name="potongan" class="form-control" id="potongan"
+                                    oninput="calculateTotal()" value="0" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-5">
+                        <div class="col">
+                            <div class="mb-1">
                                 <label for="bayar" class="col-form-label">Bayar</label>
                                 <input type="text" name="pay" class="form-control" id="bayar"
                                     oninput="calculateTotal()" value="0" />
@@ -255,12 +268,14 @@
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) || 0;
             var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+            var potongan = parseFloat(document.getElementById('potongan').value.replace(/[^0-9.-]+/g, '')) || 0;
 
             // If tax and bayar are not provided, set them to 0
             tax = isNaN(tax) ? 0 : tax;
             bayar = isNaN(bayar) ? 0 : bayar;
+            potongan = isNaN(potongan) ? 0 : potongan;
 
-            var grandTotal = subtotal + (subtotal * (tax / 100));
+            var grandTotal = subtotal + (subtotal * (tax / 100)) - potongan;
 
             var sisa = calculateSisa(grandTotal, bayar);
 
@@ -268,7 +283,9 @@
             document.getElementById('bayar').value = bayar.toFixed(0);
             document.getElementById('grandTotal').value = grandTotal.toFixed(0);
             document.getElementById('sisa').value = sisa.toFixed(0);
+            document.getElementById('potongan').value = potongan.toFixed(0);
         }
+        
         calculateTotal();
 
 

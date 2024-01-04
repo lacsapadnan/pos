@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, HasPermissions;
 
     /**
      * The attributes that are mass assignable.
@@ -47,6 +48,17 @@ class User extends Authenticatable
 
     public function warehouse()
     {
-        return $this->belongsTo(Warehouse::class, 'warehouse_id');
+        return $this->hasOne(Warehouse::class, 'id', 'warehouse_id');
     }
+    
+    public function cashflows()
+    {
+        return $this->hasMany(Cashflow::class, 'user_id');
+    }
+    
+    public function sellReturs()
+    {
+        return $this->hasMany(SellRetur::class, 'user_id');
+    }
+    
 }

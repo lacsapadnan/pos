@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cashflow;
 use App\Models\Settlement;
 use App\Models\TreasuryMutation;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -51,13 +54,9 @@ class SettlementController extends Controller
                 'id' => $mutation->id,
                 'input_date' => $mutation->input_date,
                 'from_warehouse' => $mutation->fromWarehouse->name,
-                'to_warehouse' => $mutation->toWarehouse->name,
-                'input_cashier' => $mutation->inputCashier->name,
                 'output_cashier' => $mutation->outputCashier->name,
-                'amount' => $mutation->amount,
-                'description' => $mutation->description,
                 'from_treasury' => $mutation->from_treasury,
-                'to_treasury' => $mutation->to_treasury,
+                'amount' => $mutation->amount,
                 'total_received' => $totalReceived,
                 'outstanding' => $outstanding,
             ];
@@ -71,7 +70,10 @@ class SettlementController extends Controller
      */
     public function create()
     {
-        return view('pages.settlement.create');
+        $warehouses = Warehouse::all();
+        $roles = auth()->user()->roles->pluck('name')->implode(',');
+        $cashiers = User::orderBy('id', 'asc')->get();
+        return view('pages.settlement.create', compact('roles', 'warehouses', 'cashiers'));
     }
 
     /**
@@ -79,6 +81,8 @@ class SettlementController extends Controller
      */
     public function store(Request $request)
     {
+        DB::beginTransaction();
+
         try {
             $inputRequests = $request->input('requests');
 
@@ -117,7 +121,6 @@ class SettlementController extends Controller
             }
 
             // Insert all settlements in a single database transaction
-            DB::beginTransaction();
             Settlement::insert($settlements);
             DB::commit();
 
@@ -127,6 +130,32 @@ class SettlementController extends Controller
             Log::error('Error in store method: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred while processing the request'], 500);
         }
+    }
+
+    public function actionStore(Request $request)
+    {
+        $mutation = TreasuryMutation::find($request->mutation_id);
+        $totalRecieved = $request->amount;
+        $outstanding = $mutation->amount - $totalRecieved;
+
+        $settlement = new Settlement();
+        $settlement->mutation_id = $request->mutation_id;
+        $settlement->cashier_id = $request->output_cashier;
+        $settlement->total_recieved = $totalRecieved;
+        $settlement->outstanding = $outstanding;
+        $settlement->to_treasury = $request->from_warehouse;
+        $settlement->save();
+
+        Cashflow::create([
+            'user_id' => $request->output_cashier,
+            'warehouse_id' => $request->from_warehouse,
+            'for' => 'Settlement',
+            'description' => $request->description,
+            'out' => 0,
+            'in' => $totalRecieved,
+        ]);
+
+        return redirect()->route('laporan')->with('success', 'Settlement created successfully');
     }
 
 
@@ -161,6 +190,11 @@ class SettlementController extends Controller
     {
         $settlement = Settlement::find($id);
         $settlement->delete();
+
+        $cashflow = Cashflow::where('for', 'Settlement')->where('user_id', $settlement->cashier_id)->where('warehouse_id', $settlement->to_treasury)->first();
+        if ($cashflow) {
+            $cashflow->delete();
+        }
 
         return redirect()->back()->with('success', 'Settlement deleted successfully');
     }

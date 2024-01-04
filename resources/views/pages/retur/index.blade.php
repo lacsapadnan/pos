@@ -74,7 +74,9 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>No. Order Penjualan</th>
                                 <th>Cabang</th>
+                                <th>Kasir</th>
                                 <th>Pembeli</th>
+                                <th>Tanggal</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -121,13 +123,24 @@
                             "data": "warehouse.name"
                         },
                         {
+                            "data": "user.name",
+                            defaultContent: '-'
+                        },
+                        {
                             "data": "sell.customer.name"
+                        },
+                        {
+                            "data": "created_at",
+                            "render": function(data, type, row) {
+                                return moment(data).format('DD MMMM YYYY');
+                            }
                         },
                         {
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                <a href="/penjualan-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
                             }
                         },
@@ -234,6 +247,28 @@
                             },
                             {
                                 data: 'qty'
+                            },
+                            {
+                                data: 'price',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: null,
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data.qty * data.price);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
                             }
                         ]
                     });

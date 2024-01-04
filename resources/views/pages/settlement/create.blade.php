@@ -83,12 +83,9 @@
                                 </th>
                                 <th>Tgl Mutasi</th>
                                 <th>Dari Pos</th>
-                                <th>Kasir Pengirim</th>
                                 <th>Kas Pengirim</th>
                                 <th>Total</th>
-                                <th>Ke Pos</th>
                                 <th>Kasir Penerima</th>
-                                <th>Kas Penerima</th>
                                 <th>Total Telah Diterima</th>
                                 <th>Outstanding</th>
                                 <th></th>
@@ -101,7 +98,7 @@
             </div>
         </div>
     </div>
-    @includeIf('pages.purchase.modal')
+    @includeIf('pages.settlement.modal')
 @endsection
 
 @push('addon-script')
@@ -157,6 +154,7 @@
                     "info": false,
                     'order': [],
                     'pageLength': 10,
+                    scrollX: true,
                     "ajax": {
                         url: '{{ route('api.combined-data') }}',
                         type: 'GET',
@@ -178,16 +176,13 @@
                             }
                         },
                         {
-                            data: "created_at",
+                            data: "input_date",
                             render: function(data, type, row) {
                                 return moment(data).format('DD MMMM YYYY');
                             }
                         },
                         {
                             data: "from_warehouse"
-                        },
-                        {
-                            data: "input_cashier"
                         },
                         {
                             data: "from_treasury"
@@ -204,13 +199,7 @@
                             }
                         },
                         {
-                            data: "to_warehouse"
-                        },
-                        {
                             data: "output_cashier"
-                        },
-                        {
-                            data: "to_treasury"
                         },
                         {
                             data: "total_received", // Make sure this matches the property name in your data source
@@ -223,11 +212,8 @@
                                     }).format(totalReceivedValue).replace(",00", "") :
                                     totalReceivedValue;
 
-                                // Conditionally add the 'disabled' attribute if total_received is not 0
-                                var disabledAttribute = totalReceivedValue !== 0 ? 'disabled' : '';
-
                                 return `
-                                    <input type="number" name="total_recieved" class="form-control" value="${formattedTotalReceived}" ${disabledAttribute}>
+                                    <input type="number" name="total_recieved" class="form-control" value="${formattedTotalReceived}">
                                     <input type="hidden" name="mutation_id" value="${row.id}">
                                 `;
                             }
@@ -244,14 +230,22 @@
                             }
                         },
                         {
-                            data: "id",
-                            "render": function(data, type, row) {
-                                return `<button class="btn btn-primary btn-submit" hidden data-mutation-id="${row.id}">Simpan</button>`;
+                            data: null,
+                            render: function(data, type, row) {
+                                return `
+                                    <button class="btn btn-primary btn-submit" hidden data-mutation-id="${row.id}">Simpan</button>
+                                    <button class="btn btn-primary btn-modal btn-open-modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#kt_modal_1"
+                                        data-amount="${row.amount}"
+                                        data-mutation-id="${row.id}"
+                                        data-outstanding="${row.outstanding}">Aksi</button>
+                                `;
                             }
                         }
                     ],
                     columnDefs: [{
-                        target: [10, 11],
+                        target: [5, 9],
                         className: 'min-w-100px'
                     }],
                     select: {
@@ -373,6 +367,33 @@
         // On document ready
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
+        });
+    </script>
+    <script>
+        $(document).on('click', '.btn-open-modal', function() {
+            var amount = $(this).data('amount');
+            var outstanding = $(this).data('outstanding');
+            var mutationId = $(this).data('mutation-id');
+
+            var formattedAmount = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(amount);
+
+            var formattedOutstanding = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(outstanding);
+
+            formattedAmount = formattedAmount.replace(",00", "");
+            formattedOutstanding = formattedOutstanding.replace(",00", "");
+
+            console.log('Amount:', formattedAmount);
+
+            // Set the values in the modal fields
+            $('#kt_modal_1').find('input[name="amountData"]').val(formattedAmount).prop('disabled', true);
+            $('#kt_modal_1').find('input[name="outstandingData"]').val(formattedOutstanding).prop('disabled', true);
+            $('#kt_modal_1').find('input[name="mutation_id"]').val(mutationId);
         });
     </script>
 @endpush

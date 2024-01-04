@@ -91,6 +91,7 @@
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No.</th>
+                                <th>Kasir</th>
                                 <th>Cabang Awal</th>
                                 <th>Cabang Tujuan</th>
                                 <th>Tanggal Pindah Stok</th>
@@ -141,6 +142,10 @@
                             }
                         },
                         {
+                            "data": "user.name",
+                            defaultContent: '-'
+                        },
+                        {
                             "data": "from_warehouse.name",
                         },
                         {
@@ -157,6 +162,7 @@
                             "render": function(data, type, row) {
                                 return `
                                     <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
+                                    <a href="/pindah-stok/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
                             }
                         }

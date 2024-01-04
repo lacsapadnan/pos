@@ -193,7 +193,7 @@
                     <!--end:Menu link-->
                 </div>
                 <!--end:Menu item-->
-                @can('simpan cabang', 'baca cabang', 'update cabang', 'hapus cabang')
+                @can('baca cabang')
                     <!--begin:Menu item-->
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('cabang.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
@@ -216,7 +216,7 @@
                     </div>
                     <!--end:Menu link-->
                 @endcan
-                @can('simpan customer', 'baca customer', 'update customer', 'hapus customer')
+                @can('baca customer')
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('customer.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
                         <a href="{{ route('customer.index') }}" class="py-3 menu-link">
@@ -227,7 +227,7 @@
                     </div>
                 @endcan
                 <!--end:Menu item-->
-                @can('simpan produk', 'baca produk', 'update produk', 'hapus produk')
+                @can('baca produk')
                     <!--begin:Menu item-->
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
@@ -239,7 +239,7 @@
                     </div>
                     <!--end:Menu item-->
                 @endcan
-                @role('admin|kasir')
+                @if (auth()->user()->hasAnyDirectPermission(['baca pembelian', 'baca retur', 'baca hutang']))
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -250,41 +250,47 @@
                         </span>
                         <!--end:Menu link-->
                         <!--begin:Menu sub-->
-                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('pembelian.index') }}">
-                                    <span class="menu-title">Data Pembelian</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('pembelian-retur.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('pembelian-retur.index') }}">
-                                    <span class="menu-title">Data Retur</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('hutang') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('hutang') }}">
-                                    <span class="menu-title">Data Hutang</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
+                        <div
+                            class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            @can('baca pembelian')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('pembelian.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('pembelian.index') }}">
+                                        <span class="menu-title">Data Pembelian</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca retur')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('pembelian-retur.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('pembelian-retur.index') }}">
+                                        <span class="menu-title">Data Retur</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca hutang')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('hutang') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('hutang') }}">
+                                        <span class="menu-title">Data Hutang</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
                         </div>
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endrole
-                @can('simpan penjualan', 'baca penjualan', 'update penjualan', 'hapus penjualan')
-                    <!--begin:Menu item-->
+                @endif
+                @if (auth()->user()->hasAnyDirectPermission(['baca penjualan', 'baca retur', 'baca piutang']))
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
@@ -294,40 +300,57 @@
                         </span>
                         <!--end:Menu link-->
                         <!--begin:Menu sub-->
-                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('penjualan.index') }}">
-                                    <span class="menu-title">Data Penjualan</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('penjualan-retur.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('penjualan-retur.index') }}">
-                                    <span class="menu-title">Data Retur</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('piutang') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('piutang') }}">
-                                    <span class="menu-title">Data Piutang</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
+                        <div
+                            class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            @can('baca penjualan')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('penjualan.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('penjualan.index') }}">
+                                        <span class="menu-title">Data Penjualan</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca draft')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('penjualan-draft.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('penjualan-draft.index') }}">
+                                        <span class="menu-title">Data Draft</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca retur')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('penjualan-retur.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('penjualan-retur.index') }}">
+                                        <span class="menu-title">Data Retur</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca piutang')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('piutang') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('piutang') }}">
+                                        <span class="menu-title">Data Piutang</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
                         </div>
                         <!--end:Menu sub-->
                     </div>
-                    <!--end:Menu item-->
-                @endcan
-                @can('simpan inventory', 'baca inventory', 'update inventory', 'hapus inventory')
+                @endif
+                @if (auth()->user()->hasAnyDirectPermission(['baca inventory', 'baca pindah stok']))
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -338,55 +361,77 @@
                         </span>
                         <!--end:Menu link-->
                         <!--begin:Menu sub-->
-                        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('inventori.index') }}">
-                                    <span class="menu-title">Data Inventory</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
-                            <!--begin:Menu item-->
-                            <div class="menu-item {{ request()->routeIs('pindah-stok.*') ? ' here' : '' }}">
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('pindah-stok.index') }}">
-                                    <span class="menu-title">Pindah Stok</span>
-                                </a>
-                                <!--end:Menu link-->
-                            </div>
-                            <!--end:Menu item-->
+                        <div
+                            class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            @can('baca inventory')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('inventori.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('inventori.index') }}">
+                                        <span class="menu-title">Data Inventory</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca pindah stok')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('pindah-stok.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('pindah-stok.index') }}">
+                                        <span class="menu-title">Pindah Stok</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
                         </div>
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endcan
-                @can('baca kas', 'simpan kas', 'hapus kas', 'update kas')
+                @endif
+                @if (auth()->user()->hasAnyDirectPermission(['baca kas', 'baca mutasi']))
                     <!--begin:Menu item-->
-                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('kas.*') ? ' here' : '' }}">
+                    <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                        class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
-                        <a href="{{ route('kas.index') }}" class="py-3 menu-link">
+                        <span class="py-3 menu-link">
                             <span class="menu-title">Kas</span>
                             <span class="menu-arrow d-lg-none"></span>
-                        </a>
+                        </span>
                         <!--end:Menu link-->
+                        <!--begin:Menu sub-->
+                        <div
+                            class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                            @can('baca kas')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('kas.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('kas.index') }}">
+                                        <span class="menu-title">Entry Kas</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                            @can('baca mutasi')
+                                <!--begin:Menu item-->
+                                <div class="menu-item {{ request()->routeIs('mutasi-kas.*') ? ' here' : '' }}">
+                                    <!--begin:Menu link-->
+                                    <a class="menu-link"href="{{ route('mutasi-kas.index') }}">
+                                        <span class="menu-title">Mutasi Kas</span>
+                                    </a>
+                                    <!--end:Menu link-->
+                                </div>
+                                <!--end:Menu item-->
+                            @endcan
+                        </div>
+                        <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endcan
-                <!--begin:Menu item-->
-                    <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('mutasi-kas.*') ? ' here' : '' }}">
-                        <!--begin:Menu link-->
-                        <a href="{{ route('mutasi-kas.index') }}" class="py-3 menu-link">
-                            <span class="menu-title">Mutasi Kas</span>
-                            <span class="menu-arrow d-lg-none"></span>
-                        </a>
-                        <!--end:Menu link-->
-                    </div>
-                <!--end:Menu item-->
-
-                @role('admin')
-                <!--begin:Menu item-->
+                @endif
+                @can('baca settlement')
+                    <!--begin:Menu item-->
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('settlement.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
                         <a href="{{ route('settlement.index') }}" class="py-3 menu-link">
@@ -395,7 +440,9 @@
                         </a>
                         <!--end:Menu link-->
                     </div>
-                <!--end:Menu item-->
+                    <!--end:Menu item-->
+                @endcan
+                {{-- @can('baca laporan')
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('laporan.*') ? ' here' : '' }}">
                         <!--begin:Menu link-->
                         <a href="{{ route('laporan') }}" class="py-3 menu-link">
@@ -404,8 +451,44 @@
                         </a>
                         <!--end:Menu link-->
                     </div>
-                @endrole
-                @role('admin')
+                @endcan --}}
+                <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                    class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
+                    <!--begin:Menu link-->
+                    <span class="py-3 menu-link">
+                        <span class="menu-title">Laporan</span>
+                        <span class="menu-arrow d-lg-none"></span>
+                    </span>
+                    <!--end:Menu link-->
+                    <!--begin:Menu sub-->
+                    <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                        @can('baca laporan')
+                            <!--begin:Menu link-->
+                            <a class="menu-link" href="{{ route('laporan') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-dollar fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                        <i class="path3"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Cashflow</span>
+                            </a>
+                            <!--end:Menu link-->
+                        @endcan
+                        <!--begin:Menu link-->
+                        <a class="menu-link" href="{{ route('produk.laporan') }}">
+                            <span class="menu-icon">
+                                <i class="ki-duotone ki-document fs-2">
+                                    <i class="path1"></i>
+                                    <i class="path2"></i>
+                                </i>
+                            </span>
+                            <span class="menu-title">Produk</span>
+                        </a>
+                        <!--end:Menu link-->
+                    </div>
+                </div>
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                     class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                     <!--begin:Menu link-->
@@ -416,56 +499,67 @@
                     <!--end:Menu link-->
                     <!--begin:Menu sub-->
                     <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                        <!--begin:Menu item-->
-                        <div class="menu-item">
-                            <!--begin:Menu link-->
-                            <a class="menu-link"href="{{ route('user.index') }}">
-                                <span class="menu-icon">
-                                    <i class="ki-duotone ki-people fs-2">
-                                        <i class="path1"></i>
-                                        <i class="path2"></i>
-                                        <i class="path3"></i>
-                                        <i class="path4"></i>
-                                        <i class="path5"></i>
-                                    </i>
-                                </span>
-                                <span class="menu-title">Data User</span>
-                            </a>
-                            <!--end:Menu link-->
-                            <!--begin:Menu link-->
-                            <a class="menu-link"href="{{ route('permission.index') }}">
-                                <span class="menu-icon">
-                                    <i class="ki-duotone ki-lock-2 fs-2">
-                                        <i class="path1"></i>
-                                        <i class="path2"></i>
-                                        <i class="path3"></i>
-                                        <i class="path4"></i>
-                                        <i class="path5"></i>
-                                    </i>
-                                </span>
-                                <span class="menu-title">Data Permission</span>
-                            </a>
-                            <!--end:Menu link-->
+                        @can('baca role')
                             <!--begin:Menu link-->
                             <a class="menu-link"href="{{ route('role-permission.index') }}">
                                 <span class="menu-icon">
                                     <i class="ki-duotone ki-lock-2 fs-2">
                                         <i class="path1"></i>
                                         <i class="path2"></i>
-                                        <i class="path3"></i>
-                                        <i class="path4"></i>
-                                        <i class="path5"></i>
                                     </i>
                                 </span>
-                                <span class="menu-title">Role & Permission</span>
+                                <span class="menu-title">Data Role</span>
                             </a>
                             <!--end:Menu link-->
+                        @endcan
+                        <!--begin:Menu item-->
+                        <div class="menu-item">
+                            @can('baca user')
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('user.index') }}">
+                                    <span class="menu-icon">
+                                        <i class="ki-duotone ki-people fs-2">
+                                            <i class="path1"></i>
+                                            <i class="path2"></i>
+                                            <i class="path3"></i>
+                                            <i class="path4"></i>
+                                            <i class="path5"></i>
+                                        </i>
+                                    </span>
+                                    <span class="menu-title">Data User</span>
+                                </a>
+                                <!--end:Menu link-->
+                            @endcan
+                            @can('baca permission')
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('permission.index') }}">
+                                    <span class="menu-icon">
+                                        <i class="ki-duotone ki-lock-2 fs-2">
+                                            <i class="path1"></i>
+                                            <i class="path2"></i>
+                                            <i class="path3"></i>
+                                            <i class="path4"></i>
+                                            <i class="path5"></i>
+                                        </i>
+                                    </span>
+                                    <span class="menu-title">Data Permission</span>
+                                </a>
+                                <!--end:Menu link-->
+                            @endcan
+                            <a class="menu-link"href="{{ route('password.edit') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-key fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Update password</span>
+                            </a>
                         </div>
                         <!--end:Menu item-->
                     </div>
                     <!--end:Menu sub-->
                 </div>
-                @endrole
             </div>
             <!--end::Menu-->
         </div>

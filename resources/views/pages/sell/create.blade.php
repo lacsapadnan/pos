@@ -19,6 +19,10 @@
             transform: rotateX(180deg);
         }
 
+        .dataTables_scrollBody::-webkit-scrollbar {
+            height: 16px;
+        }
+
         .dataTables_scrollBody table {
             transform: rotateX(180deg);
         }
@@ -59,7 +63,7 @@
                             <label for="inputEmail3" class="col-form-label">Customer</label>
                             <select id="customer" class="form-select" name="customer_id" data-control="select2"
                                 data-placeholder="Pilih customer" data-allow-clear="true" required>
-                                <option readonly>Pilih Customer</option>
+                                <option readonly disabled>Pilih Customer</option>
                                 @foreach ($customers as $customer)
                                     <option value="{{ $customer->id }}">{{ $customer->name }}</option>
                                 @endforeach
@@ -90,7 +94,7 @@
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
                         class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
-                        id="searchInput">
+                        id="searchInput" autofocus>
                 </div>
                 <!--end::Search-->
             </div>
@@ -153,13 +157,14 @@
                                         <td>{{ $cart->unit->name }}</td>
                                         <td>{{ $cart->diskon ?? 0 }}</td>
                                         <td>
-                                            {{ number_format(($cart->price * $cart->quantity) - $cart->diskon) }}
+                                            {{ number_format($cart->price * $cart->quantity - $cart->diskon) }}
                                         </td>
                                         <td>
                                             <form action="{{ route('penjualan.destroyCart', $cart->id) }}"
                                                 method="POST">
                                                 @csrf
                                                 @method('delete')
+                                                <input type="hidden" name="product_id" value="{{ $cart->product_id }}">
                                                 <button class="btn btn-sm btn-danger">
                                                     Hapus
                                                 </button>
@@ -179,6 +184,8 @@
                     <input type="hidden" name="order_number" id="order_number_form2">
                     <input type="hidden" name="customer" id="customer_form2">
                     <input type="hidden" name="user_id" id="user_id_form2">
+                    <input type="hidden" name="status" id="status_form2">
+
                     <div class="row">
                         <div class="col">
                             <div class="mb-1">
@@ -232,13 +239,14 @@
                     </div>
                     <div class="mt-5 row">
                         <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan</button>
-                        <button type="button" class="mt-5 btn btn-danger" disabled>Draft</button>
+                        <button type="button" onclick="draftForms()" class="mt-5 btn btn-danger">Draft</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     @includeIf('pages.sell.modal')
+    @includeIf('pages.sell.modal-password')
 @endsection
 
 @push('addon-script')
@@ -320,6 +328,76 @@
             document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
             document.getElementById('customer_form2').value = document.getElementById('customer').value;
             document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
+            var customerId = document.getElementById('customer_form2').value;
+            var cash = document.getElementById('cash').value;
+            var transfer = document.getElementById('transfer').value;
+            var grandTotal = document.getElementById('grandTotal').value;
+
+            cash = parseInt(cash.replace(/[^0-9.-]+/g, '')) || 0;
+            transfer = parseInt(transfer.replace(/[^0-9.-]+/g, '')) || 0;
+
+            if (cash < grandTotal && transfer < grandTotal && (cash + transfer) < grandTotal) {
+                $.ajax({
+                    url: '/check-customer-status', // Update the URL to your Laravel route
+                    method: 'GET',
+                    data: {
+                        customer_id: customerId
+                    },
+                    success: function(response) {
+                        if (response.status === 'not_piutang') {
+                            document.getElementById('form2').submit();
+                        } else {
+                            $('#passwordModal').modal('show');
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error checking customer status:', error);
+                    }
+                });
+            } else {
+                document.getElementById('form2').submit();
+            }
+        }
+
+        function checkMasterUserPassword() {
+            var userId = document.getElementById('user_master').value;
+            var masterUserPassword = document.getElementById('masterUserPassword').value;
+
+            // Make an AJAX request to validate the master user's password
+            $.ajax({
+                url: '/validate-master-password', // Update the URL to your Laravel route
+                method: 'POST',
+                data: {
+                    user_id: userId,
+                    password: masterUserPassword
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Password is correct, submit form2
+                        document.getElementById('form2').submit();
+                    } else {
+                        // Password is incorrect, show an error message
+                        alert('Invalid Master User Password. Please try again.');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error validating master user password:', error);
+                }
+            });
+        }
+
+        // function draft forms add value status is draft
+        function draftForms() {
+            // Copy values from form1 to form2 hidden inputs
+            document.getElementById('transaction_date_form2').value = document.getElementById(
+                'kt_td_picker_date_only_input').value;
+            document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
+            document.getElementById('customer_form2').value = document.getElementById('customer').value;
+            document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
+            document.getElementById('status_form2').value = 'draft';
 
             // Submit form2
             document.getElementById('form2').submit();
@@ -488,39 +566,11 @@
                         }
                     ],
                     "columnDefs": [{
-                            target: 0,
+                            target: [0, 1, 7, 10, 13],
                             className: 'min-w-100px',
                         },
                         {
-                            target: 1,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 5,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 7,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 8,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 10,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 11,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 13,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 14,
+                            target: [5, 6, 8, 9, 11, 12, 14],
                             className: 'min-w-80px',
                         },
                         {

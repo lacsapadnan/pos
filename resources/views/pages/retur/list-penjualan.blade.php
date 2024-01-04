@@ -69,7 +69,7 @@
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
-                        url: '{{ route('api.penjualan') }}',
+                        url: '{{ route('api.penjualan-retur') }}',
                         type: 'GET',
                         dataSrc: '',
                     },

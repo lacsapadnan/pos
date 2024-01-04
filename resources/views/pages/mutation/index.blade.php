@@ -76,11 +76,8 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No.</th>
                                 <th>Cabang Awal</th>
-                                <th>Cabang Tujuan</th>
                                 <th>Dana Kas Keluar</th>
-                                <th>Dana Kas Masuk</th>
                                 <th>Kasir Pengeluaran</th>
-                                <th>Kasir Penerimaan</th>
                                 <th>Jumlah</th>
                                 <th>Keterangan</th>
                                 <th>Tanggal</th>
@@ -137,25 +134,10 @@
                             }
                         },
                         {
-                            data: "to_warehouse",
-                            render: function(data, type, row) {
-                                    return data.name;
-                            }
-                        },
-                        {
                             data: 'from_treasury'
                         },
                         {
-                            data: 'to_treasury'
-                        },
-                        {
                             data: 'output_cashier',
-                            render: function(data, type, row) {
-                                    return data.name;
-                            }
-                        },
-                        {
-                            data: 'input_cashier',
                             render: function(data, type, row) {
                                     return data.name;
                             }
@@ -178,7 +160,7 @@
                             }
                         },
                         {
-                            data: "date",
+                            data: "input_date",
                             render: function(data, type, row) {
                                 return moment(data).format('DD MMMM YYYY');
                             }

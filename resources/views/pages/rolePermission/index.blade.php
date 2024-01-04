@@ -9,40 +9,7 @@
 
 @section('content')
     {{-- session success --}}
-    @if (session()->has('success'))
-        <!--begin::Alert-->
-        <div class="p-5 mb-10 alert alert-primary d-flex align-items-center">
-            <i class="ki-duotone ki-shield-tick fs-2hx text-primary me-4"><span class="path1"></span><span
-                    class="path2"></span></i>
-            <div class="d-flex flex-column">
-                <h4 class="mb-1 text-primary">Sukses</h4>
-                <span>{{ session()->get('success') }}</span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-2x text-primary"><span class="path1"></span><span
-                        class="path2"></span></i>
-            </button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="p-5 mb-10 alert alert-dismissible bg-danger d-flex flex-column flex-sm-row">
-            <div class="d-flex flex-column text-light pe-0 pe-sm-10">
-                <h4 class="mb-2 text-light">Gagal Menyimpan data</h4>
-                <span>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </span>
-            </div>
-            <button type="button"
-                class="top-0 m-2 position-absolute position-sm-relative m-sm-0 end-0 btn btn-icon ms-sm-auto"
-                data-bs-dismiss="alert">
-                <i class="ki-duotone ki-cross fs-1 text-light"><span class="path1"></span><span class="path2"></span></i>
-            </button>
-        </div>
-    @endif
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -109,7 +76,6 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No.</th>
                                 <th>Role</th>
-                                <th>Hak Akses</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -160,19 +126,6 @@
                             data: "name"
                         },
                         {
-                            data: "permissions",
-                            render: function(data, type, row, meta) {
-                                if (data.length === 0) {
-                                    return `<span class="badge badge-light-danger">Tidak ada akses</span>`;
-                                } else {
-                                    var badges = data.map(permission =>
-                                        `<span class="badge badge-primary">${permission.name}</span>`
-                                        );
-                                    return badges.join(' ');
-                                }
-                            }
-                        },
-                        {
                             "data": null,
                             "sortable": false,
                             "render": function(data, type, row, meta) {
@@ -194,11 +147,8 @@
                         }
                     ],
                     "columnDefs": [{
-                        "targets": [0, 1, 2, 3],
+                        "targets": [0, 1, 2],
                         "className": "text-gray-900 fs-7 fw-bold"
-                    }, {
-                        "targets": [1, 3],
-                        "className": "min-w-200px"
                     }]
                 });
             }

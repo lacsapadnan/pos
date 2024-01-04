@@ -84,9 +84,9 @@
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th>No</th>
                                 <th>Tgl Settlement</th>
-                                <th>Kasir</th>
+                                <th>Kasir Penerima</th>
                                 <th>Total Diterima</th>
-                                <th>Outstanding</th>
+                                <th>Deskripsi</th>
                                 <th>Kas</th>
                                 <th>Aksi</th>
                             </tr>
@@ -160,15 +160,7 @@
                             }
                         },
                         {
-                            "data": "outstanding",
-                            render: function(data, type, row) {
-                                var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
-                                return formattedPrice;
-                            }
+                            data: "mutation.description"
                         },
                         {
                             data: "to_treasury"

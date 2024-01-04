@@ -29,127 +29,63 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="mb-4">
                             <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="from_warehouse">Dari Cabang</label>
-                                    <select name="from_warehouse" class="form-select form-select-solid"
-                                        data-control="select2" id="fromWarehouseSelect"
-                                        data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option disabled selected>Pilih Cabang</option>
-                                            @foreach ($warehouses as $warehouse)
-                                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="{{ auth()->user()->warehouse_id }}">
-                                                {{ auth()->user()->warehouse->name }}</option>
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="to_warehouse">Ke Cabang</label>
-                                    <select name="to_warehouse" class="form-select form-select-solid"
-                                        data-control="select2" id="toWarehouseSelect2"
-                                        data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option value="" disabled selected>Pilih Cabang</option>
-                                            @foreach ($warehouses as $warehouse)
-                                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="{{ auth()->user()->warehouse_id }}">
-                                                {{ auth()->user()->warehouse->name }}</option>
-                                        @endif
-                                    </select>
-                                </div>
+                                <label class="form-label" for="from_warehouse">Dari Cabang</label>
+                                <select name="from_warehouse" class="form-select form-select-solid"
+                                    data-control="select2" id="fromWarehouseSelect" data-dropdown-parent="#kt_modal_1">
+                                    @if ($roles === 'admin')
+                                        @foreach ($warehouses as $warehouse)
+                                            <option value="{{ $warehouse->id }}"
+                                                {{ $warehouse->id == auth()->user()->warehouse_id ? 'selected' : '' }}>
+                                                {{ $warehouse->name }}
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="{{ auth()->user()->warehouse_id }}" selected>
+                                            {{ auth()->user()->warehouse->name }}
+                                        </option>
+                                    @endif
+                                </select>
+
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="mb-4">
                             <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="from_treasury">Keluar Dari</label>
-                                    <select name="from_treasury" class="form-select form-select-solid"
-                                        data-control="select2" id="fromTreasurySelect"
-                                        data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option disabled selected>Pilih Dana</option>
-                                            <option value="Kas Bank 1">Kas Bank 1</option>
-                                            <option value="Kas Bank 2">Kas Bank 2</option>
-                                            <option value="Kas Besar">Kas Besar</option>
-                                            <option value="Kas Kecil">Kas Kecil</option>
-                                        @else
-                                            <option value="Kas Kecil">Kas Kecil</option>
-                                        @endif
-                                    </select>
-                                </div>
+                                <label class="form-label" for="from_treasury">Keluar Dari</label>
+                                <select name="from_treasury" class="form-select form-select-solid"
+                                    data-control="select2" id="fromTreasurySelect" data-dropdown-parent="#kt_modal_1">
+                                    @if ($roles === 'admin')
+                                        <option disabled>Pilih Dana</option>
+                                        <option value="Kas Bank 1">Kas Bank 1</option>
+                                        <option value="Kas Bank 2">Kas Bank 2</option>
+                                        <option value="Kas Besar">Kas Besar</option>
+                                        <option value="Kas Kecil" selected>Kas Kecil</option>
+                                    @else
+                                        <option value="Kas Kecil" selected>Kas Kecil</option>
+                                    @endif
+                                </select>
+
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="mb-4">
                             <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="output_cashier">Kasir Pengeluaran</label>
-                                    <select name="output_cashier" class="form-select form-select-solid"
-                                        data-control="select2" id="toCashierSelect" data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option disabled selected>Pilih kasir</option>
-                                            @foreach ($cashiers as $cashier)
-                                                <option value="{{ $cashier->id }}">{{ $cashier->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="{{ auth()->user()->id }}">{{ auth()->user()->name }}
+                                <label class="form-label" for="output_cashier">Kasir Pengeluaran</label>
+                                <select name="output_cashier" class="form-select form-select-solid"
+                                    data-control="select2" id="toCashierSelect" data-dropdown-parent="#kt_modal_1">
+                                    @if ($roles === 'admin')
+                                        @foreach ($cashiers as $cashier)
+                                            <option value="{{  $cashier->id }}" {{ $cashier->id == auth()->id() ? 'selected' : '' }}>
+                                                {{ $cashier->name }}
                                             </option>
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="to_treasury">Masuk ke</label>
-                                    <select name="to_treasury" class="form-select form-select-solid"
-                                        data-control="select2" id="toTreasurySelect"
-                                        data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option disabled selected>Pilih Dana</option>
-                                            <option value="Kas Bank 1">Kas Bank 1</option>
-                                            <option value="Kas Bank 2">Kas Bank 2</option>
-                                            <option value="Kas Besar">Kas Besar</option>
-                                            <option value="Kas Kecil">Kas Kecil</option>
-                                        @else
-                                            <option value="Kas Kecil">Kas Kecil</option>
-                                        @endif
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-4">
-                                <div class="mb-4">
-                                    <label class="form-label" for="input_cashier">Kasir Pemasukan</label>
-                                    <select name="input_cashier" class="form-select form-select-solid"
-                                        data-control="select2" id="fromCashierSelect"
-                                        data-dropdown-parent="#kt_modal_1">
-                                        @if ($roles === 'admin')
-                                            <option disabled selected>Pilih kasir</option>
-                                            @foreach ($cashiers as $cashier)
-                                                <option value="{{ $cashier->id }}">{{ $cashier->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="{{ auth()->user()->id }}">{{ auth()->user()->name }}
-                                            </option>
-                                        @endif
-                                    </select>
-                                </div>
+                                        @endforeach
+                                    @else
+                                        <option value="{{ auth()->user()->id }}">{{ auth()->user()->name }}
+                                        </option>
+                                    @endif
+                                </select>
                             </div>
                         </div>
                     </div>
