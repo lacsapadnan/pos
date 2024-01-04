@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Retur Penjualan')
-@section('menu-title', 'Retur Penjualan2')
+@section('title', 'View Retur')
+@section('menu-title', 'View Retur')
 
 @push('addon-style')
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -9,62 +9,6 @@
 
 @section('content')
     <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data retur">
-                </div>
-                <!--end::Search-->
-            </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                <a href="{{ route('penjualan-retur.create') }}" type="button" class="btn btn-primary">
-                    Tambah retur
-                </a>
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
-            </div>
-        </div>
         <div class="card-body">
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
                 <div class="table-responsive">
@@ -72,6 +16,7 @@
                         id="kt_datatable_example">
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
+                                <th>#</th>
                                 <th>No. Order Penjualan</th>
                                 <th>Cabang</th>
                                 <th>Kasir</th>
@@ -83,6 +28,7 @@
                         <tbody class="text-gray-900 fw-semibold">
                         </tbody>
                     </table>
+                    <button id="saveButton" class="btn btn-primary">Simpan</button>
                 </div>
             </div>
         </div>
@@ -92,6 +38,46 @@
 
 @push('addon-script')
     <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+
+
+    <script>
+        $('#saveButton').on('click', function() {
+            saveSelectedIds();
+        });
+        var selectedIds = [];
+
+        function saveSelectedIds() {
+            $('.row-checkbox').each(function() {
+                if ($(this).prop('checked')) {
+                    selectedIds.push($(this).data('id'));
+                }
+            });
+            var sell_id = new URLSearchParams(window.location.search).get('sell_id');
+            var csrf_token = $('meta[name="csrf-token"]').attr('content');
+            $.ajax({
+                url: '{{ route('konfirmReturn') }}', // Use Blade templating to get the route URL
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf_token
+                },
+                data: {
+                    sell_id: sell_id,
+                    selectedIds: selectedIds
+                },
+                success: function(response) {
+                    console.log('Save successful:', response);
+                    alert('Return confirmed successfully');
+                    location.reload();
+                },
+                error: function(error) {
+                    // Handle the error response
+                    console.error('Save error:', error);
+                }
+            });
+
+            selectedIds = [];
+        }
+    </script>
     <script>
         "use strict";
 
@@ -105,18 +91,28 @@
             var initDatatable = function() {
                 // Set date data order
                 const tableRows = table.querySelectorAll('tbody tr');
-
+                var sellIdParam = new URLSearchParams(window.location.search).get('sell_id');
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
                     "info": false,
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
-                        url: '{{ route('api.retur') }}',
+                        url: '{{ route('api.retur.byorder', ['id' => '__sell_id__']) }}'.replace(
+                            '__sell_id__', sellIdParam),
                         type: 'GET',
                         dataSrc: '',
                     },
                     "columns": [{
+                            "data": null,
+                            "render": function(data, type, row) {
+                                var isChecked = row.remark === 'verify';
+                                return '<input type="checkbox" class="row-checkbox" data-id="' + row
+                                    .id + '" ' + (isChecked ? 'checked' : '') + ' ' + (isChecked ?
+                                        'disabled' : '') + '>';
+                            }
+                        },
+                        {
                             "data": "sell.order_number"
                         },
                         {
@@ -140,7 +136,6 @@
                             "render": function(data, type, row) {
                                 return `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-                                <a href="/penjualan-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
                             }
                         },

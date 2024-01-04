@@ -239,7 +239,7 @@
                     </div>
                     <!--end:Menu item-->
                 @endcan
-                @if (auth()->user()->hasAnyDirectPermission(['baca pembelian', 'baca retur', 'baca hutang']))
+                {{-- @if (auth()->user()->hasAnyDirectPermission(['baca pembelian', 'baca retur', 'baca hutang'])) --}}
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -289,8 +289,8 @@
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endif
-                @if (auth()->user()->hasAnyDirectPermission(['baca penjualan', 'baca retur', 'baca piutang']))
+                {{-- @endif --}}
+                {{-- @if (auth()->user()->hasAnyDirectPermission(['baca penjualan', 'baca retur', 'baca piutang'])) --}}
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                         <!--begin:Menu link-->
@@ -349,8 +349,8 @@
                         </div>
                         <!--end:Menu sub-->
                     </div>
-                @endif
-                @if (auth()->user()->hasAnyDirectPermission(['baca inventory', 'baca pindah stok']))
+                {{-- @endif --}}
+                {{-- @if (auth()->user()->hasAnyDirectPermission(['baca inventory', 'baca pindah stok'])) --}}
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -389,8 +389,8 @@
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endif
-                @if (auth()->user()->hasAnyDirectPermission(['baca kas', 'baca mutasi']))
+                {{-- @endif --}}
+                {{-- @if (auth()->user()->hasAnyDirectPermission(['baca kas', 'baca mutasi'])) --}}
                     <!--begin:Menu item-->
                     <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                         class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -429,7 +429,7 @@
                         <!--end:Menu sub-->
                     </div>
                     <!--end:Menu item-->
-                @endif
+                {{-- @endif --}}
                 @can('baca settlement')
                     <!--begin:Menu item-->
                     <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('settlement.*') ? ' here' : '' }}">
