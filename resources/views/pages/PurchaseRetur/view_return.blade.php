@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'View Retur')
-@section('menu-title', 'View Retur')
+@section('title', 'View Retur Pembelian')
+@section('menu-title', 'View Retur Pembelian')
 
 @push('addon-style')
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -17,10 +17,10 @@
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>#</th>
-                                <th>No. Order Penjualan</th>
+                                <th>Invoice Penjualan</th>
                                 <th>Cabang</th>
                                 <th>Kasir</th>
-                                <th>Pembeli</th>
+                                <th>Supplier</th>
                                 <th>Tanggal</th>
                                 <th>Aksi</th>
                             </tr>
@@ -33,7 +33,7 @@
             </div>
         </div>
     </div>
-    @includeIf('pages.retur.modal')
+    @includeIf('pages.PurchaseRetur.modal')
 @endsection
 
 @push('addon-script')
@@ -45,27 +45,29 @@
         var selectedIds = [];
 
         function saveSelectedIds() {
-
-
             $('.row-checkbox').each(function() {
+                // Periksa apakah checkbox tidak disabled sebelum menambahkan data-id
                 if (!$(this).prop('disabled') && $(this).prop('checked')) {
                     selectedIds.push($(this).data('id'));
                 }
             });
+
             if (selectedIds.length === 0) {
                 alert('Please select at least one item before saving.');
                 return; // Tidak melanjutkan proses jika array kosong
             }
-            var sell_id = new URLSearchParams(window.location.search).get('sell_id');
+
+            var purchase_id = new URLSearchParams(window.location.search).get('purchase_id');
             var csrf_token = $('meta[name="csrf-token"]').attr('content');
+            console.log(selectedIds);
             $.ajax({
-                url: '{{ route('konfirmReturn') }}', // Use Blade templating to get the route URL
+                url: '{{ route('konfirmReturnPembelian') }}',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrf_token
                 },
                 data: {
-                    sell_id: sell_id,
+                    purchase_id: purchase_id,
                     selectedIds: selectedIds
                 },
                 success: function(response) {
@@ -93,15 +95,17 @@
             var initDatatable = function() {
                 // Set date data order
                 const tableRows = table.querySelectorAll('tbody tr');
-                var sellIdParam = new URLSearchParams(window.location.search).get('sell_id');
+                var purchaseParam = new URLSearchParams(window.location.search).get('purchase_id');
+
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": false,
+                    "info": true,
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
-                        url: '{{ route('api.retur.byorder', ['id' => '__sell_id__']) }}'.replace(
-                            '__sell_id__', sellIdParam),
+                        url: '{{ route('api.returPurchase.byorder', ['id' => '__purchase_id__']) }}'
+                            .replace(
+                                '__purchase_id__', purchaseParam),
                         type: 'GET',
                         dataSrc: '',
                     },
@@ -115,7 +119,7 @@
                             }
                         },
                         {
-                            "data": "sell.order_number"
+                            "data": "purchase.invoice"
                         },
                         {
                             "data": "warehouse.name"
@@ -125,7 +129,7 @@
                             defaultContent: '-'
                         },
                         {
-                            "data": "sell.customer.name"
+                            "data": "purchase.supplier.name"
                         },
                         {
                             "data": "created_at",
@@ -179,7 +183,7 @@
 
             // Send a request to fetch the sell details for the given ID
             $.ajax({
-                url: '/penjualan-retur/api/data-detail/' + id,
+                url: '/pembelian-retur/api/data-detail/' + id,
                 method: 'GET',
                 success: function(response) {
                     // Initialize the DataTable on the table
@@ -190,9 +194,6 @@
                             },
                             {
                                 data: 'unit.name'
-                            },
-                            {
-                                data: 'qty'
                             },
                             {
                                 data: 'price',
@@ -206,12 +207,15 @@
                                 }
                             },
                             {
+                                data: 'qty'
+                            },
+                            {
                                 data: null,
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
                                         currency: 'IDR'
-                                    }).format(data.qty * data.price);
+                                    }).format(data.price * data.qty);
                                     formattedPrice = formattedPrice.replace(",00", "");
                                     return formattedPrice;
                                 }

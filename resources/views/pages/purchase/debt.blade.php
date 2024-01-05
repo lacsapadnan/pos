@@ -193,10 +193,16 @@
                         },
                         {
                             data: "id",
-                            "render": function(data, type, row) {
-                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-purchase-id="${data}">Bayar</a>`;
+                            render: function(data, type, row) {
+                                var purchaseId = data;
+                                var bayarButton =`<a href="#" class="btn btn-sm btn-primary btn-submit data-purchase-id="${data}">Bayar</a>`;
+                                var returnButton = `<a href="view-return-pembelian?purchase_id=${purchaseId}" target="_blank" class="btn btn-sm btn-warning">Return</a>`;
+
+                                return bayarButton + ' ' + returnButton;
                             }
-                        },
+                        }
+
+
                     ],
                 });
 
