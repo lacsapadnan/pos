@@ -15,6 +15,7 @@ use App\Models\Unit;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseReturController extends Controller
 {
@@ -39,6 +40,21 @@ class PurchaseReturController extends Controller
         }
     }
 
+    public function dataByPurchaseId($id)
+    {
+        $userRoles = auth()->user()->getRoleNames();
+        $query = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user');
+        if ($userRoles[0] != 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id);
+        }
+        $retur = $query
+            ->select('purchase_returs.*', 'purchase_returs.remark') // Include the 'remark' column directly
+            ->where('purchase_id', $id)
+            ->orderBy('purchase_returs.id', 'asc')
+            ->get();
+        return response()->json($retur);
+    }
+
     public function  dataDetail($id)
     {
         $returDetail = PurchaseReturDetail::with('purchaseRetur', 'product', 'unit')->where('purchase_retur_id', $id)->get();
@@ -61,9 +77,6 @@ class PurchaseReturController extends Controller
         $returCart = PurchaseReturCart::where('user_id', auth()->id())
             ->where('purchase_id', $request->purchase_id)
             ->get();
-
-        $totalPrice = 0;
-
         $purchaseRetur = PurchaseRetur::create([
             'purchase_id' => $request->purchase_id,
             'warehouse_id' => auth()->user()->warehouse_id,
@@ -79,83 +92,93 @@ class PurchaseReturController extends Controller
                 'price' => $rc->price,
                 'qty' => $rc->quantity,
             ]);
+        }
 
-            $purchase = Purchase::where('id', $request->purchase_id)->first();
-            $purchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)
-                ->where('product_id', $rc->product_id)
-                ->where('unit_id', $rc->unit_id)
-                ->with('product')
-                ->first();
+        PurchaseReturCart::where('user_id', auth()->id())->delete();
+        return redirect()->route('pembelian-retur.index')->with('success', 'Retur berhasil disimpan');
+    }
 
-            // update the purchase grand total
-            $purchase->subtotal -= $rc->quantity * $purchaseDetail->price_unit;
-            $purchase->grand_total -= $rc->quantity * $purchaseDetail->price_unit;
-            $purchase->update();
 
-            // update the purchase
-            $purchaseDetail->quantity -= $rc->quantity;
-            $purchaseDetail->total_price -= $rc->quantity * $purchaseDetail->price_unit;
-            $purchaseDetail->update();
+    public function konfirmReturnPembelian(Request $request)
+    {
+        $selectedIds = $request->input('selectedIds');
+        $totalPrice = 0;
+        foreach ($selectedIds as $selectedId) {
+            $purchaseReturDetails = DB::table('purchase_retur_details')->where('purchase_retur_id', $selectedId)->get();
+            foreach ($purchaseReturDetails as $rc) {
+                $purchase= Purchase::where('id', $request->purchase_id)->first();
+                $purchaseDetail = PurchaseDetail::where('purchase_id', $request->purchase_id)
+                    ->where('product_id', $rc->product_id)
+                    ->where('unit_id', $rc->unit_id)
+                    ->with('product')
+                    ->first();
 
-            $totalPrice += $rc->quantity * $purchaseDetail->price_unit;
+                // update the purchase grand total
+                $purchase->subtotal -= $rc->qty * $purchaseDetail->price_unit;
+                $purchase->grand_total -= $rc->qty * $purchaseDetail->price_unit;
+                $purchase->update();
 
-            $unit = Unit::find($rc->unit_id);
+                // update the purchase
+                $purchaseDetail->quantity -= $rc->qty;
+                $purchaseDetail->total_price -= $rc->qty * $purchaseDetail->price_unit;
+                $purchaseDetail->update();
 
-            if ($rc->unit_id == $purchaseDetail->product->unit_dus) {
-                $unitType = 'DUS';
-            } elseif ($rc->unit_id == $purchaseDetail->product->unit_pak) {
-                $unitType = 'PAK';
-            } elseif ($rc->unit_id == $purchaseDetail->product->unit_eceran) {
-                $unitType = 'ECERAN';
+                $totalPrice += $rc->qty * $purchaseDetail->price_unit;
+                $unit = Unit::find($rc->unit_id);
+                if ($rc->unit_id == $purchaseDetail->product->unit_dus) {
+                    $unitType = 'DUS';
+                } elseif ($rc->unit_id == $purchaseDetail->product->unit_pak) {
+                    $unitType = 'PAK';
+                } elseif ($rc->unit_id == $purchaseDetail->product->unit_eceran) {
+                    $unitType = 'ECERAN';
+                }
+
+                ProductReport::create([
+                    'product_id' => $rc->product_id,
+                    'warehouse_id' => auth()->user()->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'supplier_id' => $purchase->supplier_id,
+                    'unit' => $unit->name,
+                    'unit_type' => $unitType,
+                    'qty' => $rc->qty,
+                    'price' => $purchaseDetail->price_unit,
+                    'for' => 'KELUAR',
+                    'type' => 'RETUR PEMBELIAN',
+                    'description' => 'Retur Pembelian ' . $purchase->order_number,
+                ]);
+
+
+                $product = Product::where('id', $rc->product_id)->first();
+                $inventory = Inventory::where('product_id', $rc->product_id)
+                    ->where('warehouse_id', auth()->user()->warehouse_id)
+                    ->first();
+
+                if ($product->unit_dus == $rc->unit_id) {
+                    $inventory->quantity -= $rc->qty * $product->dus_to_eceran;
+                } elseif ($product->unit_pak == $rc->unit_id) {
+                    $inventory->quantity -= $rc->qty * $product->pak_to_eceran;
+                } elseif ($product->unit_pcs == $rc->unit_id) {
+                    $inventory->quantity -= $rc->qty;
+                }
+
+                $inventory->update();
             }
+            // update remark menjadi verify
+            DB::table('purchase_returs')
+                ->where('id', $selectedId)
+                ->update(['remark' => 'verify']);
 
-            ProductReport::create([
-                'product_id' => $rc->product_id,
+            Cashflow::create([
                 'warehouse_id' => auth()->user()->warehouse_id,
                 'user_id' => auth()->id(),
-                'supplier_id' => $purchase->supplier_id,
-                'unit' => $unit->name,
-                'unit_type' => $unitType,
-                'qty' => $rc->quantity,
-                'price' => $purchaseDetail->price_unit,
-                'for' => 'KELUAR',
-                'type' => 'RETUR PEMBELIAN',
-                'description' => 'Retur Pembelian ' . $purchase->order_number,
+                'for' => 'Retur pembelian',
+                'description' => 'Retur Pembelian ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
+                'in' => $totalPrice,
+                'out' => 0,
+                'payment_method' => null,
             ]);
         }
-
-        // bring back the stock
-        foreach ($returCart as $rc) {
-            $product = Product::where('id', $rc->product_id)->first();
-            $inventory = Inventory::where('product_id', $rc->product_id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->first();
-
-            if ($product->unit_dus == $rc->unit_id) {
-                $inventory->quantity -= $rc->quantity * $product->dus_to_eceran;
-            } elseif ($product->unit_pak == $rc->unit_id) {
-                $inventory->quantity -= $rc->quantity * $product->pak_to_eceran;
-            } elseif ($product->unit_pcs == $rc->unit_id) {
-                $inventory->quantity -= $rc->quantity;
-            }
-
-            $inventory->update();
-        }
-
-        // delete the cart
-        PurchaseReturCart::where('user_id', auth()->id())->delete();
-
-        Cashflow::create([
-            'warehouse_id' => auth()->user()->warehouse_id,
-            'user_id' => auth()->id(),
-            'for' => 'Retur pembelian',
-            'description' => 'Retur Pembelian ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
-            'in' => $totalPrice,
-            'out' => 0,
-            'payment_method' => null,
-        ]);
-
-        return redirect()->route('pembelian-retur.index')->with('success', 'Retur berhasil disimpan');
+        return response()->json(['message' => 'Return confirmed successfully']);
     }
 
     /**
@@ -289,5 +312,10 @@ class PurchaseReturController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="Retur-Pembelian-' . $purchaseRetur->purchase->order_number . '.pdf"'
         ]);
+    }
+
+    public function viewReturnPembelian()
+    {
+        return view('pages.PurchaseRetur.view_return');
     }
 }

@@ -181,10 +181,14 @@
                         },
                         {
                             data: "id",
-                            "render": function(data, type, row) {
-                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-sell-id="${data}">Terima</a>`;
+                            render: function(data, type, row) {
+                                var sellId = data;
+                                var terimaButton =`<a href="#" class="btn btn-sm btn-primary btn-submit data-sell-id="${data}">Terima</a>`;
+                                var returnButton = `<a href="view-return-penjualan?sell_id=${sellId}" target="_blank" class="btn btn-sm btn-warning">Return</a>`;
+
+                                return terimaButton + ' ' + returnButton;
                             }
-                        },
+                        }
                     ],
                 });
 

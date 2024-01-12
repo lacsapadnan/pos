@@ -54,8 +54,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('penjualan', SellController::class);
     Route::resource('pembelian', PurchaseController::class);
     Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
+    // ramdan
     Route::resource('pembelian-retur', PurchaseReturController::class);
+    Route::post('konfirmReturnPembelian', [PurchaseReturController::class, 'konfirmReturnPembelian'])->name('konfirmReturnPembelian');
+    Route::get('view-return-pembelian', [PurchaseReturController::class, 'viewReturnPembelian'])->name('viewReturnPembelian');
+    // ramdan
     Route::resource('penjualan-retur', SellReturController::class);
+    Route::post('konfirmReturn', [SellReturController::class, 'konfirmReturn'])->name('konfirmReturn');
+    Route::get('view-return-penjualan', [SellReturController::class, 'viewReturnPenjualan'])->name('viewReturnPenjualan');
     Route::resource('pindah-stok', SendStockController::class);
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
@@ -82,6 +88,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
     Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
     Route::get('penjualan-retur/api/data', [SellReturController::class, 'data'])->name('api.retur');
+    // ramdan
+    Route::get('penjualan-retur/api/dataBySaleId/{id}', [SellReturController::class, 'dataBySaleId'])->name('api.retur.byorder');
+    Route::get('pembelian-retur/api/dataByPurchaseId/{id}', [PurchaseReturController::class, 'dataByPurchaseId'])->name('api.returPurchase.byorder');
     Route::get('pindah-stok/api/data', [SendStockController::class, 'data'])->name('api.pindah-stok');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
     Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');

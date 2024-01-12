@@ -15,8 +15,6 @@ use App\Models\Unit;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
-
 
 class SellReturController extends Controller
 {
@@ -40,26 +38,6 @@ class SellReturController extends Controller
             return response()->json($retur);
         }
     }
-
-    public function dataBySaleId($saleId)
-    {
-        $userRoles = auth()->user()->getRoleNames();
-
-        $query = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user');
-
-        if ($userRoles[0] != 'superadmin') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
-        }
-
-        $retur = $query
-            ->select('sell_returs.*', 'sell_returs.remark') // Include the 'remark' column directly
-            ->where('sell_id', $saleId)
-            ->orderBy('sell_returs.id', 'asc')
-            ->get();
-
-        return response()->json($retur);
-    }
-
 
     public function  dataDetail($id)
     {
@@ -100,6 +78,9 @@ class SellReturController extends Controller
         $returCart = SellReturCart::where('user_id', auth()->id())
             ->where('sell_id', $request->sell_id)
             ->get();
+
+        $totalPrice = 0;
+
         $sellRetur = SellRetur::create([
             'sell_id' => $request->sell_id,
             'warehouse_id' => auth()->user()->warehouse_id,
@@ -115,96 +96,88 @@ class SellReturController extends Controller
                 'qty' => $rc->quantity,
                 'price' => $rc->price,
             ]);
+
+            $sell = Sell::where('id', $request->sell_id)
+                ->with('customer')
+                ->first();
+            $sellDetail = SellDetail::where('sell_id', $request->sell_id)
+                ->where('product_id', $rc->product_id)
+                ->where('unit_id', $rc->unit_id)
+                ->with('product')
+                ->first();
+
+
+            // update grand total
+            $sell->grand_total = $sell->grand_total - ($rc->quantity * ($sellDetail->price - $sellDetail->diskon));
+            $sell->update();
+
+            // update the sell detail
+            $sellDetail->quantity -= $rc->quantity;
+            $sellDetail->update();
+
+            // total price
+            $totalPrice += $rc->quantity * $rc->price;
+
+            $unit = Unit::find($rc->unit_id);
+
+            if ($rc->unit_id == $sellDetail->product->unit_dus) {
+                $unitType = 'DUS';
+            } elseif ($rc->unit_id == $sellDetail->product->unit_pak) {
+                $unitType = 'PAK';
+            } elseif ($rc->unit_id == $sellDetail->product->unit_eceran) {
+                $unitType = 'ECERAN';
+            }
+
+            ProductReport::create([
+                'product_id' => $rc->product_id,
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
+                'customer_id' => $sell->customer_id,
+                'unit' => $unit->name,
+                'unit_type' => $unitType,
+                'qty' => $rc->quantity,
+                'price' => $sellDetail->price - $sellDetail->diskon,
+                'for' => 'MASUK',
+                'type' => 'RETUR PENJUALAN',
+                'description' => 'Retur Penjualan ' . $sell->order_number,
+            ]);
         }
+
+        // bring back the stock
+        foreach ($returCart as $rc) {
+            // check the unit_id is unit_dus, unit_pak or unit_pcs in proudct
+            $product = Product::where('id', $rc->product_id)->first();
+            $inventory = Inventory::where('product_id', $rc->product_id)
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->first();
+
+            if ($product->unit_dus == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity * $product->dus_to_eceran;
+            } elseif ($product->unit_pak == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity * $product->pak_to_eceran;
+            } elseif ($product->unit_pcs == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity;
+            }
+
+            $inventory->update();
+        }
+
+        if ($sell->status == 'lunas') {
+            Cashflow::create([
+                'user_id' => auth()->id(),
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Retur penjualan',
+                'description' => 'Retur Penjualan ' . $sell->order_number . ' - ' . $sell->customer->name,
+                'out' => $totalPrice,
+                'in' => 0,
+                'payment_method' => null,
+            ]);
+        }
+
+        // delete the cart
         SellReturCart::where('user_id', auth()->id())->delete();
+
         return redirect()->route('penjualan-retur.index')->with('success', 'Retur berhasil disimpan');
-    }
-
-    public function konfirmReturn(Request $request)
-    {
-        $selectedIds = $request->input('selectedIds');
-        $totalPrice = 0;
-        $sell = Sell::where('id', $request->sell_id)
-            ->with('customer')
-            ->first();
-
-        foreach ($selectedIds as $selectedId) {
-            $sellReturDetails = DB::table('sell_retur_details')->where('sell_retur_id', $selectedId)->get();
-            foreach ($sellReturDetails as $rc) {
-                $sell = Sell::where('id', $request->sell_id)
-                    ->with('customer')
-                    ->first();
-                $sellDetail = SellDetail::where('sell_id', $request->sell_id)
-                    ->where('product_id', $rc->product_id)
-                    ->where('unit_id', $rc->unit_id)
-                    ->with('product')
-                    ->first();
-                // update grand total
-                $sell->grand_total = $sell->grand_total - ($rc->qty * ($sellDetail->price - $sellDetail->diskon));
-                $sell->update();
-
-                // update the sell detail
-                $sellDetail->quantity -= $rc->qty;
-                $sellDetail->update();
-
-                // total price
-                $totalPrice += $rc->qty * $rc->price;
-
-                $unit = Unit::find($rc->unit_id);
-
-                if ($rc->unit_id == $sellDetail->product->unit_dus) {
-                    $unitType = 'DUS';
-                } elseif ($rc->unit_id == $sellDetail->product->unit_pak) {
-                    $unitType = 'PAK';
-                } elseif ($rc->unit_id == $sellDetail->product->unit_eceran) {
-                    $unitType = 'ECERAN';
-                }
-                ProductReport::create([
-                    'product_id' => $rc->product_id,
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'customer_id' => $sell->customer_id,
-                    'unit' => $unit->name,
-                    'unit_type' => $unitType,
-                    'qty' => $rc->qty,
-                    'price' => $sellDetail->price - $sellDetail->diskon,
-                    'for' => 'MASUK',
-                    'type' => 'RETUR PENJUALAN',
-                    'description' => 'Retur Penjualan ' . $sell->order_number,
-                ]);
-
-                $product = Product::where('id', $rc->product_id)->first();
-                $inventory = Inventory::where('product_id', $rc->product_id)
-                    ->where('warehouse_id', auth()->user()->warehouse_id)
-                    ->first();
-
-                if ($product->unit_dus == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty * $product->dus_to_eceran;
-                } elseif ($product->unit_pak == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty * $product->pak_to_eceran;
-                } elseif ($product->unit_pcs == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty;
-                }
-                $inventory->update();
-            }
-            // update remkar menjadi verify
-            DB::table('sell_returs')
-                ->where('id', $selectedId)
-                ->update(['remark' => 'verify']);
-
-            if ($sell->status == 'lunas') {
-                Cashflow::create([
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'for' => 'Retur penjualan',
-                    'description' => 'Retur Penjualan ' . $sell->order_number . ' - ' . $sell->customer->name,
-                    'out' => $totalPrice,
-                    'in' => 0,
-                    'payment_method' => null,
-                ]);
-            }
-        }
-        return response()->json(['message' => 'Return confirmed successfully']);
     }
 
     /**
@@ -344,10 +317,5 @@ class SellReturController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="Retur-Penjualan-' . $sellRetur->sell->order_number . '.pdf"'
         ]);
-    }
-
-    public function viewReturnPenjualan()
-    {
-        return view('pages.retur.view_return');
     }
 }
