@@ -12,7 +12,10 @@ use App\Models\PurchaseRetur;
 use App\Models\PurchaseReturCart;
 use App\Models\PurchaseReturDetail;
 use App\Models\Unit;
+use App\Models\User;
+use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -24,20 +27,57 @@ class PurchaseReturController extends Controller
      */
     public function index()
     {
-        return view('pages.PurchaseRetur.index');
+        $masters = User::role('master')->get();
+        $warehouses = Warehouse::all();
+        $users = User::all();
+        return view('pages.PurchaseRetur.index', compact('masters', 'warehouses', 'users'));
     }
 
-    public function data()
+    public function data(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'master') {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')->orderBy('id', 'desc')->get();
-            return response()->json($retur);
-        } else {
-            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')->where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'desc')->get();
-            return response()->json($retur);
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
         }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
+        }
+
+        if ($role[0] == 'master') {
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')
+                ->orderBy('id', 'desc');
+        } else {
+            $retur = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('user_id', auth()->id())
+                ->orderBy('id', 'desc');
+        }
+
+        if ($warehouse) {
+            $retur->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $retur->where('user_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $retur->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $retur = $retur->get();
+        return response()->json($retur);
     }
 
     public function dataByPurchaseId($id)

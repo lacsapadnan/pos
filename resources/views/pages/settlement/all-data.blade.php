@@ -1,13 +1,23 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Retur Pembelian')
-@section('menu-title', 'Retur Pembelian')
+@section('title', 'Settlement')
+@section('menu-title', 'Settlement')
 
 @push('addon-style')
-    <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <style>
+        ::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgba(192, 192, 192, 0.3);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            background-color: #818B99;
+        }
+    </style>
 @endpush
 
 @section('content')
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -15,46 +25,9 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data retur">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data settlement">
                 </div>
                 <!--end::Search-->
-                @role('master')
-                    <div class="ms-2">
-                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                            <option value="">All Cabang</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-2">
-                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
-                    </div>
-                @endrole
-                @role('master')
-                    <div class="ms-3">
-                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                            <option value="">All Users</option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-3">
-                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
-                    </div>
-                @endrole
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
                 <!--begin::Export dropdown-->
@@ -63,11 +36,9 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                @can('simpan retur')
-                    <a href="{{ route('pembelian-retur.create') }}" type="button" class="btn btn-primary">
-                        Tambah retur
-                    </a>
-                @endcan
+                <a href="{{ route('settlement.index') }}" type="button" class="btn btn-primary">
+                    Tambah Settlement
+                </a>
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -110,12 +81,13 @@
                     <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
                         id="kt_datatable_example">
                         <thead>
-                            <tr class="text-start fw-bold fs-7 text-uppercase">
-                                <th>Invoice Penjualan</th>
-                                <th>Cabang</th>
-                                <th>Kasir</th>
-                                <th>Supplier</th>
-                                <th>Tanggal</th>
+                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                                <th>No</th>
+                                <th>Tgl Settlement</th>
+                                <th>Kasir Penerima</th>
+                                <th>Total Diterima</th>
+                                <th>Deskripsi</th>
+                                <th>Kas</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -126,11 +98,10 @@
             </div>
         </div>
     </div>
-    @includeIf('pages.PurchaseRetur.modal')
 @endsection
 
 @push('addon-script')
-    <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script>
         "use strict";
 
@@ -147,83 +118,77 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": true,
+                    "info": false,
                     'order': [],
                     'pageLength': 10,
+                    "fixedColumns": {
+                        "rightColumns": 1
+                    },
                     "ajax": {
-                        url: '{{ route('api.purchaseRetur') }}',
+                        url: '{{ route('api.settlement') }}',
                         type: 'GET',
                         dataSrc: '',
                     },
                     "columns": [{
-                            "data": "purchase.invoice"
+                            data: "id",
+                            render: function(data, type, row, meta) {
+                                return meta.row + meta.settings._iDisplayStart + 1;
+                            }
                         },
                         {
-                            "data": "warehouse.name"
-                        },
-                        {
-                            "data": "user.name",
-                            defaultContent: '-'
-                        },
-                        {
-                            "data": "purchase.supplier.name"
-                        },
-                        {
-                            "data": "created_at",
-                            "render": function(data, type, row) {
+                            data: "created_at",
+                            render: function(data, type, row) {
                                 return moment(data).format('DD MMMM YYYY');
                             }
+                        },
+                        {
+                            data: "cashier",
+                            render: function(data, type, row) {
+                                return data.name;
+                            }
+                        },
+                        {
+                            data: "total_recieved",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: "mutation.description"
+                        },
+                        {
+                            data: "to_treasury"
                         },
                         {
                             "data": "id",
                             "render": function(data, type, row) {
                                 return `
-                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
-                                <a href="/pembelian-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
+                                    <form action="/settlement/${data}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('delete')
+                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin mengembalikan data?')">Kembali ke kas kecil</button>
+                                    </form>
                                 `;
                             }
                         },
+
                     ],
+                    columnDefs: [{
+                        targets: -1,
+                        className: 'min-w-250px'
+                    }, ],
                 });
 
-                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
-                    var fromDate = $('#fromDateFilter').val();
-                    var toDate = $('#toDateFilter').val();
-                    var warehouse_id = $('#warehouseFilter').val();
-                    var user_id = $('#userFilter').val();
-
-                    // Update the URL based on selected filters
-                    var url = '{{ route('api.purchaseRetur') }}';
-                    var params = [];
-
-                    if (fromDate) {
-                        params.push('from_date=' + fromDate);
-                    }
-
-                    if (toDate) {
-                        params.push('to_date=' + toDate);
-                    }
-
-                    if (warehouse_id) {
-                        params.push('warehouse=' + warehouse_id);
-                    }
-
-                    if (user_id) {
-                        params.push('user_id=' + user_id);
-                    }
-
-                    if (params.length > 0) {
-                        url += '?' + params.join('&');
-                    }
-
-                    // Load data with updated URL
-                    datatable.ajax.url(url).load();
-                });
             }
 
             // Hook export buttons
             var exportButtons = () => {
-                const documentTitle = 'Customer Orders Report';
+                const documentTitle = 'Settlement Report';
                 var buttons = new $.fn.dataTable.Buttons(table, {
                     buttons: [{
                             extend: 'copyHtml5',
@@ -291,7 +256,6 @@
             KTDatatablesExample.init();
         });
     </script>
-
     <script>
         var datatable;
 
@@ -306,7 +270,7 @@
 
             // Send a request to fetch the sell details for the given ID
             $.ajax({
-                url: '/pembelian-retur/api/data-detail/' + id,
+                url: '/pembelian/' + id,
                 method: 'GET',
                 success: function(response) {
                     // Initialize the DataTable on the table
@@ -319,7 +283,10 @@
                                 data: 'unit.name'
                             },
                             {
-                                data: 'price',
+                                data: 'quantity'
+                            },
+                            {
+                                data: 'price_unit',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
@@ -330,15 +297,29 @@
                                 }
                             },
                             {
-                                data: 'qty'
-                            },
-                            {
-                                data: null,
+                                data: 'discount_fix',
                                 render: function(data, type, row) {
                                     var formattedPrice = new Intl.NumberFormat('id-ID', {
                                         style: 'currency',
                                         currency: 'IDR'
-                                    }).format(data.price * data.qty);
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: 'discount_percent',
+                                render: function(data, type, row) {
+                                    return data + '%';
+                                }
+                            },
+                            {
+                                data: 'total_price',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
                                     formattedPrice = formattedPrice.replace(",00", "");
                                     return formattedPrice;
                                 }

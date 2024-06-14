@@ -12,7 +12,10 @@ use App\Models\SellRetur;
 use App\Models\SellReturCart;
 use App\Models\SellReturDetail;
 use App\Models\Unit;
+use App\Models\User;
+use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -25,20 +28,56 @@ class SellReturController extends Controller
      */
     public function index()
     {
-        return view('pages.retur.index');
+        $masters = User::role('master')->get();
+        $warehouses = Warehouse::all();
+        $users = User::all();
+        return view('pages.retur.index', compact('masters', 'warehouses', 'users'));
     }
 
-    public function data()
+    public function data(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'superadmin') {
-            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')->orderBy('id', 'asc')->get();
-            return response()->json($retur);
-        } else {
-            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')->where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'asc')->get();
-            return response()->json($retur);
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
         }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
+        }
+
+        if ($role[0] == 'master') {
+            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')->orderBy('id', 'asc');
+        } else {
+            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('user_id', auth()->id())
+                ->orderBy('id', 'asc');
+        }
+
+        if ($warehouse) {
+            $retur->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $retur->where('user_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $retur->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $retur = $retur->get();
+        return response()->json($retur);
     }
 
     public function dataBySaleId($saleId)
@@ -67,21 +106,51 @@ class SellReturController extends Controller
         return response()->json($returDetail);
     }
 
-    public function dataSell()
+    public function dataSell(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
-        if ($userRoles[0] == 'superadmin') {
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('cashier_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
+
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
+        }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
+        }
+
+        if ($role[0] == 'master') {
             $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($sells);
+                ->orderBy('id', 'desc');
         } else {
             $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($sells);
+                ->orderBy('id', 'desc');
         }
+
+
+        if ($warehouse) {
+            $sells->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $sells->where('cashier_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $sells->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $sells = $sells->get();
+        return response()->json($sells);
     }
 
     /**
@@ -89,7 +158,15 @@ class SellReturController extends Controller
      */
     public function create()
     {
-        return view('pages.retur.list-penjualan');
+        $masters = User::role('master')->get();
+        $warehouses = Warehouse::all();
+        $role = auth()->user()->getRoleNames();
+        if($role[0] == 'master'){
+            $users = User::all();
+        }else{
+            $users = User::where('warehouse_id', auth()->user()->warehouse_id)->get();
+        }
+        return view('pages.retur.list-penjualan', compact('masters', 'warehouses', 'users'));
     }
 
     /**
@@ -100,6 +177,9 @@ class SellReturController extends Controller
         $returCart = SellReturCart::where('user_id', auth()->id())
             ->where('sell_id', $request->sell_id)
             ->get();
+
+        $totalPrice = 0;
+
         $sellRetur = SellRetur::create([
             'sell_id' => $request->sell_id,
             'warehouse_id' => auth()->user()->warehouse_id,
@@ -115,8 +195,87 @@ class SellReturController extends Controller
                 'qty' => $rc->quantity,
                 'price' => $rc->price,
             ]);
+
+            $sell = Sell::where('id', $request->sell_id)
+                ->with('customer')
+                ->first();
+            $sellDetail = SellDetail::where('sell_id', $request->sell_id)
+                ->where('product_id', $rc->product_id)
+                ->where('unit_id', $rc->unit_id)
+                ->with('product')
+                ->first();
+
+
+            // update grand total
+            $sell->grand_total = $sell->grand_total - ($rc->quantity * ($sellDetail->price - $sellDetail->diskon));
+            $sell->update();
+
+            // update the sell detail
+            $sellDetail->quantity -= $rc->quantity;
+            $sellDetail->update();
+
+            // total price
+            $totalPrice += $rc->quantity * $rc->price;
+
+            $unit = Unit::find($rc->unit_id);
+
+            if ($rc->unit_id == $sellDetail->product->unit_dus) {
+                $unitType = 'DUS';
+            } elseif ($rc->unit_id == $sellDetail->product->unit_pak) {
+                $unitType = 'PAK';
+            } elseif ($rc->unit_id == $sellDetail->product->unit_eceran) {
+                $unitType = 'ECERAN';
+            }
+
+            ProductReport::create([
+                'product_id' => $rc->product_id,
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'user_id' => auth()->id(),
+                'customer_id' => $sell->customer_id,
+                'unit' => $unit->name,
+                'unit_type' => $unitType,
+                'qty' => $rc->quantity,
+                'price' => $sellDetail->price - $sellDetail->diskon,
+                'for' => 'MASUK',
+                'type' => 'RETUR PENJUALAN',
+                'description' => 'Retur Penjualan ' . $sell->order_number,
+            ]);
         }
+
+        // bring back the stock
+        foreach ($returCart as $rc) {
+            // check the unit_id is unit_dus, unit_pak or unit_pcs in proudct
+            $product = Product::where('id', $rc->product_id)->first();
+            $inventory = Inventory::where('product_id', $rc->product_id)
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->first();
+
+            if ($product->unit_dus == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity * $product->dus_to_eceran;
+            } elseif ($product->unit_pak == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity * $product->pak_to_eceran;
+            } elseif ($product->unit_pcs == $rc->unit_id) {
+                $inventory->quantity += $rc->quantity;
+            }
+
+            $inventory->update();
+        }
+
+        if ($sell->status == 'lunas') {
+            Cashflow::create([
+                'user_id' => auth()->id(),
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'for' => 'Retur penjualan',
+                'description' => 'Retur Penjualan ' . $sell->order_number . ' - ' . $sell->customer->name,
+                'out' => $totalPrice,
+                'in' => 0,
+                'payment_method' => null,
+            ]);
+        }
+
+        // delete the cart
         SellReturCart::where('user_id', auth()->id())->delete();
+
         return redirect()->route('penjualan-retur.index')->with('success', 'Retur berhasil disimpan');
     }
 

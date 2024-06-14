@@ -18,7 +18,10 @@ class SettlementController extends Controller
      */
     public function index()
     {
-        return view('pages.settlement.index');
+        $warehouses = Warehouse::all();
+        $roles = auth()->user()->roles->pluck('name')->implode(',');
+        $cashiers = User::orderBy('id', 'asc')->get();
+        return view('pages.settlement.index', compact('warehouses', 'roles', 'cashiers'));
     }
 
     public function data()
@@ -70,10 +73,7 @@ class SettlementController extends Controller
      */
     public function create()
     {
-        $warehouses = Warehouse::all();
-        $roles = auth()->user()->roles->pluck('name')->implode(',');
-        $cashiers = User::orderBy('id', 'asc')->get();
-        return view('pages.settlement.create', compact('roles', 'warehouses', 'cashiers'));
+        return view('pages.settlement.all-data');
     }
 
     /**

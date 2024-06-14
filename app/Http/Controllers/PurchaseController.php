@@ -12,6 +12,8 @@ use App\Models\PurchaseDetail;
 use App\Models\Supplier;
 use App\Models\Treasury;
 use App\Models\Unit;
+use App\Models\User;
+use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,25 +25,57 @@ class PurchaseController extends Controller
      */
     public function index()
     {
-        return view('pages.purchase.index');
+        $masters = User::role('master')->get();
+        $warehouses = Warehouse::all();
+        $users = User::all();
+        return view('pages.purchase.index', compact('masters', 'warehouses', 'users'));
     }
 
-    public function data()
+    public function data(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'master') {
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
+        }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
+        }
+
+        if ($role[0] == 'master') {
             $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($purchases);
+                ->orderBy('id', 'desc');
         } else {
             $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($purchases);
+                ->where('user_id', auth()->id())
+                ->orderBy('id', 'desc');
         }
+
+        if ($warehouse) {
+            $purchases->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $purchases->where('user_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $purchases->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $purchases = $purchases->get();
+        return response()->json($purchases);
     }
 
     /**
@@ -56,7 +90,29 @@ class PurchaseController extends Controller
             ->get();
         $products = Product::all();
         $units = Unit::all();
-        $orderNumber = "PL -" . date('Ymd') . "-" . str_pad(Purchase::count() + 1, 4, '0', STR_PAD_LEFT);
+        $today = date('Ymd');
+        $warehouseId = auth()->user()->warehouse_id;
+        $userId = auth()->id();
+
+        $lastOrder = Purchase::where('user_id', $userId)
+            ->whereDate('created_at', today())
+            ->latest()
+            ->first();
+
+        if ($lastOrder) {
+            // Extract the numerical part of the order number and increment it
+            $lastOrderNumber = intval(substr($lastOrder->order_number, strrpos($lastOrder->order_number, '-') + 1));
+            $newOrderNumber = $lastOrderNumber + 1;
+        } else {
+            // Reset the order number to 1
+            $newOrderNumber = 1;
+        }
+
+        // Format the new order number with leading zeros
+        $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
+
+        // Generate the order number string
+        $orderNumber = "PL-" . $today . "-" . $formattedOrderNumber;
         $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
@@ -79,25 +135,12 @@ class PurchaseController extends Controller
                 $status = 'lunas';
             }
 
-            $lastOrder = Purchase::latest()->first();
-
-            if ($lastOrder) {
-                // Extract the numerical part of the order number and perform modulo operation
-                $lastOrderNumber = (int) preg_replace('/[^0-9]/', '', $lastOrder->order_number);
-                $newOrderNumber = ($lastOrderNumber % 9999) + 1;
-            } else {
-                // If there are no previous orders, set the order number to 1
-                $newOrderNumber = 1;
-            }
-
-            $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
-
             $purchase = Purchase::create([
                 'user_id' => auth()->id(),
                 'supplier_id' => $request->supplier_id,
                 'treasury_id' => $request->treasury_id,
                 'warehouse_id' => auth()->user()->warehouse_id,
-                'order_number' => $orderNumber,
+                'order_number' => $request->order_number,
                 'invoice' => $request->invoice,
                 'subtotal' => $request->subtotal,
                 'potongan' => $request->potongan,
@@ -183,7 +226,7 @@ class PurchaseController extends Controller
                     'price' => $cart->price_unit,
                     'for' => 'MASUK',
                     'type' => 'PEMBELIAN',
-                    'description' => 'Pembelian ' . $orderNumber,
+                    'description' => 'Pembelian ' . $request->order_number,
                 ]);
             }
 
@@ -195,7 +238,7 @@ class PurchaseController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Pembelian',
-                    'description' => 'Pembelian ' . $orderNumber . ' Supplier ' . $supplier->name,
+                    'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
                     'in' => 0,
                     'out' => $request->pay - $request->remaint,
                     'payment_method' => 'kas besar',
@@ -204,8 +247,8 @@ class PurchaseController extends Controller
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Pembelian ' . $orderNumber . ' Supplier ' . $supplier->name,
+                    'for' => 'Pembelian',
+                    'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
                     'in' => 0,
                     'out' => $request->pay - $request->remaint,
                     'payment_method' => 'kas kecil',
@@ -421,12 +464,21 @@ class PurchaseController extends Controller
         $purchase = Purchase::with('supplier')
             ->find($request->purchase_id);
 
-        if ($request->pay > $purchase->grand_total) {
-            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh lebih dari total hutang');
+        if ($request->pay > $purchase->grand_total + $purchase->pay) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran hutang tidak boleh lebih dari total hutang'
+            ]);
         } elseif ($request->pay < 0) {
-            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh kurang dari 0');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran hutang tidak boleh kurang dari 0'
+            ]);
         } elseif ($request->pay == 0) {
-            return redirect()->back()->with('error', 'Pembayaran hutang tidak boleh 0');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran hutang tidak boleh 0'
+            ]);
         } else {
 
             if ($request->potongan) {
@@ -474,7 +526,10 @@ class PurchaseController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Pembayaran hutang berhasil');
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pembayaran hutang berhasil'
+            ]);
         }
     }
 }

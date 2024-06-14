@@ -195,7 +195,7 @@ class SellDraftController extends Controller
 
             $sellCart->each->delete();
 
-            if ($request->payment_method == 'transfer') {
+            if ($request->payment_method == 'transfer' && $sell->transfer > 0) {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
@@ -215,7 +215,7 @@ class SellDraftController extends Controller
                     'out' => $transfer,
                     'payment_method' => 'transfer',
                 ]);
-            } elseif ($request->payment_method == 'cash') {
+            } elseif ($request->payment_method == 'cash' && $sell->cash > 0) {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
@@ -254,13 +254,7 @@ class SellDraftController extends Controller
         }
 
         if ($request->status != 'draft') {
-            $printUrl = route('penjualan.print', $sell->id);
-            $script = "<script>
-                window.open('$printUrl', '_blank');
-            </script>";
-            return Response::make($script . '<script>
-                window.location.href = "' . route('penjualan.index') . '";
-            </script>');
+            return redirect()->route('penjualan.print', $sell->id);
         } else {
             return redirect()->route('penjualan.index');
         }
@@ -272,7 +266,9 @@ class SellDraftController extends Controller
     public function destroy(string $id)
     {
         $sell = Sell::where('id', $id)->first();
-        $sellCart = SellCartDraft::where('cashier_id', $sell->cashier_id)->get();
+        $sellCart = SellCartDraft::where('cashier_id', $sell->cashier_id)
+        ->where('sell_id', $id)
+        ->get();
 
         foreach ($sellCart as $sc) {
             $inventory = Inventory::where('product_id', $sc->product_id)

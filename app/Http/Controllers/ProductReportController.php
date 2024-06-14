@@ -25,11 +25,19 @@ class ProductReportController extends Controller
     {
         $role = auth()->user()->getRoleNames();
         $user_id = $request->input('user_id');
-        $selectedMonth = $request->input('selected_month');
+        // $selectedMonth = $request->input('selected_month');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
         $for = $request->input('for');
 
-        if (!$selectedMonth) {
-            $selectedMonth = now()->format('Y-m'); // Default to current month if no specific month is selected
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
+        }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
         }
 
         if ($role[0] == 'master') {
@@ -43,8 +51,11 @@ class ProductReportController extends Controller
                 ->orderBy('created_at', 'desc');
         }
 
-        $query->whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-            ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month);
+        // $query->whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
+        //     ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month);
+
+        $query->whereDate('created_at', '>=', $fromDate)
+            ->whereDate('created_at', '<=', $toDate);
 
         if ($warehouse) {
             $query->where('warehouse_id', $warehouse);
@@ -59,8 +70,8 @@ class ProductReportController extends Controller
         }
 
         if ($role[0] == 'master') {
-            $totalNilai = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalNilai = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->when($warehouse, function ($query) use ($warehouse) {
                     return $query->where('warehouse_id', $warehouse);
                 })
@@ -72,8 +83,8 @@ class ProductReportController extends Controller
                 })
                 ->sum(DB::raw('qty * price'));
 
-            $totalDus = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalDus = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->when($warehouse, function ($query) use ($warehouse) {
                     return $query->where('warehouse_id', $warehouse);
                 })
@@ -86,8 +97,8 @@ class ProductReportController extends Controller
                 ->where('unit_type', 'DUS')
                 ->sum('qty');
 
-            $totalPak = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalPak = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->when($warehouse, function ($query) use ($warehouse) {
                     return $query->where('warehouse_id', $warehouse);
                 })
@@ -100,8 +111,8 @@ class ProductReportController extends Controller
                 ->where('unit_type', 'PAK')
                 ->sum('qty');
 
-            $totalEceran = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalEceran = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->when($warehouse, function ($query) use ($warehouse) {
                     return $query->where('warehouse_id', $warehouse);
                 })
@@ -114,31 +125,31 @@ class ProductReportController extends Controller
                 ->where('unit_type', 'ECERAN')
                 ->sum('qty');
         } else {
-            $totalNilai = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalNilai = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->where('user_id', auth()->user()->id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('for', $for)
                 ->sum(DB::raw('qty * price'));
 
-            $totalDus = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalDus = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->where('user_id', auth()->user()->id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('for', $for)
                 ->where('unit_type', 'DUS')
                 ->sum('qty');
 
-            $totalPak = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalPak = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->where('user_id', auth()->user()->id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('for', $for)
                 ->where('unit_type', 'PAK')
                 ->sum('qty');
 
-            $totalEceran = ProductReport::whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-                ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month)
+            $totalEceran = ProductReport::whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $toDate)
                 ->where('user_id', auth()->user()->id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('for', $for)

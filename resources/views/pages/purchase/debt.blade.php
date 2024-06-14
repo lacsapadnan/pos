@@ -193,16 +193,10 @@
                         },
                         {
                             data: "id",
-                            render: function(data, type, row) {
-                                var purchaseId = data;
-                                var bayarButton =`<a href="#" class="btn btn-sm btn-primary btn-submit data-purchase-id="${data}">Bayar</a>`;
-                                var returnButton = `<a href="view-return-pembelian?purchase_id=${purchaseId}" target="_blank" class="btn btn-sm btn-warning">Return</a>`;
-
-                                return bayarButton + ' ' + returnButton;
+                            "render": function(data, type, row) {
+                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-purchase-id="${data}">Bayar</a>`;
                             }
-                        }
-
-
+                        },
                     ],
                 });
 
@@ -230,14 +224,22 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
-                            // Reload the page after successful update
-                            location.reload();
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: response.message,
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: response.message,
+                                });
+                            }
                         },
-                        error: function(xhr, status, error) {
-                            // Handle error response
-                            console.log(xhr.responseText);
-                            console.log('Request data:', inputRequest);
-                        }
                     });
                 });
 

@@ -20,6 +20,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
+use Mike42\Escpos\EscposImage;
+use Mike42\Escpos\ImagickEscposImage;
+use Mike42\Escpos\PrintConnectors\FilePrintConnector;
+use Mike42\Escpos\Printer;
 
 class SellController extends Controller
 {
@@ -91,7 +95,29 @@ class SellController extends Controller
             ->get();
         $products = Product::all();
         $customers = Customer::all();
-        $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad(Sell::count() + 1, 4, '0', STR_PAD_LEFT);
+        $today = date('Ymd');
+        $warehouseId = auth()->user()->warehouse_id;
+        $userId = auth()->id();
+
+        $lastOrder = Sell::where('cashier_id', $userId)
+            ->whereDate('created_at', today())
+            ->latest()
+            ->first();
+
+        if ($lastOrder) {
+            // Extract the numerical part of the order number and increment it
+            $lastOrderNumber = intval(substr($lastOrder->order_number, strrpos($lastOrder->order_number, '-') + 1));
+            $newOrderNumber = $lastOrderNumber + 1;
+        } else {
+            // Reset the order number to 1
+            $newOrderNumber = 1;
+        }
+
+        // Format the new order number with leading zeros
+        $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
+
+        // Generate the order number string
+        $orderNumber = "PJ-" . $today . "-" . $formattedOrderNumber;
         $cart = SellCart::with('product', 'unit')->orderBy('id', 'desc')
             ->where('cashier_id', auth()->id())
             ->get();
@@ -123,24 +149,10 @@ class SellController extends Controller
             $status = 'lunas';
         }
 
-        $lastOrder = Sell::latest()->first();
-
-        if ($lastOrder) {
-            // Extract the numerical part of the order number and perform modulo operation
-            $lastOrderNumber = (int) preg_replace('/[^0-9]/', '', $lastOrder->order_number);
-            $newOrderNumber = ($lastOrderNumber % 9999) + 1;
-        } else {
-            // If there are no previous orders, set the order number to 1
-            $newOrderNumber = 1;
-        }
-
-        // Format the new order number and create the order number string
-        $orderNumber = "PJ -" . date('Ymd') . "-" . str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
-
         $sell = Sell::create([
             'cashier_id' => auth()->id(),
             'warehouse_id' => auth()->user()->warehouse_id,
-            'order_number' => $orderNumber,
+            'order_number' => $request->order_number,
             'customer_id' => $request->customer,
             'subtotal' => $request->subtotal,
             'grand_total' => $request->grand_total,
@@ -202,19 +214,19 @@ class SellController extends Controller
                     'price' => $sc->price - $sc->diskon,
                     'for' => 'KELUAR',
                     'type' => 'PENJUALAN',
-                    'description' => 'Penjualan ' . $orderNumber,
+                    'description' => 'Penjualan ' . $sell->order_number,
                 ]);
             }
 
             // delete all purchase cart
             SellCart::where('cashier_id', auth()->id())->delete();
 
-            if ($request->payment_method == 'transfer') {
+            if ($request->payment_method == 'transfer' && $sell->transfer > 0) {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . 'Customer ' . $customer->name,
+                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
                     'in' => $transfer - $sell->change,
                     'out' => 0,
                     'payment_method' => 'transfer',
@@ -224,22 +236,22 @@ class SellController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . 'Customer ' . $customer->name,
+                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
                     'in' => 0,
                     'out' => $transfer - $sell->change,
                     'payment_method' => 'transfer',
                 ]);
-            } elseif ($request->payment_method == 'cash') {
+            } elseif ($request->payment_method == 'cash' && $sell->cash > 0) {
                 Cashflow::create([
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . 'Customer ' . $customer->name,
+                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
                     'in' => $cash - $sell->change,
                     'out' => 0,
                     'payment_method' => 'cash',
                 ]);
-            } elseif ($request->payment_method == 'split') {
+            } elseif ($request->payment_method == 'split' && $sell->cash > 0 && $sell->transfer > 0) {
                 // format transfer and cash to currency
                 $cashFinal = $cash - $sell->change;
                 $transferFormat = number_format($transfer, 0, ',', '.');
@@ -249,7 +261,7 @@ class SellController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
+                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
                     'in' => 0,
                     'out' => $transfer,
                     'payment_method' => 'split payment',
@@ -259,7 +271,7 @@ class SellController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
+                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
                     'in' => $transfer,
                     'out' => 0,
                     'payment_method' => 'split payment',
@@ -269,8 +281,8 @@ class SellController extends Controller
                     'warehouse_id' => auth()->user()->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $orderNumber . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
-                    'in' => $sell->grand_total - $transfer ,
+                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
+                    'in' => $sell->grand_total - $transfer,
                     'out' => 0,
                     'payment_method' => 'split payment',
                 ]);
@@ -278,12 +290,46 @@ class SellController extends Controller
         }
 
         if ($request->status != 'draft') {
-            $printUrl = route('penjualan.print', $sell->id);
-            $script = "<script>window.open('$printUrl', '_blank');</script>";
-            return Response::make($script . '<script>window.location.href = "' . route('penjualan.index') . '";</script>');
+            try {
+                $printUrl = route('penjualan.print', $sell->id);
+                $script = "<script>window.open('$printUrl', '_blank');</script>";
+                return Response::make($script . '<script>window.location.href = "' . route('penjualan.index') . '";</script>');
+            } catch (\Throwable $th) {
+                return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
+            }
         } else {
             return redirect()->route('penjualan.index');
         }
+    }
+
+    public function printReceipt($id)
+    {
+        $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
+        $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+        $totalQuantity = 0;
+        $totalQuantity += $details->count();
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
+
+        // Save the PDF to a file
+        $pdf->save("receipt.pdf");
+
+        // Convert the PDF to an image using Imagick
+        $imagick = new \Imagick();
+        $imagick->readImage("receipt.pdf[0]"); // Read the first page of the PDF
+        $imagick->setImageFormat('png');
+        $imagick->writeImage('receipt.png');
+
+        $connector = new FilePrintConnector("php://stdout");
+        $printer = new Printer($connector);
+
+        // Load the image
+        $img = EscposImage::load("receipt.png", false);
+
+        // Print the image
+        $printer->graphics($img);
+
+        // Close printer
+        $printer->close();
     }
 
     public function checkCustomerStatus(Request $request)
@@ -512,12 +558,23 @@ class SellController extends Controller
         $sell = Sell::with('customer')
             ->find($request->sell_id);
 
-        if ($request->pay > $sell->grand_total) {
-            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh lebih dari total piutang');
+        $sisaHutang = $sell->grand_total - $sell->pay;
+
+        if ($request->pay > $sell->grand_total - $sell->pay) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh lebih dari sisa piutang'
+            ]);
         } elseif ($request->pay < 0) {
-            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh kurang dari 0');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh kurang dari 0'
+            ]);
         } elseif ($request->pay == 0) {
-            return redirect()->back()->with('error', 'Pembayaran piutang tidak boleh 0');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh 0'
+            ]);
         } else {
             $sell->pay += $request->pay;
 
@@ -559,7 +616,10 @@ class SellController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Pembayaran piutang berhasil');
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pembayaran piutang berhasil'
+            ]);
         }
     }
 }

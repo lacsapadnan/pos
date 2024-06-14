@@ -62,8 +62,10 @@
                 </div>
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="month" id="selectedMonthFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="month" placeholder="Pilih Bulan">
+                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Dari Tanggal">
+                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Ke Tanggal">
                 </div>
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -215,8 +217,10 @@
                     ],
                 });
 
-                $('#selectedMonthFilter, #warehouseFilter, #userFilter, #forFilter').on('change', function() {
-                    var selectedMonth = $('#selectedMonthFilter').val();
+                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter, #forFilter').on('change', function() {
+                    // var selectedMonth = $('#selectedMonthFilter').val();
+                    var fromDate = $('#fromDateFilter').val();
+                    var toDate = $('#toDateFilter').val();
                     var warehouse_id = $('#warehouseFilter').val();
                     var user_id = $('#userFilter').val();
                     var forFilter = $('#forFilter').val();
@@ -225,8 +229,12 @@
                     var url = '{{ route('api.laporan-produk') }}';
                     var params = [];
 
-                    if (selectedMonth) {
-                        params.push('selected_month=' + selectedMonth);
+                    if (fromDate) {
+                        params.push('from_date=' + fromDate);
+                    }
+
+                    if (toDate) {
+                        params.push('to_date=' + toDate);
                     }
 
                     if (warehouse_id) {

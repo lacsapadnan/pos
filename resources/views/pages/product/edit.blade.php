@@ -14,7 +14,7 @@
                         <div id="otherSelectContainer" class="mb-4">
                             <label class="form-label" for="otherSelect">Kelompok</label>
                             <select id="otherSelect" name="category" class="form-select form-select-solid"
-                                data-control="select2" >
+                                data-control="select2">
                                 <option selected>{{ $product->group }}</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->name }}">{{ $category->name }}</option>
@@ -153,6 +153,7 @@
                             <input name="lastest_price_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga eceran terakhir"
                                 value="{{ $product->lastest_price_eceran }}" />
+                            <span class="mt-2">Harga eceran terakhir: {{ $product->lastest_price_eceran }}</span>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -160,6 +161,7 @@
                             <label class="form-label" for="name">Harga Jual Dus</label>
                             <input name="price_sell_dus" type="number" class="form-control"
                                 placeholder="Masukan harga jual dus" value="{{ $product->price_sell_dus }}" />
+                            <span>Harga jual dus: {{ $product->price_sell_dus }}</span>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -167,6 +169,7 @@
                             <label class="form-label" for="name">Harga Jual Pak</label>
                             <input name="price_sell_pak" type="number" class="form-control"
                                 placeholder="Masukan harga jual pak" value="{{ $product->price_sell_pak }}" />
+                            <span>Harga Jual Pak: {{ $product->price_sell_pak }}</span>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -174,6 +177,7 @@
                             <label class="form-label" for="name">Harga Jual Eceran</label>
                             <input name="price_sell_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga jual eceran" value="{{ $product->price_sell_eceran }}" />
+                            <span>Harga Jual Eceran: {{ $product->price_sell_eceran }}</span>
                         </div>
                     </div>
                 </div>
