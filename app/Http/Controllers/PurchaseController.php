@@ -94,14 +94,18 @@ class PurchaseController extends Controller
         $warehouseId = auth()->user()->warehouse_id;
         $userId = auth()->id();
 
+        $today = Carbon::today()->format('Ymd'); // Format date as YYYYMMDD
+
         $lastOrder = Purchase::where('user_id', $userId)
-            ->whereDate('created_at', today())
-            ->latest()
+            ->where('warehouse_id', $warehouseId)
+            ->whereDate('created_at', Carbon::today())
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if ($lastOrder) {
             // Extract the numerical part of the order number and increment it
-            $lastOrderNumber = intval(substr($lastOrder->order_number, strrpos($lastOrder->order_number, '-') + 1));
+            $lastOrderNumberPart = explode('-', $lastOrder->order_number);
+            $lastOrderNumber = intval($lastOrderNumberPart[2]);
             $newOrderNumber = $lastOrderNumber + 1;
         } else {
             // Reset the order number to 1
@@ -111,8 +115,8 @@ class PurchaseController extends Controller
         // Format the new order number with leading zeros
         $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
 
-        // Generate the order number string
-        $orderNumber = "PL-" . $today . "-" . $formattedOrderNumber;
+        // Generate the order number string with warehouseId
+        $orderNumber = "PL-" . $today . "-" . $warehouseId . "-" . $formattedOrderNumber;
         $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
