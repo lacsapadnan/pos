@@ -105,7 +105,7 @@ class PurchaseController extends Controller
         if ($lastOrder) {
             // Extract the numerical part of the order number and increment it
             $lastOrderNumberPart = explode('-', $lastOrder->order_number);
-            $lastOrderNumber = intval($lastOrderNumberPart[2]);
+            $lastOrderNumber = intval(end($lastOrderNumberPart));
             $newOrderNumber = $lastOrderNumber + 1;
         } else {
             // Reset the order number to 1
@@ -115,7 +115,7 @@ class PurchaseController extends Controller
         // Format the new order number with leading zeros
         $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
 
-        // Generate the order number string with warehouseId
+        // Generate the order number string with warehouseId in the middle
         $orderNumber = "PL-" . $today . "-" . $warehouseId . "-" . $formattedOrderNumber;
         $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;

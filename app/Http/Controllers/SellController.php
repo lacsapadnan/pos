@@ -99,18 +99,15 @@ class SellController extends Controller
         $warehouseId = auth()->user()->warehouse_id;
         $userId = auth()->id();
 
-        $today = Carbon::today()->format('Ymd'); // Format date as YYYYMMDD
-
         $lastOrder = Sell::where('cashier_id', $userId)
             ->where('warehouse_id', $warehouseId)
             ->whereDate('created_at', Carbon::today())
             ->orderBy('created_at', 'desc')
             ->first();
-
         if ($lastOrder) {
             // Extract the numerical part of the order number and increment it
             $lastOrderNumberPart = explode('-', $lastOrder->order_number);
-            $lastOrderNumber = intval($lastOrderNumberPart[2]);
+            $lastOrderNumber = intval(end($lastOrderNumberPart));
             $newOrderNumber = $lastOrderNumber + 1;
         } else {
             // Reset the order number to 1
@@ -120,7 +117,7 @@ class SellController extends Controller
         // Format the new order number with leading zeros
         $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
 
-        // Generate the order number string with warehouseId
+        // Generate the order number string with warehouseId in the middle
         $orderNumber = "PJ-" . $today . "-" . $warehouseId . "-" . $formattedOrderNumber;
         $cart = SellCart::with('product', 'unit')->orderBy('id', 'desc')
             ->where('cashier_id', auth()->id())
