@@ -32,38 +32,26 @@ class SettlementController extends Controller
 
     public function combinedData()
     {
-        // Query mutations with necessary relationships
-        $mutations = TreasuryMutation::with(['fromWarehouse', 'toWarehouse', 'inputCashier', 'outputCashier'])
+        $combinedData = TreasuryMutation::with(['fromWarehouse', 'toWarehouse', 'inputCashier', 'outputCashier'])
             ->orderBy('input_date', 'desc')
-            ->get();
-        // Query settlements with related data
-        $settlements = Settlement::all();
+            ->get()
+            ->map(function ($mutation) {
+                $settlement = Settlement::where('mutation_id', $mutation->id)->first();
 
-        // Combine mutations with settlements using mutation_id as the key
-        $combinedData = [];
+                $totalReceived = $settlement ? $settlement->total_received : 0;
+                $outstanding = $settlement ? $settlement->outstanding : 0;
 
-        foreach ($mutations as $mutation) {
-            $mutationId = $mutation->id;
-
-            // Find the corresponding settlement, if it exists
-            $settlement = $settlements->firstWhere('mutation_id', $mutationId);
-
-            // If no settlement is found, default to 0 for total_received and outstanding
-            $totalReceived = $settlement ? $settlement->total_recieved : 0;
-            $outstanding = $settlement ? $settlement->outstanding : 0;
-
-            // Build the combined data
-            $combinedData[] = [
-                'id' => $mutation->id,
-                'input_date' => $mutation->input_date,
-                'from_warehouse' => $mutation->fromWarehouse->name,
-                'output_cashier' => $mutation->outputCashier->name,
-                'from_treasury' => $mutation->from_treasury,
-                'amount' => $mutation->amount,
-                'total_received' => $totalReceived,
-                'outstanding' => $outstanding,
-            ];
-        }
+                return [
+                    'id' => $mutation->id,
+                    'input_date' => $mutation->input_date,
+                    'from_warehouse' => $mutation->fromWarehouse->name,
+                    'output_cashier' => $mutation->outputCashier->name,
+                    'from_treasury' => $mutation->from_treasury,
+                    'amount' => $mutation->amount,
+                    'total_received' => $totalReceived,
+                    'outstanding' => $outstanding,
+                ];
+            });
 
         return response()->json($combinedData);
     }
