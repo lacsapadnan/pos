@@ -74,8 +74,6 @@
                                 <th>Kasir</th>
                                 <th>Cabang</th>
                                 <th>Total Pembelian</th>
-                                <th>Terima Piutang</th>
-                                <th>Metode Bayar</th>
                                 <th>Terbayar</th>
                                 <th>Sisa Piutang</th>
                                 <th>Aksi</th>
@@ -89,6 +87,41 @@
         </div>
     </div>
     @includeIf('pages.sell.modal')
+
+    <!-- Modal Pembayaran Piutang -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Pembayaran Piutang</h5>
+                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentForm">
+                        <div class="form-group">
+                            <label class="form-label" for="pay_credit">Jumlah Pembayaran:</label>
+                            <input type="text" class="form-control" id="pay_credit" name="pay_credit">
+                        </div>
+                        <div class="mt-2 form-group">
+                            <label class="form-label" for="payment_method">Metode Pembayaran:</label>
+                            <select class="form-select" id="payment_method" name="payment">
+                                <option value="">Pilih Pembayaran</option>
+                                <option value="transfer">Transfer</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="sell_id" name="sell_id">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="submitPayment">Submit Pembayaran</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('addon-script')
@@ -141,22 +174,6 @@
                             }
                         },
                         {
-                            data: null,
-                            render: function(data, type, row) {
-                                return `<input type="text" name="pay_credit" class="form-control price-input">`;
-                            }
-                        },
-                        {
-                            data: null,
-                            render: function(data, type, row) {
-                                return `<select name="payment" class="form-select form-select-solid" aria-label="Default select example">
-                                    <option value="">Pilih Pembayaran</option>
-                                    <option value="transfer">Transfer</option>
-                                    <option value="cash">Cash</option>
-                                </select>`;
-                            }
-                        },
-                        {
                             "data": "pay",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -182,7 +199,7 @@
                         {
                             data: "id",
                             "render": function(data, type, row) {
-                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-sell-id="${data}">Terima</a>`;
+                                return `<button class="btn btn-sm btn-primary" onclick="openPaymentModal(${data}, ${row.grand_total - row.pay})">Terima</button>`;
                             }
                         },
                     ],
@@ -306,5 +323,47 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
+
+        function openPaymentModal(sellId, remaining) {
+            $('#sell_id').val(sellId);
+            $('#pay_credit').val(remaining);
+            $('#paymentModal').modal('show');
+        }
+
+        $('#submitPayment').click(function() {
+            var formData = {
+                sell_id: $('#sell_id').val(),
+                pay: $('#pay_credit').val(),
+                payment: $('#payment_method').val(),
+            };
+
+            $.ajax({
+                url: '{{ route('bayar-piutang') }}',
+                type: 'POST',
+                data: formData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message,
+                        }).then(() => {
+                            $('#paymentModal').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: response.message,
+                        });
+                    }
+                },
+            });
+        });
     </script>
 @endpush
+
