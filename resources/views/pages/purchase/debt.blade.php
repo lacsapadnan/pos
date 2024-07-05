@@ -84,8 +84,6 @@
                                 <th>Supplier</th>
                                 <th>Cabang</th>
                                 <th>Grand Total</th>
-                                <th>Bayar Hutang</th>
-                                <th>Metode Bayar</th>
                                 <th>Terbayar</th>
                                 <th>Sisa</th>
                                 <th>Aksi</th>
@@ -94,6 +92,39 @@
                         <tbody class="text-gray-900 fw-semibold">
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Pembayaran Hutang -->
+    <div class="modal fade" id="payDebtModal" tabindex="-1" role="dialog" aria-labelledby="payDebtModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="payDebtModalLabel">Bayar Hutang</h5>
+                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <form id="payDebtForm">
+                        <div class="form-group">
+                            <label class="form-label" for="payDebtAmount">Jumlah Pembayaran</label>
+                            <input type="number" class="form-control" id="payDebtAmount" name="pay_debt">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="paymentMethod">Metode Pembayaran</label>
+                            <select class="form-select" id="paymentMethod" name="payment">
+                                <option value="transfer">Transfer</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="purchaseId" name="purchase_id">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="submitPayment">Submit Pembayaran</button>
                 </div>
             </div>
         </div>
@@ -154,21 +185,6 @@
                             }
                         },
                         {
-                            data: null,
-                            render: function(data, type, row) {
-                                return `<input type="text" name="pay_debt" class="form-control price-input">`;
-                            }
-                        },
-                        {
-                            data: null,
-                            render: function(data, type, row) {
-                                return `<select name="payment" class="form-select form-select-solid" aria-label="Default select example">
-                                <option value="transfer">Transfer</option>
-                                    <option value="cash">Cash</option>
-                                </select>`;
-                            }
-                        },
-                        {
                             "data": "pay",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -192,9 +208,9 @@
                             }
                         },
                         {
-                            data: "id",
-                            "render": function(data, type, row) {
-                                return `<a href="#" class="btn btn-sm btn-primary btn-submit data-purchase-id="${data}">Bayar</a>`;
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<button class="btn btn-sm btn-primary btn-submit data-purchase-id="${row.id}">Bayar</button>`;
                             }
                         },
                     ],
@@ -202,15 +218,15 @@
 
                 $(table).on('click', '.btn-submit', function() {
                     var rowData = datatable.row($(this).closest('tr')).data();
-                    var purchaseId = rowData.id;
-                    var payDebt = $(this).closest('tr').find('input[name="pay_debt"]').val();
-                    var selectedPayment = $(this).closest('tr').find('select[name="payment"]').val();
+                    $('#purchaseId').val(rowData.id);
+                    $('#payDebtModal').modal('show');
+                });
 
+                $('#submitPayment').on('click', function() {
                     var inputRequest = {
-                        purchase_id: purchaseId,
-                        pay: payDebt,
-                        payment: selectedPayment,
-
+                        purchase_id: $('#purchaseId').val(),
+                        pay: $('#payDebtAmount').val(),
+                        payment: $('#paymentMethod').val(),
                     };
 
                     console.log(inputRequest);
@@ -230,6 +246,7 @@
                                     title: 'Berhasil',
                                     text: response.message,
                                 }).then(() => {
+                                    $('#payDebtModal').modal('hide');
                                     location.reload();
                                 });
                             } else {
@@ -242,8 +259,6 @@
                         },
                     });
                 });
-
-
             }
 
             // Hook export buttons
@@ -307,13 +322,6 @@
                     initDatatable();
                     exportButtons();
                     handleSearchDatatable();
-                    $(table).on('keydown', 'input[name^="pay_debt"]', function(event) {
-                        if (event.which === 13) {
-                            event.preventDefault();
-                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
-                            btnSubmit.click();
-                        }
-                    });
                 }
             };
         }();
