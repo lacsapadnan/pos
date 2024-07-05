@@ -96,6 +96,8 @@ class SellController extends Controller
         $products = Product::all();
         $customers = Customer::all();
         $today = date('Ymd');
+        $year = substr($today, 2, 2);
+        $today = substr($today, 2);
         $warehouseId = auth()->user()->warehouse_id;
         $userId = auth()->id();
 
@@ -118,7 +120,7 @@ class SellController extends Controller
         $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
 
         // Generate the order number string with warehouseId in the middle
-        $orderNumber = "PJ-" . $today . "-" . $warehouseId . "-" . $formattedOrderNumber;
+        $orderNumber = "PJ-" . $today . "-" . $warehouseId . auth()->id() . "-" . $formattedOrderNumber;
         $cart = SellCart::with('product', 'unit')->orderBy('id', 'desc')
             ->where('cashier_id', auth()->id())
             ->get();

@@ -91,10 +91,10 @@ class PurchaseController extends Controller
         $products = Product::all();
         $units = Unit::all();
         $today = date('Ymd');
+        $year = substr($today, 2, 2);
+        $today = substr($today, 2);
         $warehouseId = auth()->user()->warehouse_id;
         $userId = auth()->id();
-
-        $today = Carbon::today()->format('Ymd'); // Format date as YYYYMMDD
 
         $lastOrder = Purchase::where('user_id', $userId)
             ->where('warehouse_id', $warehouseId)
@@ -116,7 +116,7 @@ class PurchaseController extends Controller
         $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
 
         // Generate the order number string with warehouseId in the middle
-        $orderNumber = "PL-" . $today . "-" . $warehouseId . "-" . $formattedOrderNumber;
+        $orderNumber = "PL-" . $today . "-" . $warehouseId . auth()->id() . "-" . $formattedOrderNumber;
         $cart = PurchaseCart::with('product.unit_dus', 'product.unit_pak', 'product.unit_eceran')->where('user_id', auth()->id())->get();
         $subtotal = 0;
         foreach ($cart as $c) {
