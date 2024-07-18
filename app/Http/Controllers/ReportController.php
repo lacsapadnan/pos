@@ -19,100 +19,62 @@ class ReportController extends Controller
 
     public function data(Request $request)
     {
-        $role = auth()->user()->getRoleNames();
+        $role = auth()->user()->getRoleNames()->first();
         $user_id = $request->input('user_id');
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
+        $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
+        $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
 
-        $defaultDate = now()->format('Y-m-d');
+        $endDate = Carbon::parse($toDate)->endOfDay();
 
-        if (!$fromDate) {
-            $fromDate = $defaultDate;
-        }
+        $query = Cashflow::with('user')->orderBy('created_at', 'desc');
 
-        if (!$toDate) {
-            $toDate = $defaultDate;
-        }
-
-        if ($role[0] == 'master') {
+        if ($role == 'master') {
             $warehouse = $request->input('warehouse');
-            $query = Cashflow::orderBy('created_at', 'desc')->with('user');
         } else {
             $warehouse = auth()->user()->warehouse_id;
-            $query = Cashflow::where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->with('user')
-                ->orderBy('created_at', 'desc');
+            $query->where('user_id', auth()->user()->id)->where('warehouse_id', $warehouse);
         }
 
-        // Query untuk mendapatkan data Cashflow sesuai kriteria.
-        $query = $query->when($warehouse, function ($query) use ($warehouse) {
-            return $query->where('warehouse_id', $warehouse);
+        $query->when($warehouse, function ($q) use ($warehouse) {
+            $q->where('warehouse_id', $warehouse);
         })
-            ->when($user_id, function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
+            ->when($user_id, function ($q) use ($user_id) {
+                $q->where('user_id', $user_id);
             })
-            ->when($fromDate && $toDate, function ($query) use ($fromDate, $toDate) {
-                $endDate = Carbon::parse($toDate)->endOfDay();
+            ->whereBetween('created_at', [$fromDate, $endDate]);
 
-                return $query->whereDate('created_at', '>=', $fromDate)
-                    ->whereDate('created_at', '<=', $endDate);
+        // Calculating awalValue only once
+        $awalQuery = Cashflow::whereDate('created_at', '<', $fromDate);
+
+        if ($role != 'master') {
+            $awalQuery->where('user_id', auth()->user()->id)->where('warehouse_id', $warehouse);
+        }
+
+        $awalQuery->when($warehouse, function ($q) use ($warehouse) {
+            $q->where('warehouse_id', $warehouse);
+        })
+            ->when($user_id, function ($q) use ($user_id) {
+                $q->where('user_id', $user_id);
             });
 
-        if ($warehouse) {
-            $query->where('warehouse_id', $warehouse);
-        }
+        $awalValue = $awalQuery->sum('in') - $awalQuery->sum('out');
 
-        if ($user_id) {
-            $query->where('user_id', $user_id);
-        }
-
-        if ($fromDate && $toDate) {
-            $endDate = Carbon::parse($toDate)->endOfDay();
-
-            $query->whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $endDate);
-        }
-
-        if ($role[0] == 'master') {
-            $awalValue = Cashflow::whereDate('created_at', '<', $fromDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->sum('in') - Cashflow::whereDate('created_at', '<', $fromDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->sum('out');
-        } else {
-            $awalValue = Cashflow::whereDate('created_at', '<', $fromDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->sum('in') - Cashflow::whereDate('created_at', '<', $fromDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->sum('out');
-        }
-
-        // Hitung nilai "akhir".
-        $akhirValue = $awalValue + ($query->sum('in') - $query->sum('out'));
+        $cashflows = $query->get();
+        $sumIn = $cashflows->sum('in');
+        $sumOut = $cashflows->sum('out');
+        $akhirValue = $awalValue + ($sumIn - $sumOut);
 
         $response = [
-            'cashflow' => $query->get(),
+            'cashflow' => $cashflows,
             'awalValue' => $awalValue,
             'akhirValue' => $akhirValue,
         ];
 
         return response()->json($response);
     }
-    
-    public function destroy($id) {
+
+    public function destroy($id)
+    {
         $cashflow = Cashflow::findOrFail($id);
         $cashflow->delete();
 

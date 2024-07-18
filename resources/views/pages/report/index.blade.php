@@ -33,7 +33,8 @@
                     </div>
                 @else
                     <div class="ms-2">
-                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
+                        <input type="text" id="warehouseFilter" class="form-control"
+                            value="{{ auth()->user()->warehouse_id }}" disabled hidden>
                         <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
                     </div>
                 @endrole
@@ -72,6 +73,11 @@
                 </div>
                 <div class="col-md-4">
                     <h2>Akhir: <span id="akhirValue">Calculating...</span></h2>
+                </div>
+            </div>
+            <div id="loadingSpinner" style="display: none; position: absolute; top: 90%; left: 50%; transform: translate(-50%, -50%);">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
                 </div>
             </div>
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
@@ -128,6 +134,11 @@
                         url: '{{ route('api.report') }}',
                         type: 'GET',
                         dataSrc: '',
+                        beforeSend: function() {
+                            // Show loading spinner and hide the table
+                            $('#loadingSpinner').show();
+                            $(table).hide();
+                        },
                         success: function(response) {
                             const numberFormatter = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
@@ -142,6 +153,15 @@
 
                             // Update your DataTable with cashflow data
                             datatable.clear().rows.add(response.cashflow).draw();
+
+                            // Hide loading spinner and show the table
+                            $('#loadingSpinner').hide();
+                            $(table).show();
+                        },
+                        error: function() {
+                            // Hide loading spinner and show the table even if there's an error
+                            $('#loadingSpinner').hide();
+                            $(table).show();
                         },
                     },
                     columns: [{
@@ -193,22 +213,23 @@
                             }
                         },
                         @role('master')
-                        {
-                            data: "id",
-                            render: function(data, type, row) {
-                                return `
-                                <form id="deleteForm_${data}" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <input type="hidden" name="id" value="${data}">
-                                            <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
-                                        </form>
-                                `;
+                            {
+                                data: "id",
+                                render: function(data, type, row) {
+                                    return `
+                <form id="deleteForm_${data}" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <input type="hidden" name="id" value="${data}">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
+                </form>
+                `;
+                                }
                             }
-                        }
                         @endrole
                     ],
                 });
+
 
                 $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
                     var fromDate = $('#fromDateFilter').val();
