@@ -161,9 +161,9 @@ class SellReturController extends Controller
         $masters = User::role('master')->get();
         $warehouses = Warehouse::all();
         $role = auth()->user()->getRoleNames();
-        if($role[0] == 'master'){
+        if ($role[0] == 'master') {
             $users = User::all();
-        }else{
+        } else {
             $users = User::where('warehouse_id', auth()->user()->warehouse_id)->get();
         }
         return view('pages.retur.list-penjualan', compact('masters', 'warehouses', 'users'));
@@ -413,7 +413,6 @@ class SellReturController extends Controller
         $userId = auth()->id();
         $inputRequests = $request->input_requests;
 
-        // Loop through each input request
         foreach ($inputRequests as $inputRequest) {
             $productId = $inputRequest['product_id'];
             $unitId = $inputRequest['unit_id'];
@@ -422,35 +421,35 @@ class SellReturController extends Controller
             if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
                 $quantityRetur = $inputRequest['quantity'];
 
-                // Fetch the sell detail
                 $sellDetail = SellDetail::where('sell_id', $sellId)
                     ->where('product_id', $productId)
                     ->where('unit_id', $unitId)
                     ->first();
 
-                // Check if sell detail exists
                 if ($sellDetail) {
+                    $existingCart = SellReturCart::where('user_id', $userId)
+                        ->where('sell_id', $sellId)
+                        ->where('product_id', $productId)
+                        ->where('unit_id', $unitId)
+                        ->first();
+
+                    $totalQuantityInCart = $existingCart ? $existingCart->quantity + $quantityRetur : $quantityRetur;
+
                     $rules = [
-                        'quantity' => 'required|numeric|min:1|max:' . $sellDetail->quantity,
+                        'quantity' => 'required|numeric|min:1|max:' . ($sellDetail->quantity - ($existingCart ? $existingCart->quantity : 0)),
                     ];
 
                     $message = [
                         'quantity.max' => 'Jumlah retur tidak boleh melebihi jumlah penjualan',
                     ];
 
-                    $validator = Validator::make($inputRequest, $rules, $message);
+                    $validator = Validator::make(['quantity' => $totalQuantityInCart], $rules, $message);
 
                     if ($validator->fails()) {
                         return response()->json([
                             'errors' => $validator->errors()->all(),
                         ], 422);
                     }
-
-                    $existingCart = SellReturCart::where('user_id', $userId)
-                        ->where('sell_id', $sellId)
-                        ->where('product_id', $productId)
-                        ->where('unit_id', $unitId)
-                        ->first();
 
                     if ($existingCart) {
                         $existingCart->quantity += $quantityRetur;
