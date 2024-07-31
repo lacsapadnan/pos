@@ -535,23 +535,45 @@ class SellController extends Controller
 
     public function credit()
     {
-        return view('pages.sell.credit');
+        $warehouses = Warehouse::all();
+        $users = User::all();
+        return view('pages.sell.credit', compact('warehouses', 'users'));
     }
 
-    public function dataCredit()
+    public function dataCredit(Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'superadmin') {
+        if ($userRoles[0] == 'master') {
             $sell = Sell::with('warehouse', 'customer', 'cashier')
-                ->where('status', 'piutang')
-                ->get();
+                ->where('status', 'piutang');
         } else {
             $sell = Sell::with('warehouse', 'customer', 'cashier')
                 ->where('status', 'piutang')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->get();
+                ->where('cashier_id', auth()->id());
         }
+
+        if ($warehouse) {
+            $sell->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $sell->where('cashier_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $sell->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $sell = $sell->get();
 
         return response()->json($sell);
     }
