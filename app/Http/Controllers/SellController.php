@@ -554,8 +554,7 @@ class SellController extends Controller
         } else {
             $sell = Sell::with('warehouse', 'customer', 'cashier')
                 ->where('status', 'piutang')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('cashier_id', auth()->id());
+                ->where('warehouse_id', auth()->user()->warehouse_id);
         }
 
         if ($warehouse) {
