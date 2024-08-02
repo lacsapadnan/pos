@@ -443,22 +443,44 @@ class PurchaseController extends Controller
 
     public function debt()
     {
-        return view('pages.purchase.debt');
+        $warehouses = Warehouse::all();
+        $users = User::all();
+        return view('pages.purchase.debt', compact('warehouses', 'users'));
     }
 
-    public function dataDebt()
+    public function dataDebt( Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
-        if ($userRoles[0] == 'superadmin') {
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
+
+        if ($userRoles[0] == 'master') {
             $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
-                ->where('status', 'hutang')
-                ->get();
+                ->where('status', 'hutang');
         } else {
             $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('status', 'hutang')
-                ->get();
+                ->where('status', 'hutang');
         }
+
+        if ($warehouse) {
+            $purchases->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $purchases->where('user_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $purchases->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $purchases = $purchases->get();
 
         return response()->json($purchases);
     }
