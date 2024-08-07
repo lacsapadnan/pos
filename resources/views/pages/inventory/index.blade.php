@@ -33,9 +33,11 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
-                    Tambah Data
-                </button>
+                @can('simpan inventori')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
+                        Tambah Data
+                    </button>
+                @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
                     class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
@@ -149,7 +151,7 @@
                                     @can('update inventory')
                                         <button type="button" class="btn btn-primary edit-button" data-id="${data}" data-toggle="modal" data-target="#editModal">Edit</button>
                                     @endcan
-                                    @role('master')
+                                    @role('hapus inventory')
                                         <form action="/inventori/${data}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
@@ -244,15 +246,15 @@
             // Make an AJAX request to fetch the data based on the id
             $.ajax({
                 url: '/inventori/' + id +
-                '/edit', // Update the URL to your Laravel route that fetches the data
+                    '/edit', // Update the URL to your Laravel route that fetches the data
                 method: 'GET',
                 success: function(response) {
                     console.log(response);
                     $('#editInventoryId').val(response.id);
                     $('#productInput').val(response.product_id).trigger(
-                    'change'); // Update select form1 value and trigger change event
+                        'change'); // Update select form1 value and trigger change event
                     $('#cabangInput').val(response.warehouse_id).trigger(
-                    'change'); // Update select form2 value and trigger change event
+                        'change'); // Update select form2 value and trigger change event
                     $('#quantityInput').val(response.quantity);
 
                     $('#editForm').attr('action', '/inventori/' + id);
