@@ -130,10 +130,13 @@
                             "sortable": false,
                             "render": function(data, type, row, meta) {
                                 return `
+                                    @can('update role')
                                     <a href="{{ url('role-permission') }}/${row.id}/edit" type="button" class="btn btn-warning btn-sm">
                                         <i class="ki-solid ki-pencil"></i>
                                         Edit
                                     </a>
+                                    @endcan
+                                    @can('hapus role')
                                     <form action="{{ url('role-permission') }}/${row.id}" method="POST" class="d-inline">
                                         @csrf
                                         @method('delete')
@@ -142,6 +145,7 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @endcan
                                 `;
                             }
                         }
