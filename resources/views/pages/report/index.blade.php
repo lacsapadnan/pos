@@ -75,7 +75,8 @@
                     <h2>Akhir: <span id="akhirValue">Calculating...</span></h2>
                 </div>
             </div>
-            <div id="loadingSpinner" style="display: none; position: absolute; top: 90%; left: 50%; transform: translate(-50%, -50%);">
+            <div id="loadingSpinner"
+                style="display: none; position: absolute; top: 90%; left: 50%; transform: translate(-50%, -50%);">
                 <div class="spinner-border" role="status">
                     <span class="sr-only">Loading...</span>
                 </div>
@@ -94,9 +95,9 @@
                                 <th>Metode Bayar</th>
                                 <th>Masuk</th>
                                 <th>Keluar</th>
-                                @role('master')
+                                @can('hapus laporan')
                                     <th>Aksi</th>
-                                @endrole
+                                @endcan
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
@@ -212,21 +213,21 @@
                                 return formattedPrice;
                             }
                         },
-                        @role('master')
+                        @can('hapus laporan')
                             {
                                 data: "id",
                                 render: function(data, type, row) {
                                     return `
-                <form id="deleteForm_${data}" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <input type="hidden" name="id" value="${data}">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
-                </form>
-                `;
+                                    <form id="deleteForm_${data}" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="id" value="${data}">
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
+                                    </form>
+                                    `;
                                 }
                             }
-                        @endrole
+                        @endcan
                     ],
                 });
 
