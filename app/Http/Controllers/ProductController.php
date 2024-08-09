@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\Unit;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -94,11 +95,14 @@ class ProductController extends Controller
         $data['group'] = $category->name;
         $product = Product::create($data);
 
-        Inventory::create([
-            'product_id' => $product->id,
-            'warehouse_id' => auth()->user()->warehouse_id,
-            'quantity' => 0,
-        ]);
+        $warehouses = Warehouse::all();
+        foreach ($warehouses as $warehouse) {
+            Inventory::create([
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouse->id,
+                'quantity' => 0,
+            ]);
+        }
 
         return redirect()
             ->back()

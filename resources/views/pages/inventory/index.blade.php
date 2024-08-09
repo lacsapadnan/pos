@@ -33,7 +33,7 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                @can('simpan inventori')
+                @can('simpan inventory')
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
                         Tambah Data
                     </button>
