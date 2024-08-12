@@ -58,11 +58,13 @@ class SellController extends Controller
 
         if ($role[0] == 'master') {
             $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
+                ->where('status', '!=', 'draft')
                 ->orderBy('id', 'desc');
         } else {
             $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('cashier_id', auth()->id())
+                ->where('status', '!=', 'draft')
                 ->orderBy('id', 'desc');
         }
 
@@ -144,7 +146,7 @@ class SellController extends Controller
 
         $pay = $transfer + $cash;
 
-        if ($request->status == 'draft') {
+        if ($request->status === 'draft') {
             $status = 'draft';
         } elseif ($pay < $request->grand_total) {
             $status = 'piutang';
@@ -157,12 +159,12 @@ class SellController extends Controller
             'warehouse_id' => auth()->user()->warehouse_id,
             'order_number' => $request->order_number,
             'customer_id' => $request->customer,
-            'subtotal' => $request->subtotal,
-            'grand_total' => $request->grand_total,
-            'cash' => $cash,
-            'transfer' => $transfer,
-            'pay' => $pay,
-            'change' => $request->change ?? 0,
+            'subtotal' => preg_replace('/[,.]/', '', $request->subtotal),
+            'grand_total' => preg_replace('/[,.]/', '', $request->grand_total),
+            'cash' => preg_replace('/[,.]/', '', $cash),
+            'transfer' => preg_replace('/[,.]/', '', $transfer),
+            'pay' => preg_replace('/[,.]/', '', $pay),
+            'change' => preg_replace('/[,.]/', '', $request->change ?? 0),
             'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
             'payment_method' => $request->payment_method,
             'status' => $status,

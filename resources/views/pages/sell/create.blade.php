@@ -191,7 +191,7 @@
                             <div class="mb-1">
                                 <label for="subtotal" class="col-form-label">Subtotal</label>
                                 <input type="text" name="subtotal" class="form-control" id="subtotal"
-                                    value="{{ $subtotal }}" readonly />
+                                    value="{{ number_format($subtotal) }}" readonly />
                             </div>
 
                             <!-- Parent div with id="bayarDiv" -->
@@ -271,8 +271,8 @@
 
             var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash);
 
-            document.getElementById('grandTotal').value = grandTotal.toFixed(0);
-            document.getElementById('kembali').value = kembali.toFixed(0);
+            document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
+            document.getElementById('kembali').value = new Intl.NumberFormat('id-ID').format(kembali);
         }
 
         function calculateKembali(paymentMethod, grandTotal, transfer, cash) {
