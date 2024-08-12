@@ -24,29 +24,36 @@ class InventoryController extends Controller
 
     public function data(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $userRoles = auth()->user()->roles->pluck('name');
         $category = $request->input('category');
+        $warehouseId = $request->input('warehouse_id');
 
-        if ($userRoles[0] == 'superadmin') {
+        if ($userRoles[0] == 'master') {
+            $query = Inventory::with('product', 'warehouse');
+
             if ($category) {
-                $inventory = Inventory::with('product', 'warehouse')->whereHas('product', function ($query) use ($category) {
+                $query->whereHas('product', function ($query) use ($category) {
                     $query->where('group', 'LIKE', '%' . $category . '%');
-                })->get();
-                return response()->json($inventory);
-            } else {
-                $inventory = Inventory::with('product', 'warehouse')->get();
-                return response()->json($inventory);
+                });
             }
+
+            if ($warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            }
+
+            $inventory = $query->get();
+            return response()->json($inventory);
         } else {
+            $query = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id);
+
             if ($category) {
-                $inventory = Inventory::with('product', 'warehouse')->whereHas('product', function ($query) use ($category) {
+                $query->whereHas('product', function ($query) use ($category) {
                     $query->where('group', 'LIKE', '%' . $category . '%');
-                })->where('warehouse_id', auth()->user()->warehouse_id)->get();
-                return response()->json($inventory);
-            } else {
-                $inventory = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id)->get();
-                return response()->json($inventory);
+                });
             }
+
+            $inventory = $query->get();
+            return response()->json($inventory);
         }
     }
 

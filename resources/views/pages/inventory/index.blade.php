@@ -24,6 +24,14 @@
                         <option value="{{ $category->name }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
+                @role('master')
+                    <select id="warehouseFilter" class="form-select ms-4" aria-label="Branch filter" data-control="select2">
+                        <option value="">All Cabangs</option>
+                        @foreach ($warehouse as $item)
+                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                        @endforeach
+                    </select>
+                @endrole
                 <!--end::Search-->
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -166,7 +174,14 @@
 
                 $('#categoryFilter').on('change', function() {
                     var category = this.value;
-                    datatable.ajax.url('{{ route('api.inventori') }}?category=' + category).load();
+                    var warehouseId = $('#warehouseFilter').val();
+                    datatable.ajax.url('{{ route('api.inventori') }}?category=' + category + '&warehouse_id=' + warehouseId).load();
+                });
+
+                $('#warehouseFilter').on('change', function() {
+                    var warehouseId = this.value;
+                    var category = $('#categoryFilter').val();
+                    datatable.ajax.url('{{ route('api.inventori') }}?category=' + category + '&warehouse_id=' + warehouseId).load();
                 });
             }
 
