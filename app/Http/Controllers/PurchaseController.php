@@ -486,21 +486,24 @@ class PurchaseController extends Controller
     }
 
     public function payDebt(Request $request)
-    {
-        $purchase = Purchase::with('supplier')
-            ->find($request->purchase_id);
+{
+    $purchase = Purchase::with('supplier')->find($request->purchase_id);
 
-        if ($request->pay > $purchase->grand_total + $purchase->pay) {
+        $pay = (int) preg_replace('/[,.]/', '', $request->pay);
+        $grandTotal = (int) preg_replace('/[,.]/', '', $purchase->grand_total);
+        $currentPay = (int) preg_replace('/[,.]/', '', $purchase->pay);
+
+        if ($pay > $grandTotal - $currentPay) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Pembayaran hutang tidak boleh lebih dari total hutang'
             ]);
-        } elseif ($request->pay < 0) {
+        } elseif ($pay < 0) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Pembayaran hutang tidak boleh kurang dari 0'
             ]);
-        } elseif ($request->pay == 0) {
+        } elseif ($pay == 0) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Pembayaran hutang tidak boleh 0'
@@ -508,11 +511,12 @@ class PurchaseController extends Controller
         } else {
 
             if ($request->potongan) {
-                $purchase->potongan += $request->potongan;
-                $purchase->grand_total -= $request->potongan;
+                $potongan = (int) preg_replace('/[,.]/', '', $request->potongan);
+                $purchase->potongan += $potongan;
+                $purchase->grand_total -= $potongan;
             }
 
-            $purchase->pay += $request->pay;
+            $purchase->pay += $pay;
 
             if ($purchase->pay == $purchase->grand_total) {
                 $purchase->status = 'lunas';
@@ -525,19 +529,18 @@ class PurchaseController extends Controller
                     'warehouse_id' => $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
-                    'in' => $request->pay,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
+                    'in' => $pay,
                     'out' => 0,
                     'payment_method' => 'transfer',
                 ]);
-                // save to cashflow
                 Cashflow::create([
-                    'warehouse_id' =>  $purchase->warehouse_id,
+                    'warehouse_id' => $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
                     'in' => 0,
-                    'out' => $request->pay,
+                    'out' => $pay,
                     'payment_method' => 'transfer',
                 ]);
             } else {
@@ -545,9 +548,9 @@ class PurchaseController extends Controller
                     'warehouse_id' => $purchase->warehouse_id,
                     'user_id' => auth()->id(),
                     'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . 'Supplier ' . $purchase->supplier->name,
+                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
                     'in' => 0,
-                    'out' => $request->pay,
+                    'out' => $pay,
                     'payment_method' => 'cash',
                 ]);
             }
@@ -557,5 +560,5 @@ class PurchaseController extends Controller
                 'message' => 'Pembayaran hutang berhasil'
             ]);
         }
-    }
-}
+    }   
+}   

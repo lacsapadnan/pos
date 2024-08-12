@@ -127,8 +127,9 @@
                     <form id="paymentForm">
                         <div class="form-group">
                             <label class="form-label" for="pay_credit">Jumlah Pembayaran:</label>
-                            <input type="text" class="form-control" id="pay_credit" name="pay_credit">
+                            <input type="text" class="form-control" id="pay_credit" name="pay_credit" oninput="formatNumber(this)">
                         </div>
+
                         <div class="mt-2 form-group">
                             <label class="form-label" for="payment_method">Metode Pembayaran:</label>
                             <select class="form-select" id="payment_method" name="payment">
@@ -154,6 +155,16 @@
     <script>
         "use strict";
 
+        function formatNumber(input) {
+            // Hapus semua karakter non-digit
+            let value = input.value.replace(/\D/g, '');
+                
+            // Tambahkan separator ribuan
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                
+            // Set nilai input dengan format yang baru
+            input.value = value;
+            }
         // Class definition
         var KTDatatablesExample = function() {
             // Shared variables

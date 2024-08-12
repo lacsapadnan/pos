@@ -135,7 +135,7 @@
                     <form id="payDebtForm">
                         <div class="form-group">
                             <label class="form-label" for="payDebtAmount">Jumlah Pembayaran</label>
-                            <input type="number" class="form-control" id="payDebtAmount" name="pay_debt">
+                            <input type="text" class="form-control" id="payDebtAmount" name="pay_debt" oninput="formatNumber(this);" />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="paymentMethod">Metode Pembayaran</label>
@@ -160,6 +160,16 @@
 @push('addon-script')
     <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
     <script>
+        function formatNumber(input) {
+    // Hapus semua karakter non-digit
+    let value = input.value.replace(/\D/g, '');
+
+    // Tambahkan separator ribuan
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    // Set nilai input dengan format yang baru
+    input.value = value;
+}
         "use strict";
 
         // Class definition

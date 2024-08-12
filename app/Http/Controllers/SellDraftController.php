@@ -109,8 +109,8 @@ class SellDraftController extends Controller
             ->where('sell_id', $id)
             ->get();
 
-        $transfer = $request->transfer ?? 0;
-        $cash = $request->cash ?? 0;
+        $transfer = (float)str_replace(',', '', $request->transfer ?? 0);
+        $cash = (float)str_replace(',', '', $request->cash ?? 0);
 
         $pay = $transfer + $cash;
 

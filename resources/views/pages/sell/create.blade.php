@@ -201,17 +201,14 @@
                                     oninput="calculateTotal()" />
                             </div>
 
-                            <!-- Additional input fields initially hidden -->
                             <div class="mb-1" style="display: none;" id="transferDiv">
                                 <label for="transfer" class="col-form-label">Transfer</label>
-                                <input type="text" name="transfer" class="form-control" id="transfer"
-                                    oninput="calculateTotal()" />
+                                <input type="text" name="transfer" class="form-control" id="transfer" oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1" style="display: none;" id="cashDiv">
                                 <label for="cash" class="col-form-label">Cash</label>
-                                <input type="text" name="cash" class="form-control" id="cash"
-                                    oninput="calculateTotal()" />
+                                <input type="text" name="cash" class="form-control" id="cash" oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1">
@@ -256,6 +253,16 @@
 
     {{-- calculated form --}}
     <script>
+        function formatNumber(input) {
+    // Hapus semua karakter non-digit
+    let value = input.value.replace(/\D/g, '');
+
+    // Tambahkan separator ribuan
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    // Set nilai input dengan format yang baru
+    input.value = value;
+}
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var grandTotal = subtotal;
