@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\ProductReport;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -18,47 +19,32 @@ class ProductReportController extends Controller
     {
         $warehouses = Warehouse::all();
         $users = User::all();
-        return view('pages.product.report', compact('warehouses', 'users'));
+        $products = Product::all();
+        return view('pages.product.report', compact('warehouses', 'users', 'products'));
     }
 
     public function data(Request $request)
     {
         $role = auth()->user()->getRoleNames();
         $user_id = $request->input('user_id');
-        // $selectedMonth = $request->input('selected_month');
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
+        $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
+        $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $for = $request->input('for');
+        $product = $request->input('product');
 
-        $defaultDate = now()->format('Y-m-d');
+        $query = ProductReport::with(['user:id,name', 'supplier:id,name', 'customer:id,name', 'product:id,name'])
+            ->select('product_id', 'unit_type', 'user_id', 'type', 'description', 'supplier_id', 'customer_id', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(qty * price) as total_value'))
+            ->whereDate('created_at', '>=', $fromDate)
+            ->whereDate('created_at', '<=', $toDate)
+            ->groupBy('product_id', 'unit_type', 'user_id', 'supplier_id', 'customer_id', 'type', 'description');
 
-        if (!$fromDate) {
-            $fromDate = $defaultDate;
-        }
-
-        if (!$toDate) {
-            $toDate = $defaultDate;
-        }
-
-        if ($role[0] == 'master') {
-            $warehouse = $request->input('warehouse');
-            $query = ProductReport::orderBy('created_at', 'desc')->with('user', 'supplier', 'customer', 'product');
+        if ($role[0] !== 'master') {
+            $query->where('user_id', auth()->user()->id)
+                ->where('warehouse_id', auth()->user()->warehouse_id);
         } else {
-            $warehouse = auth()->user()->warehouse_id;
-            $query = ProductReport::where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->with('user', 'supplier', 'customer', 'product')
-                ->orderBy('created_at', 'desc');
-        }
-
-        // $query->whereYear('created_at', '=', Carbon::parse($selectedMonth)->year)
-        //     ->whereMonth('created_at', '=', Carbon::parse($selectedMonth)->month);
-
-        $query->whereDate('created_at', '>=', $fromDate)
-            ->whereDate('created_at', '<=', $toDate);
-
-        if ($warehouse) {
-            $query->where('warehouse_id', $warehouse);
+            if ($warehouse = $request->input('warehouse')) {
+                $query->where('warehouse_id', $warehouse);
+            }
         }
 
         if ($user_id) {
@@ -69,102 +55,25 @@ class ProductReportController extends Controller
             $query->where('for', $for);
         }
 
-        if ($role[0] == 'master') {
-            $totalNilai = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->when($for, function ($query) use ($for) {
-                    return $query->where('for', $for);
-                })
-                ->sum(DB::raw('qty * price'));
-
-            $totalDus = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->when($for, function ($query) use ($for) {
-                    return $query->where('for', $for);
-                })
-                ->where('unit_type', 'DUS')
-                ->sum('qty');
-
-            $totalPak = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->when($for, function ($query) use ($for) {
-                    return $query->where('for', $for);
-                })
-                ->where('unit_type', 'PAK')
-                ->sum('qty');
-
-            $totalEceran = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->when($warehouse, function ($query) use ($warehouse) {
-                    return $query->where('warehouse_id', $warehouse);
-                })
-                ->when($user_id, function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
-                })
-                ->when($for, function ($query) use ($for) {
-                    return $query->where('for', $for);
-                })
-                ->where('unit_type', 'ECERAN')
-                ->sum('qty');
-        } else {
-            $totalNilai = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('for', $for)
-                ->sum(DB::raw('qty * price'));
-
-            $totalDus = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('for', $for)
-                ->where('unit_type', 'DUS')
-                ->sum('qty');
-
-            $totalPak = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('for', $for)
-                ->where('unit_type', 'PAK')
-                ->sum('qty');
-
-            $totalEceran = ProductReport::whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $toDate)
-                ->where('user_id', auth()->user()->id)
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('for', $for)
-                ->where('unit_type', 'ECERAN')
-                ->sum('qty');
+        if ($product) {
+            $query->where('product_id', $product);
         }
 
+        $report = $query->get();
+
+        // Calculate totals
+        $totalNilai = $report->sum('total_value');
+        $totalDus = $report->where('unit_type', 'DUS')->sum('total_qty');
+        $totalPak = $report->where('unit_type', 'PAK')->sum('total_qty');
+        $totalEceran = $report->where('unit_type', 'ECERAN')->sum('total_qty');
+
         $response = [
-            'report' => $query->get(),
+            'report' => $report,
             'totalNilai' => $totalNilai,
             'totalDus' => $totalDus,
             'totalPak' => $totalPak,
             'totalEceran' => $totalEceran,
         ];
-
 
         return response()->json($response);
     }

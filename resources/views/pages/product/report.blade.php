@@ -60,6 +60,14 @@
                         <option value="KELUAR">Keluar</option>
                     </select>
                 </div>
+                <div class="ms-3">
+                    <select id="productFilter" class="form-select" aria-label="Product filter" data-control="select2">
+                        <option value="">Semua Produk</option>
+                        @foreach ($products as $product)
+                            <option value="{{ $product->id }}">{{ $product->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
                     <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
@@ -169,29 +177,30 @@
                             data: "product.name"
                         },
                         {
-                            data: "unit"
+                            data: "unit_type"
                         },
                         {
-                            data: "qty"
+                            data: "total_qty"
                         },
                         {
-                            data: "price",
+                            data: null,
                             render: function(data, type, row) {
+                                var calculatedData = row.total_value / row.total_qty;
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
-                                }).format(data);
+                                }).format(calculatedData);
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             },
                         },
                         {
-                            data: null,
+                            data: "total_value",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
-                                }).format(row.qty * row.price);
+                                }).format(data);
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             },
@@ -217,13 +226,14 @@
                     ],
                 });
 
-                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter, #forFilter').on('change', function() {
+                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter, #forFilter, #productFilter').on('change', function() {
                     // var selectedMonth = $('#selectedMonthFilter').val();
                     var fromDate = $('#fromDateFilter').val();
                     var toDate = $('#toDateFilter').val();
                     var warehouse_id = $('#warehouseFilter').val();
                     var user_id = $('#userFilter').val();
                     var forFilter = $('#forFilter').val();
+                    var productFilter = $('#productFilter').val();
 
                     // Update the URL based on selected filters
                     var url = '{{ route('api.laporan-produk') }}';
@@ -247,6 +257,10 @@
 
                     if (forFilter) {
                         params.push('for=' + forFilter);
+                    }
+
+                    if (productFilter) {
+                        params.push('product=' + productFilter);
                     }
 
                     if (params.length > 0) {
