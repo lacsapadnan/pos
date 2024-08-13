@@ -109,14 +109,14 @@ class SellDraftController extends Controller
             ->where('sell_id', $id)
             ->get();
 
-        $transfer = (float)str_replace(',', '', $request->transfer ?? 0);
-        $cash = (float)str_replace(',', '', $request->cash ?? 0);
+        $transfer = str_replace(',', '', $request->transfer ?? 0);
+        $cash = str_replace(',', '', $request->cash ?? 0);
 
         $pay = $transfer + $cash;
 
         if ($request->status == 'draft') {
             $status = 'draft';
-        } elseif ($pay < $request->grand_total) {
+        } elseif ($pay < preg_replace('/[,.]/', '', $request->grand_total)) {
             $status = 'piutang';
         } else {
             $status = 'lunas';
@@ -124,7 +124,7 @@ class SellDraftController extends Controller
 
         $sell->status = $status;
         $sell->customer_id = $request->customer;
-        $sell->grand_total = $request->grand_total;
+        $sell->grand_total = preg_replace('/[,.]/', '', $request->grand_total);
         $sell->cash = $cash ?? 0;
         $sell->transfer = $transfer ?? 0;
         $sell->change = $request->change ?? 0;
