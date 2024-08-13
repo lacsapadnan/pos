@@ -146,8 +146,8 @@
                     <p>Kasir:</p>
                 </td>
                 <td width="50%" style="text-align:right">
-                    <p>Total: {{ number_format($sell->grand_total) }}</p>
-                </td>
+                    <p>Total: {{ number_format(floatval($sell->grand_total ?? 0), 2) }}</p>
+                </td>                
             </tr>
             <tr>
                 <td width="30%"></td>
