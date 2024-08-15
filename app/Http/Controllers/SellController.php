@@ -141,14 +141,14 @@ class SellController extends Controller
     {
         $sellCart = SellCart::where('cashier_id', auth()->id())->get();
 
-        $transfer = (float)str_replace(',', '', $request->transfer ?? 0);
-        $cash = (float)str_replace(',', '', $request->cash ?? 0);
-
+        $transfer = (int)str_replace(',', '', $request->transfer ?? 0);
+        $cash = (int)str_replace(',', '', $request->cash ?? 0);
+        $grandtotal = (int)preg_replace('/[,.]/', '', $request->grand_total);
         $pay = $transfer + $cash;
 
         if ($request->status === 'draft') {
             $status = 'draft';
-        } elseif ($pay < $request->grand_total) {
+        } elseif ($pay < $grandtotal) {
             $status = 'piutang';
         } else {
             $status = 'lunas';
@@ -580,95 +580,94 @@ class SellController extends Controller
     }
 
     public function payCredit(Request $request)
-{
+    {
 
-    $validated = $request->validate([
-        'sell_id' => 'required|integer',
-        'pay' => 'required|string',
-        'payment' => 'required|string'
-    ]);
-
-    $sell = Sell::with('customer')
-        ->find($validated['sell_id']);
-
-    if (!$sell) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Sale not found'
+        $validated = $request->validate([
+            'sell_id' => 'required|integer',
+            'pay' => 'required|string',
+            'payment' => 'required|string'
         ]);
-    }
 
-   
-    $grandTotal = (int) preg_replace('/[,.]/', '', $sell->grand_total);
-    $currentPay = (int) preg_replace('/[,.]/', '', $sell->pay);
-    $payment = (int) preg_replace('/[,.]/', '', $validated['pay']);
+        $sell = Sell::with('customer')
+            ->find($validated['sell_id']);
 
-    $sisaHutang = $grandTotal - $currentPay;
-
-    if ($payment > $sisaHutang) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Pembayaran piutang tidak boleh lebih dari sisa piutang'
-        ]);
-    } elseif ($payment < 0) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Pembayaran piutang tidak boleh kurang dari 0'
-        ]);
-    } elseif ($payment == 0) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Pembayaran piutang tidak boleh 0'
-        ]);
-    } else {
-        $sell->pay = $currentPay + $payment;
-
-        if ($sell->pay >= $grandTotal) {
-            $sell->status = 'lunas';
+        if (!$sell) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sale not found'
+            ]);
         }
 
-        $sell->save();
 
-        $paymentMethod = $validated['payment'];
-        $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name;
+        $grandTotal = (int) preg_replace('/[,.]/', '', $sell->grand_total);
+        $currentPay = (int) preg_replace('/[,.]/', '', $sell->pay);
+        $payment = (int) preg_replace('/[,.]/', '', $validated['pay']);
 
-        if ($paymentMethod === 'transfer') {
-            Cashflow::create([
-                'warehouse_id' => $sell->warehouse_id,
-                'user_id' => auth()->id(),
-                'for' => 'Bayar piutang',
-                'description' => $description,
-                'in' => $payment,
-                'out' => 0,
-                'payment_method' => 'transfer',
+        $sisaHutang = $grandTotal - $currentPay;
+
+        if ($payment > $sisaHutang) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh lebih dari sisa piutang'
             ]);
-
-            Cashflow::create([
-                'warehouse_id' => $sell->warehouse_id,
-                'user_id' => auth()->id(),
-                'for' => 'Bayar piutang',
-                'description' => $description,
-                'in' => 0,
-                'out' => $payment,
-                'payment_method' => 'transfer',
+        } elseif ($payment < 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh kurang dari 0'
+            ]);
+        } elseif ($payment == 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran piutang tidak boleh 0'
             ]);
         } else {
-            Cashflow::create([
-                'warehouse_id' => $sell->warehouse_id,
-                'user_id' => auth()->id(),
-                'for' => 'Bayar piutang',
-                'description' => $description,
-                'in' => $payment,
-                'out' => 0,
-                'payment_method' => 'cash',
+            $sell->pay = $currentPay + $payment;
+
+            if ($sell->pay >= $grandTotal) {
+                $sell->status = 'lunas';
+            }
+
+            $sell->save();
+
+            $paymentMethod = $validated['payment'];
+            $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name;
+
+            if ($paymentMethod === 'transfer') {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar piutang',
+                    'description' => $description,
+                    'in' => $payment,
+                    'out' => 0,
+                    'payment_method' => 'transfer',
+                ]);
+
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar piutang',
+                    'description' => $description,
+                    'in' => 0,
+                    'out' => $payment,
+                    'payment_method' => 'transfer',
+                ]);
+            } else {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar piutang',
+                    'description' => $description,
+                    'in' => $payment,
+                    'out' => 0,
+                    'payment_method' => 'cash',
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pembayaran piutang berhasil'
             ]);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Pembayaran piutang berhasil'
-        ]);
     }
-}
-
 }
