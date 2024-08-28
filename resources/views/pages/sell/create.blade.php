@@ -203,12 +203,14 @@
 
                             <div class="mb-1" style="display: none;" id="transferDiv">
                                 <label for="transfer" class="col-form-label">Transfer</label>
-                                <input type="text" name="transfer" class="form-control" id="transfer" oninput="formatNumber(this); calculateTotal()" />
+                                <input type="text" name="transfer" class="form-control" id="transfer"
+                                    oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1" style="display: none;" id="cashDiv">
                                 <label for="cash" class="col-form-label">Cash</label>
-                                <input type="text" name="cash" class="form-control" id="cash" oninput="formatNumber(this); calculateTotal()" />
+                                <input type="text" name="cash" class="form-control" id="cash"
+                                    oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1">
@@ -254,15 +256,16 @@
     {{-- calculated form --}}
     <script>
         function formatNumber(input) {
-    // Hapus semua karakter non-digit
-    let value = input.value.replace(/\D/g, '');
+            // Hapus semua karakter non-digit
+            let value = input.value.replace(/\D/g, '');
 
-    // Tambahkan separator ribuan
-    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            // Tambahkan separator ribuan
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-    // Set nilai input dengan format yang baru
-    input.value = value;
-}
+            // Set nilai input dengan format yang baru
+            input.value = value;
+        }
+
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var grandTotal = subtotal;
@@ -270,6 +273,7 @@
             var paymentMethod = document.getElementsByName('payment_method')[0].value;
             var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
             var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+            // var grandTotal = parseFloat(document.getElementById('grandTotal').value.replace(/[^0-9.-]+/g, '')) || 0;
 
             if (paymentMethod === 'split') {
                 // Calculate grand total based on the sum of transfer and cash
@@ -343,7 +347,7 @@
             cash = parseInt(cash.replace(/[^0-9.-]+/g, '')) || 0;
             transfer = parseInt(transfer.replace(/[^0-9.-]+/g, '')) || 0;
 
-            if (cash < grandTotal && transfer < grandTotal && (cash + transfer) < grandTotal) {
+            if (cash < grandTotal || transfer < grandTotal || (cash + transfer) < grandTotal) {
                 $.ajax({
                     url: '/check-customer-status', // Update the URL to your Laravel route
                     method: 'GET',
