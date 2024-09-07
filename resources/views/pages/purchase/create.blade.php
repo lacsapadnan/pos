@@ -182,7 +182,7 @@
                             <div class="mb-1">
                                 <label for="subtotal" class="col-form-label">Subtotal</label>
                                 <input type="text" name="subtotal" class="form-control" id="subtotal"
-                                    value="{{ $subtotal }}" readonly />
+                                    value="{{ number_format($subtotal) }}" readonly />
                             </div>
                         </div>
                         <div class="col">
@@ -198,7 +198,7 @@
                             <div class="mb-1">
                                 <label for="potongan" class="col-form-label">Potongan</label>
                                 <input type="text" name="potongan" class="form-control" id="potongan"
-                                    oninput="calculateTotal()" value="0" />
+                                    oninput="formatNumber(this); calculateTotal()" value="0" />
                             </div>
                         </div>
                     </div>
@@ -207,7 +207,7 @@
                             <div class="mb-1">
                                 <label for="bayar" class="col-form-label">Bayar</label>
                                 <input type="text" name="pay" class="form-control" id="bayar"
-                                    oninput="calculateTotal()" value="0" />
+                                    oninput="formatNumber(this); calculateTotal()" value="0" />
                             </div>
                         </div>
                     </div>
@@ -260,6 +260,17 @@
 
     {{-- calculated form --}}
     <script>
+        function formatNumber(input) {
+            // Hapus semua karakter non-digit
+            let value = input.value.replace(/\D/g, '');
+
+            // Tambahkan separator ribuan
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+            // Set nilai input dengan format yang baru
+            input.value = value;
+        }
+
         function calculateSisa(grandTotal, bayar) {
             return Math.max(bayar - grandTotal, 0);
         }
@@ -280,15 +291,13 @@
             var sisa = calculateSisa(grandTotal, bayar);
 
             document.getElementById('ppn').value = tax.toFixed(0);
-            document.getElementById('bayar').value = bayar.toFixed(0);
-            document.getElementById('grandTotal').value = grandTotal.toFixed(0);
-            document.getElementById('sisa').value = sisa.toFixed(0);
+            document.getElementById('bayar').value = new Intl.NumberFormat('id-ID').format(bayar);
+            document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
+            document.getElementById('sisa').value = new Intl.NumberFormat('id-ID').format(sisa);
             document.getElementById('potongan').value = potongan.toFixed(0);
         }
-        
+
         calculateTotal();
-
-
 
         function submitForms() {
             // Get the values from form1

@@ -133,6 +133,13 @@ class PurchaseController extends Controller
     {
         try {
             $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
+
+            $subtotal = (int)str_replace(',', '', $request->subtotal ?? 0);
+            $remaint = (int)str_replace(',', '', $request->remaint ?? 0);
+            $potongan = (int)str_replace(',', '', $request->potongan ?? 0);
+            $grandTotal = (int) str_replace('.', '', $request->grand_total);
+            $pay = (int) str_replace('.', '', $request->pay);
+
             if ($request->pay < $request->grand_total) {
                 $status = 'hutang';
             } else {
@@ -146,10 +153,10 @@ class PurchaseController extends Controller
                 'warehouse_id' => auth()->user()->warehouse_id,
                 'order_number' => $request->order_number,
                 'invoice' => $request->invoice,
-                'subtotal' => $request->subtotal,
-                'potongan' => $request->potongan,
-                'grand_total' => $request->grand_total,
-                'pay' => $request->pay,
+                'subtotal' => $subtotal,
+                'potongan' => $potongan,
+                'grand_total' => $grandTotal,
+                'pay' => $pay,
                 'reciept_date' => Carbon::createFromFormat('d/m/Y', $request->reciept_date)->format('Y-m-d'),
                 'description' => $request->description,
                 'tax' => $request->tax,
@@ -244,7 +251,7 @@ class PurchaseController extends Controller
                     'for' => 'Pembelian',
                     'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
                     'in' => 0,
-                    'out' => $request->pay - $request->remaint,
+                    'out' => $request->pay - $remaint,
                     'payment_method' => 'kas besar',
                 ]);
             } else {
@@ -254,7 +261,7 @@ class PurchaseController extends Controller
                     'for' => 'Pembelian',
                     'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
                     'in' => 0,
-                    'out' => $request->pay - $request->remaint,
+                    'out' => $request->pay - $remaint,
                     'payment_method' => 'kas kecil',
                 ]);
             }
@@ -448,7 +455,7 @@ class PurchaseController extends Controller
         return view('pages.purchase.debt', compact('warehouses', 'users'));
     }
 
-    public function dataDebt( Request $request)
+    public function dataDebt(Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
         $user_id = $request->input('user_id');
@@ -486,8 +493,8 @@ class PurchaseController extends Controller
     }
 
     public function payDebt(Request $request)
-{
-    $purchase = Purchase::with('supplier')->find($request->purchase_id);
+    {
+        $purchase = Purchase::with('supplier')->find($request->purchase_id);
 
         $pay = (int) preg_replace('/[,.]/', '', $request->pay);
         $grandTotal = (int) preg_replace('/[,.]/', '', $purchase->grand_total);
@@ -560,5 +567,5 @@ class PurchaseController extends Controller
                 'message' => 'Pembayaran hutang berhasil'
             ]);
         }
-    }   
-}   
+    }
+}
