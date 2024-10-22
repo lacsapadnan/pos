@@ -17,6 +17,7 @@
 @endpush
 
 @section('content')
+    @include('components.alert');
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -28,29 +29,29 @@
                 </div>
                 <!--end::Search-->
                 @role('master')
-                <div class="ms-2">
-                    <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                        <option value="">All Cabang</option>
-                        @foreach ($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="ms-3">
-                    <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                        <option value="">All Users</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ms-3">
+                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                            <option value="">All Users</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="my-1 d-flex align-items-center position-relative">
+                        <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                        <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Dari Tanggal">
+                        <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Ke Tanggal">
+                    </div>
                 @endrole
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -122,12 +123,14 @@
         </div>
     </div>
     <!-- Modal Pembayaran Hutang -->
-    <div class="modal fade" id="payDebtModal" tabindex="-1" role="dialog" aria-labelledby="payDebtModalLabel" aria-hidden="true">
+    <div class="modal fade" id="payDebtModal" tabindex="-1" role="dialog" aria-labelledby="payDebtModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="payDebtModalLabel">Bayar Hutang</h5>
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
+                        aria-label="Close">
                         <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
                     </div>
                 </div>
@@ -135,7 +138,8 @@
                     <form id="payDebtForm">
                         <div class="form-group">
                             <label class="form-label" for="payDebtAmount">Jumlah Pembayaran</label>
-                            <input type="text" class="form-control" id="payDebtAmount" name="pay_debt" oninput="formatNumber(this);" />
+                            <input type="text" class="form-control" id="payDebtAmount" name="pay_debt"
+                                oninput="formatNumber(this);" />
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="paymentMethod">Metode Pembayaran</label>
@@ -161,15 +165,15 @@
     <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
     <script>
         function formatNumber(input) {
-    // Hapus semua karakter non-digit
-    let value = input.value.replace(/\D/g, '');
+            // Hapus semua karakter non-digit
+            let value = input.value.replace(/\D/g, '');
 
-    // Tambahkan separator ribuan
-    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            // Tambahkan separator ribuan
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-    // Set nilai input dengan format yang baru
-    input.value = value;
-}
+            // Set nilai input dengan format yang baru
+            input.value = value;
+        }
         "use strict";
 
         // Class definition
@@ -245,7 +249,8 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                return `<button class="btn btn-sm btn-primary btn-submit data-purchase-id="${row.id}">Bayar</button>`;
+                                // return `<button class="btn btn-sm btn-primary btn-submit data-purchase-id="${row.id}">Bayar</button>`;
+                                return `<a href="bayar-hutang/${row.id}" class="btn btn-sm btn-primary">Bayar</a>`
                             }
                         },
                     ],

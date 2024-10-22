@@ -73,6 +73,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('piutang', [SellController::class, 'credit'])->name('piutang');
     Route::get('laporan', [ReportController::class, 'index'])->name('laporan');
     Route::delete('laporan/{id}', [ReportController::class, 'destroy'])->name('laporan.destroy');
+    Route::get('bayar-hutang/{id}', [PurchaseController::class, 'payDebtPage'])->name('bayar-hutang-page');
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
     Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');

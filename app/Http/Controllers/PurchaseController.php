@@ -9,6 +9,8 @@ use App\Models\ProductReport;
 use App\Models\Purchase;
 use App\Models\PurchaseCart;
 use App\Models\PurchaseDetail;
+use App\Models\PurchaseRetur;
+use App\Models\PurchaseReturDetail;
 use App\Models\Supplier;
 use App\Models\Treasury;
 use App\Models\Unit;
@@ -16,6 +18,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
@@ -492,80 +495,61 @@ class PurchaseController extends Controller
         return response()->json($purchases);
     }
 
+    public function payDebtPage(string $id)
+    {
+        $debt = Purchase::with('supplier', 'treasury', 'warehouse')->find($id);
+        $purchaseReturs = PurchaseRetur::with(['details' => function ($query) {
+            $query->where('status', '!=', 'clearance')
+                ->orWhereNull('status');
+        }, 'details.product', 'details.unit'])
+            ->whereHas('purchase', function ($query) use ($debt) {
+                $query->where('supplier_id', $debt->supplier_id);
+            })
+            ->whereHas('details', function ($query) {
+                $query->where('status', '!=', 'clearance')
+                    ->orWhereNull('status');
+            })
+            ->get();
+
+        return view('pages.purchase.payDebt', compact('debt', 'purchaseReturs'));
+    }
+
     public function payDebt(Request $request)
     {
-        $purchase = Purchase::with('supplier')->find($request->purchase_id);
+        $retur = intval(str_replace(',', '', $request->input('retur')));
+        $bayarHutang = intval(str_replace(',', '', $request->input('bayar_hutang')));
 
-        $pay = (int) preg_replace('/[,.]/', '', $request->pay);
-        $grandTotal = (int) preg_replace('/[,.]/', '', $purchase->grand_total);
-        $currentPay = (int) preg_replace('/[,.]/', '', $purchase->pay);
+        $selectedReturs = array_map('intval', $request->input('selected_returs', []));
 
-        if ($pay > $grandTotal - $currentPay) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pembayaran hutang tidak boleh lebih dari total hutang'
-            ]);
-        } elseif ($pay < 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pembayaran hutang tidak boleh kurang dari 0'
-            ]);
-        } elseif ($pay == 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pembayaran hutang tidak boleh 0'
-            ]);
-        } else {
+        DB::beginTransaction();
+        try {
+            $debt = Purchase::find($request->debt_id);
+            $debt->grand_total = $debt->grand_total - $retur;
+            $debt->pay = $debt->pay + $bayarHutang;
 
-            if ($request->potongan) {
-                $potongan = (int) preg_replace('/[,.]/', '', $request->potongan);
-                $purchase->potongan += $potongan;
-                $purchase->grand_total -= $potongan;
+            if ($debt->pay >= $debt->grand_total) {
+                $debt->status = 'lunas';
             }
 
-            $purchase->pay += $pay;
+            $debt->save();
 
-            if ($purchase->pay == $purchase->grand_total) {
-                $purchase->status = 'lunas';
+            if (!empty($selectedReturs)) {
+                foreach ($selectedReturs as $returProduct) {
+                    $purchaseReturs = PurchaseReturDetail::find($returProduct);
+                    if ($purchaseReturs) {
+                        $purchaseReturs->status = 'clearance';
+                        $purchaseReturs->save();
+                    } else {
+                        return redirect()->back()->withErrors("Retur product with ID {$returProduct} not found.");
+                    }
+                }
             }
 
-            $purchase->save();
-
-            if ($request->payment == 'transfer') {
-                Cashflow::create([
-                    'warehouse_id' => $purchase->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
-                    'in' => $pay,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
-                Cashflow::create([
-                    'warehouse_id' => $purchase->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
-                    'in' => 0,
-                    'out' => $pay,
-                    'payment_method' => 'transfer',
-                ]);
-            } else {
-                Cashflow::create([
-                    'warehouse_id' => $purchase->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $purchase->order_number . ' Supplier ' . $purchase->supplier->name,
-                    'in' => 0,
-                    'out' => $pay,
-                    'payment_method' => 'cash',
-                ]);
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Pembayaran hutang berhasil'
-            ]);
+            DB::commit();
+            return redirect()->route('hutang')->withSuccess('Berhasil bayar hutang');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return redirect()->back()->withErrors($th->getMessage());
         }
     }
 }
