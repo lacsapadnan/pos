@@ -523,7 +523,7 @@ class PurchaseController extends Controller
 
         DB::beginTransaction();
         try {
-            $debt = Purchase::find($request->debt_id);
+            $debt = Purchase::with('supplier')->find($request->debt_id);
             $debt->grand_total = $debt->grand_total - $retur;
             $debt->pay = $debt->pay + $bayarHutang;
 
@@ -543,6 +543,37 @@ class PurchaseController extends Controller
                         return redirect()->back()->withErrors("Retur product with ID {$returProduct} not found.");
                     }
                 }
+            }
+
+            if ($request->payment_method == 'transfer') {
+                Cashflow::create([
+                    'warehouse_id' => $debt->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
+                    'in' => $bayarHutang,
+                    'out' => 0,
+                    'payment_method' => 'transfer',
+                ]);
+                Cashflow::create([
+                    'warehouse_id' => $debt->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
+                    'in' => 0,
+                    'out' => $bayarHutang,
+                    'payment_method' => 'transfer',
+                ]);
+            } else {
+                Cashflow::create([
+                    'warehouse_id' => $debt->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar hutang',
+                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
+                    'in' => 0,
+                    'out' => $bayarHutang,
+                    'payment_method' => 'cash',
+                ]);
             }
 
             DB::commit();

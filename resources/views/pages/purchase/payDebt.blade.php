@@ -32,7 +32,7 @@
 @endpush
 
 @section('content')
-    @include('components.alert');
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="mt-3">
             <form id="form1">
@@ -116,7 +116,7 @@
                                         <td>{{ $details->product->name }}</td>
                                         <td>{{ $details->qty }}</td>
                                         <td>{{ $details->unit->name }}</td>
-                                        <td>{{ number_format($details->price) }}</td>
+                                        <td>{{ number_format($details->price * $details->qty) }}</td>
                                     </tr>
                                 @endforeach
                             @empty
@@ -144,16 +144,24 @@
                     </div>
                     <div class="mb-3">
                         <label for="retur" class="col-form-label">Retur</label>
-                        <input id="retur_value" type="text" name="retur" class="form-control" readonly />
+                        <input id="retur_value" type="text" name="retur" class="form-control" value="0"
+                            readonly />
                     </div>
                     <div class="mb-3">
                         <label for="total_after_retur" class="col-form-label">Total Hutang setelah retur</label>
                         <input id="total_after_retur" type="text" name="total_after_retur" class="form-control"
-                            readonly />
+                            value="{{ number_format($debt->grand_total - $debt->pay) }}" readonly />
                     </div>
                     <div class="mb-3">
                         <label for="bayar_hutang" class="col-form-label">Bayar Hutang</label>
-                        <input id="bayar_hutang" type="number" name="bayar_hutang" class="form-control" />
+                        <input id="bayar_hutang" type="text" name="bayar_hutang" class="form-control" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_method" class="col-form-label">Metode Pembayaran</label>
+                        <select id="payment_method" name="payment_method" class="form-control">
+                            <option value="cash">Cash</option>
+                            <option value="transfer">Transfer</option>
+                        </select>
                     </div>
                     <div id="selected_returs"></div>
                     <input type="hidden" name="debt_id" value="{{ $debt->id }}">
@@ -171,6 +179,10 @@
         $("#kt_datatable_example").DataTable();
     </script>
     <script>
+        function formatNumber(n) {
+            return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        }
+
         $(document).ready(function() {
             let totalHutang = parseFloat('{{ $debt->grand_total - $debt->pay }}'.replace(/,/g, ''));
 
@@ -205,6 +217,17 @@
             // Add event listener to checkboxes
             $('#kt_datatable_example').on('change', 'input[type="checkbox"]', function() {
                 calculateRetur();
+            });
+
+            // Set initial values
+            $('#retur_value').val('0');
+            $('#total_after_retur').val(totalHutang.toLocaleString());
+
+            // Add event listener for formatting bayar hutang input
+            $('#bayar_hutang').on('input', function() {
+                let input = $(this).val();
+                let formattedInput = formatNumber(input);
+                $(this).val(formattedInput);
             });
         });
     </script>

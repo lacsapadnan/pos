@@ -17,7 +17,7 @@
 @endpush
 
 @section('content')
-    @include('components.alert');
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
