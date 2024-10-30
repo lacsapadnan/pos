@@ -140,7 +140,7 @@ class SellDraftController extends Controller
                     ->first();
 
                 if ($sellCart) {
-                    $sellCart->quantity += $sc->quantity;
+                    $sellCart->quantity = $sc->quantity;
                     $sellCart->save();
                 } else {
                     SellCartDraft::create([
