@@ -111,6 +111,7 @@ class SellDraftController extends Controller
 
         $transfer = str_replace(',', '', $request->transfer ?? 0);
         $cash = str_replace(',', '', $request->cash ?? 0);
+        $change = str_replace('.', '', $request->change ?? 0);
 
         $pay = $transfer + $cash;
 
@@ -127,7 +128,7 @@ class SellDraftController extends Controller
         $sell->grand_total = preg_replace('/[,.]/', '', $request->grand_total);
         $sell->cash = $cash ?? 0;
         $sell->transfer = $transfer ?? 0;
-        $sell->change = $request->change ?? 0;
+        $sell->change = $change ?? 0;
         $sell->payment_method = $request->payment_method ?? null;
         $sell->update();
 
