@@ -148,13 +148,17 @@
                             readonly />
                     </div>
                     <div class="mb-3">
+                        <label for="potongan" class="col-form-label">Potongan</label>
+                        <input id="potongan" type="text" name="potongan" class="form-control" value="0" />
+                    </div>
+                    <div class="mb-3">
                         <label for="total_after_retur" class="col-form-label">Total Hutang setelah retur</label>
                         <input id="total_after_retur" type="text" name="total_after_retur" class="form-control"
                             value="{{ number_format($debt->grand_total - $debt->pay) }}" readonly />
                     </div>
                     <div class="mb-3">
                         <label for="bayar_hutang" class="col-form-label">Bayar Hutang</label>
-                        <input id="bayar_hutang" type="text" name="bayar_hutang" class="form-control" required/>
+                        <input id="bayar_hutang" type="text" name="bayar_hutang" class="form-control" required />
                     </div>
                     <div class="mb-3">
                         <label for="payment_method" class="col-form-label">Metode Pembayaran</label>
@@ -162,6 +166,10 @@
                             <option value="cash">Cash</option>
                             <option value="transfer">Transfer</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keterangan" class="col-form-label">Keterangan</label>
+                        <textarea id="keterangan" name="keterangan" class="form-control" rows="3"></textarea>
                     </div>
                     <div id="selected_returs"></div>
                     <input type="hidden" name="debt_id" value="{{ $debt->id }}">
@@ -180,7 +188,7 @@
     </script>
     <script>
         function formatNumber(n) {
-            return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            return n.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
         $(document).ready(function() {
@@ -209,14 +217,23 @@
                 // Update the retur input
                 $('#retur_value').val(totalRetur.toLocaleString());
 
-                // Calculate total debt after retur
-                let totalAfterRetur = totalHutang - totalRetur;
+                // Calculate new total after retur, including potongan
+                let potongan = parseFloat($('#potongan').val().replace(/,/g, '')) || 0; // Get potongan value
+                let totalAfterRetur = totalHutang - totalRetur - potongan; // Use potongan in calculation
                 $('#total_after_retur').val(totalAfterRetur.toLocaleString());
             }
 
             // Add event listener to checkboxes
             $('#kt_datatable_example').on('change', 'input[type="checkbox"]', function() {
                 calculateRetur();
+            });
+
+            // Add listener for potongan input
+            $('#potongan').on('input', function() {
+                let input = $(this).val();
+                let formattedInput = formatNumber(input);
+                $(this).val(formattedInput); // Format input as user types
+                calculateRetur(); // Recalculate after input changes
             });
 
             // Set initial values

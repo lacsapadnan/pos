@@ -516,65 +516,36 @@ class PurchaseController extends Controller
 
     public function payDebt(Request $request)
     {
+        // Sanitize the inputs
         $retur = intval(str_replace(',', '', $request->input('retur')));
+        $potongan = intval(str_replace(',', '', $request->input('potongan')));
         $bayarHutang = intval(str_replace(',', '', $request->input('bayar_hutang')));
-
         $selectedReturs = array_map('intval', $request->input('selected_returs', []));
 
         DB::beginTransaction();
         try {
+            // Fetch debt
             $debt = Purchase::with('supplier')->find($request->debt_id);
-            $debt->grand_total = $debt->grand_total - $retur;
-            $debt->pay = $debt->pay + $bayarHutang;
+            if (!$debt) {
+                return redirect()->back()->withErrors('Debt not found.');
+            }
 
+            // Update grand total and payment
+            $debt->grand_total -= $retur;
+            $debt->pay += $bayarHutang;
+
+            // Update status to 'lunas' if fully paid
             if ($debt->pay >= $debt->grand_total) {
                 $debt->status = 'lunas';
             }
 
             $debt->save();
 
-            if (!empty($selectedReturs)) {
-                foreach ($selectedReturs as $returProduct) {
-                    $purchaseReturs = PurchaseReturDetail::find($returProduct);
-                    if ($purchaseReturs) {
-                        $purchaseReturs->status = 'clearance';
-                        $purchaseReturs->save();
-                    } else {
-                        return redirect()->back()->withErrors("Retur product with ID {$returProduct} not found.");
-                    }
-                }
-            }
+            // Update selected return products
+            $this->updateSelectedReturs($selectedReturs);
 
-            if ($request->payment_method == 'transfer') {
-                Cashflow::create([
-                    'warehouse_id' => $debt->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
-                    'in' => $bayarHutang,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
-                Cashflow::create([
-                    'warehouse_id' => $debt->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
-                    'in' => 0,
-                    'out' => $bayarHutang,
-                    'payment_method' => 'transfer',
-                ]);
-            } else {
-                Cashflow::create([
-                    'warehouse_id' => $debt->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar hutang',
-                    'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
-                    'in' => 0,
-                    'out' => $bayarHutang,
-                    'payment_method' => 'cash',
-                ]);
-            }
+            // Create cash flow records
+            $this->createCashflow($debt, $bayarHutang, $potongan, $request->payment_method);
 
             DB::commit();
             return redirect()->route('hutang')->withSuccess('Berhasil bayar hutang');
@@ -582,5 +553,50 @@ class PurchaseController extends Controller
             DB::rollBack();
             return redirect()->back()->withErrors($th->getMessage());
         }
+    }
+
+    private function updateSelectedReturs(array $selectedReturs)
+    {
+        foreach ($selectedReturs as $returProduct) {
+            $purchaseReturs = PurchaseReturDetail::find($returProduct);
+            if ($purchaseReturs) {
+                $purchaseReturs->status = 'clearance';
+                $purchaseReturs->save();
+            } else {
+                return redirect()->back()->withErrors("Retur product with ID {$returProduct} not found.");
+            }
+        }
+    }
+
+    private function createCashflow($debt, $bayarHutang, $potongan, $paymentMethod)
+    {
+        $commonData = [
+            'warehouse_id' => $debt->warehouse_id,
+            'user_id' => auth()->id(),
+            'for' => 'Bayar hutang',
+            'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
+        ];
+
+        // Create cash flow for payment
+        $this->storeCashflow(array_merge($commonData, [
+            'in' => $paymentMethod === 'transfer' ? $bayarHutang : 0,
+            'out' => $paymentMethod === 'transfer' ? 0 : $bayarHutang,
+            'payment_method' => $paymentMethod,
+        ]));
+
+        // Create cash flow for potongan if applicable
+        if ($potongan > 0) {
+            $this->storeCashflow(array_merge($commonData, [
+                'in' => $paymentMethod === 'transfer' ? $potongan : 0,
+                'out' => $paymentMethod === 'transfer' ? 0 : $potongan,
+                'description' => 'Potongan diskon ' . $commonData['description'],
+                'payment_method' => $paymentMethod,
+            ]));
+        }
+    }
+
+    private function storeCashflow(array $data)
+    {
+        Cashflow::create($data);
     }
 }

@@ -139,10 +139,10 @@
         <hr class="dotted-hr">
         <table width="100%" style="margin: 8px 0px;">
             <tr>
-                <td width="30%">
+                <td width="20%">
                     <p>Tanda Terima:</p>
                 </td>
-                <td width="30%" style="text-align:center">
+                <td width="20%" style="text-align:center">
                     <p>Kasir:</p>
                 </td>
                 <td width="50%" style="text-align:right">
@@ -150,8 +150,8 @@
                 </td>
             </tr>
             <tr>
-                <td width="30%"></td>
-                <td width="30%"></td>
+                <td width="20%"></td>
+                <td width="20%"></td>
                 <td width="50%" style="text-align:right">
                     @if($sell->payment_method == 'transfer')
                         <p>Transfer: {{ number_format($sell->transfer) }}</p>
@@ -161,6 +161,13 @@
                         <p>Cash: {{ number_format($sell->cash) }}</p>
                         <p>Transfer: {{ number_format($sell->transfer) }}</p>
                     @endif
+                </td>
+            </tr>
+            <tr>
+                <td width="20%"></td>
+                <td width="20%"></td>
+                <td width="50%" style="text-align:right">
+                    <p>Sisa: {{ number_format($sell->grand_total - $sell->pay) }}</p>
                 </td>
             </tr>
             <tr>
