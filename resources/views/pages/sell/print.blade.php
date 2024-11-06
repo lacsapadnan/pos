@@ -167,7 +167,7 @@
                 <td width="20%"></td>
                 <td width="20%"></td>
                 <td width="50%" style="text-align:right">
-                    <p>Sisa: {{ number_format($sell->grand_total - $sell->pay) }}</p>
+                    <p>Sisa: {{ $sell->pay >= $sell->grand_total ? '0' : number_format($sell->grand_total - $sell->pay) }}</p>
                 </td>
             </tr>
             <tr>
