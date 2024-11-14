@@ -587,8 +587,8 @@ class PurchaseController extends Controller
         // Create cash flow for potongan if applicable
         if ($potongan > 0) {
             $this->storeCashflow(array_merge($commonData, [
-                'in' => $paymentMethod === 'transfer' ? $potongan : 0,
-                'out' => $paymentMethod === 'transfer' ? 0 : $potongan,
+                'in' => $potongan,
+                'out' => 0,
                 'description' => 'Potongan diskon ' . $commonData['description'],
                 'payment_method' => $paymentMethod,
             ]));
