@@ -190,12 +190,12 @@
                                 }
                             }
                         },
+                        @can('hapus kas')
                         {
                             "data": null,
                             "sortable": false,
                             "render": function(data, type, row, meta) {
                                 return `
-                                    @can('hapus kas')
                                     <form action="{{ url('kas') }}/${row.id}" method="POST" class="d-inline">
                                         @csrf
                                         @method('delete')
@@ -204,10 +204,10 @@
                                             Hapus
                                         </button>
                                     </form>
-                                    @endcan
                                 `;
                             }
                         }
+                        @endcan
                     ],
                 });
             }
