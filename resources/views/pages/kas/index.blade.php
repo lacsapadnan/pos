@@ -98,7 +98,9 @@
                                 <th>Keperluan</th>
                                 <th>Jumlah</th>
                                 <th>Deskripsi</th>
-                                <th>Aksi</th>
+                                @can('hapus kas')
+                                    <th>Aksi</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
@@ -193,6 +195,7 @@
                             "sortable": false,
                             "render": function(data, type, row, meta) {
                                 return `
+                                    @can('hapus kas')
                                     <form action="{{ url('kas') }}/${row.id}" method="POST" class="d-inline">
                                         @csrf
                                         @method('delete')
@@ -201,6 +204,7 @@
                                             Hapus
                                         </button>
                                     </form>
+                                    @endcan
                                 `;
                             }
                         }
@@ -278,97 +282,98 @@
         });
     </script>
     <script>
-       $(document).ready(function() {
-    // Initialize the first Select2
-    $('#typeSelect').select2({
-        // Select2 options...
-    });
+        $(document).ready(function() {
+            // Initialize the first Select2
+            $('#typeSelect').select2({
+                // Select2 options...
+            });
 
-    // Initialize the second Select2 with dynamic option creation
-    $('#otherSelect').select2({
-        tags: true,
-        createTag: function(params) {
-            return {
-                id: params.term,
-                text: params.term,
-                isNew: true
-            };
-        }
-    });
-
-    // Listen for changes in the first Select2
-    $('#typeSelect').on('change', function() {
-        var selectedValue = $(this).val();
-
-        // Show or hide the second Select2 based on the selected value
-        if (selectedValue === 'Kas Masuk' || selectedValue === 'Kas Keluar') {
-            $('#otherSelectContainer').show();
-
-            // Populate options for the second Select2 based on the selected value
-            populateOptions(selectedValue);
-        } else {
-            $('#otherSelectContainer').hide();
-        }
-    });
-
-    // Listen for Select2 select event
-    $('#otherSelect').on('select2:select', function(e) {
-        var selectedValue = $('#typeSelect').val();
-        var selectedOption = $(e.params.data.element);
-
-        // Check if the selected option is a new tag
-        if (selectedOption.data('isNew')) {
-            // Make an AJAX request to save the new item
-            $.ajax({
-                url: '/kas', // Update the URL to your route/controller's store method
-                method: 'POST',
-                data: {
-                    type: selectedValue,
-                    other: selectedOption.val()
-                },
-                success: function(response) {
-                    // Append the newly created option to the second Select2
-                    var otherSelect = $('#otherSelect');
-                    otherSelect.append($('<option></option>').attr('value', response.data.id).text(response.data.name));
-
-                    // Select the newly created option
-                    otherSelect.val(response.data.id).trigger('change');
-                },
-                error: function(xhr, textStatus, errorThrown) {
-                    console.log('Error:', errorThrown);
+            // Initialize the second Select2 with dynamic option creation
+            $('#otherSelect').select2({
+                tags: true,
+                createTag: function(params) {
+                    return {
+                        id: params.term,
+                        text: params.term,
+                        isNew: true
+                    };
                 }
             });
-        }
-    });
 
-    // Function to populate options for the second Select2 based on the selected value
-    function populateOptions(selectedValue) {
-        var url = '/kas-income/api/data'; // Default URL for Kas Masuk
-        if (selectedValue === 'Kas Keluar') {
-            url = '/kas-expense/api/data'; // URL for Kas Keluar
-        }
+            // Listen for changes in the first Select2
+            $('#typeSelect').on('change', function() {
+                var selectedValue = $(this).val();
 
-        // Make an AJAX request to retrieve the existing data for the Select2
-        $.ajax({
-            url: url,
-            method: 'GET',
-            success: function(response) {
-                var otherSelect = $('#otherSelect');
+                // Show or hide the second Select2 based on the selected value
+                if (selectedValue === 'Kas Masuk' || selectedValue === 'Kas Keluar') {
+                    $('#otherSelectContainer').show();
 
-                // Clear existing options
-                otherSelect.empty();
+                    // Populate options for the second Select2 based on the selected value
+                    populateOptions(selectedValue);
+                } else {
+                    $('#otherSelectContainer').hide();
+                }
+            });
 
-                // Append the retrieved options to the Select2
-                response.forEach(function(option) {
-                    otherSelect.append($('<option></option>').attr('value', option.id).text(option.name));
+            // Listen for Select2 select event
+            $('#otherSelect').on('select2:select', function(e) {
+                var selectedValue = $('#typeSelect').val();
+                var selectedOption = $(e.params.data.element);
+
+                // Check if the selected option is a new tag
+                if (selectedOption.data('isNew')) {
+                    // Make an AJAX request to save the new item
+                    $.ajax({
+                        url: '/kas', // Update the URL to your route/controller's store method
+                        method: 'POST',
+                        data: {
+                            type: selectedValue,
+                            other: selectedOption.val()
+                        },
+                        success: function(response) {
+                            // Append the newly created option to the second Select2
+                            var otherSelect = $('#otherSelect');
+                            otherSelect.append($('<option></option>').attr('value', response
+                                .data.id).text(response.data.name));
+
+                            // Select the newly created option
+                            otherSelect.val(response.data.id).trigger('change');
+                        },
+                        error: function(xhr, textStatus, errorThrown) {
+                            console.log('Error:', errorThrown);
+                        }
+                    });
+                }
+            });
+
+            // Function to populate options for the second Select2 based on the selected value
+            function populateOptions(selectedValue) {
+                var url = '/kas-income/api/data'; // Default URL for Kas Masuk
+                if (selectedValue === 'Kas Keluar') {
+                    url = '/kas-expense/api/data'; // URL for Kas Keluar
+                }
+
+                // Make an AJAX request to retrieve the existing data for the Select2
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    success: function(response) {
+                        var otherSelect = $('#otherSelect');
+
+                        // Clear existing options
+                        otherSelect.empty();
+
+                        // Append the retrieved options to the Select2
+                        response.forEach(function(option) {
+                            otherSelect.append($('<option></option>').attr('value', option.id)
+                                .text(option.name));
+                        });
+                    },
+                    error: function(xhr, textStatus, errorThrown) {
+                        console.log('Error:', errorThrown);
+                    }
                 });
-            },
-            error: function(xhr, textStatus, errorThrown) {
-                console.log('Error:', errorThrown);
             }
         });
-    }
-});
-
     </script>
 @endpush
