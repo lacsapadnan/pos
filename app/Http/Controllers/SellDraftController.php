@@ -30,23 +30,11 @@ class SellDraftController extends Controller
 
     public function data()
     {
-        $userRoles = auth()
-            ->user()
-            ->getRoleNames();
-        if ($userRoles[0] == 'superadmin') {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
-                ->where('status', 'draft')
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($sells);
-        } else {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('status', 'draft')
-                ->orderBy('id', 'desc')
-                ->get();
-            return response()->json($sells);
-        }
+        $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
+            ->where('status', 'draft')
+            ->orderBy('id', 'desc')
+            ->get();
+        return response()->json($sells);
     }
 
     /**
@@ -130,6 +118,7 @@ class SellDraftController extends Controller
         $sell->transfer = $transfer ?? 0;
         $sell->change = $change ?? 0;
         $sell->payment_method = $request->payment_method ?? null;
+        $sell->cashier_id = auth()->id();
         $sell->update();
 
         if ($request->status == 'draft') {
@@ -268,8 +257,8 @@ class SellDraftController extends Controller
     {
         $sell = Sell::where('id', $id)->first();
         $sellCart = SellCartDraft::where('cashier_id', $sell->cashier_id)
-        ->where('sell_id', $id)
-        ->get();
+            ->where('sell_id', $id)
+            ->get();
 
         foreach ($sellCart as $sc) {
             $inventory = Inventory::where('product_id', $sc->product_id)
@@ -382,8 +371,7 @@ class SellDraftController extends Controller
         }
 
         if ($sellId != null) {
-            $existingCart = SellCartDraft::where('cashier_id', auth()->id())
-                ->where('sell_id', $sellId)
+            $existingCart = SellCartDraft::where('sell_id', $sellId)
                 ->where('product_id', $productId)
                 ->where('unit_id', $unitId)
                 ->first();

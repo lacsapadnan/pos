@@ -188,7 +188,7 @@
                     <input type="hidden" name="customer" id="customer_form2">
                     <input type="hidden" name="user_id" id="user_id_form2">
                     <input type="hidden" name="status" id="status_form2">
-                    <input type="hidden" name="cashier_id" id="cashier_form2" value="{{ $sell->cashier_id }}">
+                    <input type="hidden" name="cashier_id" id="cashier_form2" value="{{ auth()->id() }}">
 
                     <div class="row">
                         <div class="col">
@@ -210,7 +210,7 @@
                                 <label for="transfer" class="col-form-label">Transfer</label>
                                 <input type="text" name="transfer" class="form-control" id="transfer" oninput="formatNumber(this); calculateTotal()" />
                             </div>
-                            
+
                             <div class="mb-1" style="display: none;" id="cashDiv">
                                 <label for="cash" class="col-form-label">Cash</label>
                                 <input type="text" name="cash" class="form-control" id="cash" oninput="formatNumber(this); calculateTotal()" />
@@ -261,10 +261,10 @@
         function formatNumber(input) {
             // Hapus semua karakter non-digit
             let value = input.value.replace(/\D/g, '');
-                
+
             // Tambahkan separator ribuan
             value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                
+
             // Set nilai input dengan format yang baru
             input.value = value;
             }
