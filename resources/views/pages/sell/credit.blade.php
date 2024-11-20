@@ -8,6 +8,7 @@
 @endpush
 
 @section('content')
+    @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
@@ -19,29 +20,29 @@
                 </div>
                 <!--end::Search-->
                 @role('master')
-                <div class="ms-2">
-                    <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                        <option value="">All Cabang</option>
-                        @foreach ($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="ms-3">
-                    <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                        <option value="">All Users</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ms-3">
+                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                            <option value="">All Users</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="my-1 d-flex align-items-center position-relative">
+                        <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                        <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Dari Tanggal">
+                        <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Ke Tanggal">
+                    </div>
                 @endrole
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -112,42 +113,6 @@
         </div>
     </div>
     @includeIf('pages.sell.modal')
-
-    <!-- Modal Pembayaran Piutang -->
-    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="paymentModalLabel">Pembayaran Piutang</h5>
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <form id="paymentForm">
-                        <div class="form-group">
-                            <label class="form-label" for="pay_credit">Jumlah Pembayaran:</label>
-                            <input type="text" class="form-control" id="pay_credit" name="pay_credit" oninput="formatNumber(this)">
-                        </div>
-
-                        <div class="mt-2 form-group">
-                            <label class="form-label" for="payment_method">Metode Pembayaran:</label>
-                            <select class="form-select" id="payment_method" name="payment">
-                                <option value="">Pilih Pembayaran</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="cash">Cash</option>
-                            </select>
-                        </div>
-                        <input type="hidden" id="sell_id" name="sell_id">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="submitPayment">Submit Pembayaran</button>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('addon-script')
@@ -158,13 +123,13 @@
         function formatNumber(input) {
             // Hapus semua karakter non-digit
             let value = input.value.replace(/\D/g, '');
-                
+
             // Tambahkan separator ribuan
             value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                
+
             // Set nilai input dengan format yang baru
             input.value = value;
-            }
+        }
         // Class definition
         var KTDatatablesExample = function() {
             // Shared variables
@@ -233,9 +198,9 @@
                             }
                         },
                         {
-                            data: "id",
-                            "render": function(data, type, row) {
-                                return `<button class="btn btn-sm btn-primary" onclick="openPaymentModal(${data}, ${row.grand_total - row.pay})">Terima</button>`;
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<a href="bayar-piutang/${row.id}" class="btn btn-sm btn-primary">Bayar</a>`
                             }
                         },
                     ],
@@ -436,4 +401,3 @@
         });
     </script>
 @endpush
-
