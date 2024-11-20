@@ -32,6 +32,7 @@ class SellDraftController extends Controller
     {
         $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
             ->where('status', 'draft')
+            ->where('warehouse_id', auth()->user()->warehouse_id)
             ->orderBy('id', 'desc')
             ->get();
         return response()->json($sells);
