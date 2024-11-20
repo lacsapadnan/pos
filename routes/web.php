@@ -111,6 +111,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('penjualan-draft/api/data', [SellDraftController::class, 'data'])->name('api.penjualan-draft');
     Route::get('report/api/data', [ReportController::class, 'data'])->name('api.report');
     Route::get('penjualan/retur/api/data', [SellReturController::class, 'dataSell'])->name('api.penjualan-retur');
+    Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
 
     // Import

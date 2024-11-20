@@ -19,6 +19,37 @@
                         class="form-control form-control-solid w-250px ps-14" placeholder="Cari data pembelian">
                 </div>
                 <!--end::Search-->
+                @role('master')
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div class="ms-2">
+                        <input type="text" id="warehouseFilter" class="form-control"
+                            value="{{ auth()->user()->warehouse_id }}" disabled hidden>
+                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+                    </div>
+                @endrole
+                <div class="ms-3">
+                    <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                        <option value="">All Users</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="my-1 d-flex align-items-center position-relative">
+                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Dari Tanggal">
+                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                        data-kt-filter="date" placeholder="Ke Tanggal">
+                </div>
             </div>
         </div>
         <div class="card-body">
@@ -69,7 +100,7 @@
                     'order': [],
                     'pageLength': 10,
                     "ajax": {
-                        url: '{{ route('api.pembelian') }}',
+                        url: '{{ route('api.pembelian-retur') }}',
                         type: 'GET',
                         dataSrc: '',
                     },
@@ -103,6 +134,40 @@
                         },
 
                     ],
+                });
+
+                $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
+                    var fromDate = $('#fromDateFilter').val();
+                    var toDate = $('#toDateFilter').val();
+                    var warehouse_id = $('#warehouseFilter').val();
+                    var cashier_id = $('#userFilter').val();
+
+                    // Update the URL based on selected filters
+                    var url = '{{ route('api.pembelian-retur') }}';
+                    var params = [];
+
+                    if (fromDate) {
+                        params.push('from_date=' + fromDate);
+                    }
+
+                    if (toDate) {
+                        params.push('to_date=' + toDate);
+                    }
+
+                    if (warehouse_id) {
+                        params.push('warehouse=' + warehouse_id);
+                    }
+
+                    if (cashier_id) {
+                        params.push('cashier_id=' + cashier_id);
+                    }
+
+                    if (params.length > 0) {
+                        url += '?' + params.join('&');
+                    }
+
+                    // Load data with updated URL
+                    datatable.ajax.url(url).load();
                 });
             }
 

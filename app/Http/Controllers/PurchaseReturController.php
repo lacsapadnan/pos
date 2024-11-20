@@ -101,12 +101,66 @@ class PurchaseReturController extends Controller
         return response()->json($returDetail);
     }
 
+    public function dataPurchase(Request $request)
+    {
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('cashier_id');
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $warehouse = $request->input('warehouse');
+
+        $defaultDate = now()->format('Y-m-d');
+
+        if (!$fromDate) {
+            $fromDate = $defaultDate;
+        }
+
+        if (!$toDate) {
+            $toDate = $defaultDate;
+        }
+
+        if ($role[0] == 'master') {
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'supplier')
+                ->orderBy('id', 'desc');
+        } else {
+            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'supplier')
+                ->where('warehouse_id', auth()->user()->warehouse_id)
+                ->orderBy('id', 'desc');
+        }
+
+        if ($warehouse) {
+            $purchases->where('warehouse_id', $warehouse);
+        }
+
+        if ($user_id) {
+            $purchases->where('user_id', $user_id);
+        }
+
+        if ($fromDate && $toDate) {
+            $endDate = Carbon::parse($toDate)->endOfDay();
+
+            $purchases->whereDate('created_at', '>=', $fromDate)
+                ->whereDate('created_at', '<=', $endDate);
+        }
+
+        $purchases = $purchases->get();
+        return response()->json($purchases);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        return view('pages.PurchaseRetur.list-pembelian');
+        $masters = User::role('master')->get();
+        $warehouses = Warehouse::all();
+        $role = auth()->user()->getRoleNames();
+        if ($role[0] == 'master') {
+            $users = User::all();
+        } else {
+            $users = User::where('warehouse_id', auth()->user()->warehouse_id)->get();
+        }
+        return view('pages.PurchaseRetur.list-pembelian', compact('masters', 'warehouses', 'users'));
     }
 
     /**
