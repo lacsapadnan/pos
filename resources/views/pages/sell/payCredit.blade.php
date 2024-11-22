@@ -106,10 +106,10 @@
                                                     value="{{ $details->id }}" />
                                             </div>
                                         </td>
-                                        <td>{{ $details->product->name ?? '' }}</td>
-                                        <td>{{ $details->qty ?? '' }}</td>
-                                        <td>{{ $details->unit->name ?? '' }}</td>
-                                        <td>{{ number_format($details->price * $details->qty) ?? 0 }}</td>
+                                        <td>{{ $details->product->name }}</td>
+                                        <td>{{ $details->qty }}</td>
+                                        <td>{{ $details->unit->name }}</td>
+                                        <td>{{ number_format($details->price * $details->qty) }}</td>
                                     </tr>
                                 @endforeach
                             @empty
