@@ -19,29 +19,29 @@
                 </div>
                 <!--end::Search-->
                 @role('master')
-                <div class="ms-2">
-                    <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                        <option value="">All Cabang</option>
-                        @foreach ($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="ms-3">
-                    <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                        <option value="">All Users</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+                    <div class="ms-2">
+                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                            <option value="">All Cabang</option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ms-3">
+                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                            <option value="">All Users</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="my-1 d-flex align-items-center position-relative">
+                        <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                        <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Dari Tanggal">
+                        <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
+                            data-kt-filter="date" placeholder="Ke Tanggal">
+                    </div>
                 @endrole
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
@@ -114,29 +114,50 @@
     @includeIf('pages.sell.modal')
 
     <!-- Modal Pembayaran Piutang -->
-    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="paymentModalLabel">Pembayaran Piutang</h5>
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
+                        aria-label="Close">
                         <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
                     </div>
                 </div>
                 <div class="modal-body">
                     <form id="paymentForm">
-                        <div class="form-group">
-                            <label class="form-label" for="pay_credit">Jumlah Pembayaran:</label>
-                            <input type="text" class="form-control" id="pay_credit" name="pay_credit" oninput="formatNumber(this)">
-                        </div>
-
                         <div class="mt-2 form-group">
                             <label class="form-label" for="payment_method">Metode Pembayaran:</label>
                             <select class="form-select" id="payment_method" name="payment">
                                 <option value="">Pilih Pembayaran</option>
                                 <option value="transfer">Transfer</option>
                                 <option value="cash">Cash</option>
+                                <option value="split">Split</option>
                             </select>
+                        </div>
+                        <div class="mt-2 form-group">
+                            <label class="form-label" for="total_piutang">Total Piutang:</label>
+                            <input type="text" class="form-control" id="total_piutang" name="total_piutang" readonly>
+                        </div>
+                        <div class="mt-2 form-group">
+                            <label class="form-label" for="discount">Potongan:</label>
+                            <input type="text" class="form-control" id="discount" name="discount"
+                                oninput="updateTotalPiutang()">
+                        </div>
+
+                        <div class="mt-2 form-group" id="payCreditGroup" style="display: none;">
+                            <label class="form-label" for="pay_credit">Jumlah Pembayaran:</label>
+                            <input type="text" class="form-control" id="pay_credit" name="pay_credit"
+                                oninput="formatNumber(this)">
+                        </div>
+                        <div class="mt-2 form-group" id="splitPaymentFields" style="display: none;">
+                            <label class="form-label" for="pay_credit_cash">Jumlah Pembayaran (Cash):</label>
+                            <input type="text" class="form-control" id="pay_credit_cash" name="pay_credit_cash"
+                                oninput="formatNumber(this)">
+                            <label class="form-label" for="pay_credit_transfer">Jumlah Pembayaran (Transfer):</label>
+                            <input type="text" class="form-control" id="pay_credit_transfer"
+                                name="pay_credit_transfer" oninput="formatNumber(this)">
                         </div>
                         <input type="hidden" id="sell_id" name="sell_id">
                     </form>
@@ -153,18 +174,36 @@
 @push('addon-script')
     <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
     <script>
+        document.getElementById('payment_method').addEventListener('change', function() {
+            var paymentMethod = this.value;
+            var payCreditGroup = document.getElementById('payCreditGroup');
+            var splitPaymentFields = document.getElementById('splitPaymentFields');
+
+            if (paymentMethod === 'split') {
+                payCreditGroup.style.display = 'none';
+                splitPaymentFields.style.display = 'block';
+            } else if (paymentMethod) {
+                payCreditGroup.style.display = 'block';
+                splitPaymentFields.style.display = 'none';
+            } else {
+                payCreditGroup.style.display = 'none';
+                splitPaymentFields.style.display = 'none';
+            }
+        });
+    </script>
+    <script>
         "use strict";
 
         function formatNumber(input) {
             // Hapus semua karakter non-digit
             let value = input.value.replace(/\D/g, '');
-                
+
             // Tambahkan separator ribuan
             value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                
+
             // Set nilai input dengan format yang baru
             input.value = value;
-            }
+        }
         // Class definition
         var KTDatatablesExample = function() {
             // Shared variables
@@ -394,18 +433,59 @@
             KTDatatablesExample.init();
         });
 
+        let originalTotalPiutang = 0;
+
         function openPaymentModal(sellId, remaining) {
             $('#sell_id').val(sellId);
             $('#pay_credit').val(remaining);
+            $('#total_piutang').val(new Intl.NumberFormat('id-ID', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(remaining));
+            originalTotalPiutang = remaining; // Simpan nilai total piutang asli
             $('#paymentModal').modal('show');
         }
 
+        function updateTotalPiutang() {
+            const totalPiutangInput = document.getElementById('total_piutang');
+            const discountInput = document.getElementById('discount');
+
+            // Ambil nilai potongan
+            const discount = parseFloat(discountInput.value.replace(/[^0-9.-]+/g, "")) || 0;
+
+            // Hitung total piutang baru
+            const newTotal = originalTotalPiutang - discount;
+
+            // Format dan set nilai total piutang
+            totalPiutangInput.value = new Intl.NumberFormat('id-ID', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(newTotal >= 0 ? newTotal : 0); // Pastikan tidak negatif
+        }
+
+        $('#paymentModal').on('hidden.bs.modal', function() {
+            // Reset semua nilai dalam form modal
+            $('#paymentForm')[0].reset();
+            $('#payCreditGroup').hide();
+            $('#splitPaymentFields').hide();
+        });
+
         $('#submitPayment').click(function() {
+            var paymentMethod = $('#payment_method').val();
             var formData = {
                 sell_id: $('#sell_id').val(),
-                pay: $('#pay_credit').val(),
-                payment: $('#payment_method').val(),
+                potongan: $('#discount').val(),
+                payment: paymentMethod,
             };
+
+            if (paymentMethod === 'split') {
+                formData.pay_credit_cash = $('#pay_credit_cash').val();
+                formData.pay_credit_transfer = $('#pay_credit_transfer').val();
+            } else {
+                formData.pay = $('#pay_credit').val();
+            }
 
             $.ajax({
                 url: '{{ route('bayar-piutang') }}',
@@ -436,4 +516,3 @@
         });
     </script>
 @endpush
-

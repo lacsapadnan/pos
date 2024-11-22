@@ -581,15 +581,12 @@ class SellController extends Controller
 
     public function payCredit(Request $request)
     {
-
         $validated = $request->validate([
             'sell_id' => 'required|integer',
-            'pay' => 'required|string',
-            'payment' => 'required|string'
+            'payment' => 'required|string',
         ]);
 
-        $sell = Sell::with('customer')
-            ->find($validated['sell_id']);
+        $sell = Sell::with('customer')->find($validated['sell_id']);
 
         if (!$sell) {
             return response()->json([
@@ -598,10 +595,36 @@ class SellController extends Controller
             ]);
         }
 
-
         $grandTotal = (int) preg_replace('/[,.]/', '', $sell->grand_total);
         $currentPay = (int) preg_replace('/[,.]/', '', $sell->pay);
-        $payment = (int) preg_replace('/[,.]/', '', $validated['pay']);
+        $paymentMethod = $validated['payment'];
+
+        // Initialize payment variable
+        $payment = 0;
+        $potongan = (int) preg_replace('/[,.]/', '', $request->potongan);
+
+
+        if ($paymentMethod === 'split') {
+            $paymentCash = (int) preg_replace('/[,.]/', '', $request->pay_credit_cash);
+            $paymentTransfer = (int) preg_replace('/[,.]/', '', $request->pay_credit_transfer);
+            $payment = $paymentCash + $paymentTransfer;
+
+            // Validate split payment
+            if ($paymentCash < 0 || $paymentTransfer < 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pembayaran tidak boleh kurang dari 0'
+                ]);
+            }
+        } else {
+            $payment = (int) preg_replace('/[,.]/', '', $request->pay);
+            if ($payment <= 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pembayaran tidak boleh 0 atau kurang'
+                ]);
+            }
+        }
 
         $sisaHutang = $grandTotal - $currentPay;
 
@@ -610,29 +633,45 @@ class SellController extends Controller
                 'status' => 'error',
                 'message' => 'Pembayaran piutang tidak boleh lebih dari sisa piutang'
             ]);
-        } elseif ($payment < 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pembayaran piutang tidak boleh kurang dari 0'
-            ]);
-        } elseif ($payment == 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Pembayaran piutang tidak boleh 0'
-            ]);
-        } else {
-            $sell->pay = $currentPay + $payment;
+        }
 
-            if ($sell->pay >= $grandTotal) {
-                $sell->status = 'lunas';
+        $sell->pay = $currentPay + $payment;
+
+        if ($sell->pay >= $grandTotal) {
+            $sell->status = 'lunas';
+        }
+
+        $sell->save();
+
+        $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name;
+
+        // Handle cash and transfer payments
+        if ($paymentMethod === 'split') {
+            if ($paymentCash > 0) {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar piutang',
+                    'description' => $description,
+                    'in' => $paymentCash,
+                    'out' => 0,
+                    'payment_method' => 'cash',
+                ]);
             }
 
-            $sell->save();
-
-            $paymentMethod = $validated['payment'];
-            $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name;
-
-            if ($paymentMethod === 'transfer') {
+            if ($paymentTransfer > 0) {
+                Cashflow::create([
+                    'warehouse_id' => $sell->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'for' => 'Bayar piutang',
+                    'description' => $description,
+                    'in' => $paymentTransfer,
+                    'out' => 0,
+                    'payment_method' => 'transfer',
+                ]);
+            }
+        } elseif ($paymentMethod === 'transfer') {
+            if ($payment > 0) {
                 Cashflow::create([
                     'warehouse_id' => $sell->warehouse_id,
                     'user_id' => auth()->id(),
@@ -652,7 +691,9 @@ class SellController extends Controller
                     'out' => $payment,
                     'payment_method' => 'transfer',
                 ]);
-            } else {
+            }
+        } else {
+            if ($payment > 0) {
                 Cashflow::create([
                     'warehouse_id' => $sell->warehouse_id,
                     'user_id' => auth()->id(),
@@ -663,11 +704,23 @@ class SellController extends Controller
                     'payment_method' => 'cash',
                 ]);
             }
+        }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Pembayaran piutang berhasil'
+        if ($potongan !== null && $potongan > 0) {
+            Cashflow::create([
+                'warehouse_id' => $sell->warehouse_id,
+                'user_id' => auth()->id(),
+                'for' => 'Bayar piutang',
+                'description' => 'Potongan bayar piutang ' . $sell->order_number,
+                'in' => 0,
+                'out' => $potongan,
+                'payment_method' => 'cash',
             ]);
         }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pembayaran piutang berhasil'
+        ]);
     }
 }
