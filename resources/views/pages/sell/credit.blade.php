@@ -159,6 +159,10 @@
                             <input type="text" class="form-control" id="pay_credit_transfer"
                                 name="pay_credit_transfer" oninput="formatNumber(this)">
                         </div>
+                        <div class="mt-2 form-group">
+                            <label class="form-label" for="keterangan">Keterangan:</label>
+                            <textarea class="form-control" id="keterangan" name="keterangan" rows="3"></textarea>
+                        </div>
                         <input type="hidden" id="sell_id" name="sell_id">
                     </form>
                 </div>
@@ -478,6 +482,7 @@
                 sell_id: $('#sell_id').val(),
                 potongan: $('#discount').val(),
                 payment: paymentMethod,
+                keterangan: $('#keterangan').val(),
             };
 
             if (paymentMethod === 'split') {

@@ -635,7 +635,7 @@ class SellController extends Controller
             ]);
         }
 
-        $sell->pay = $currentPay + $payment;
+        $sell->pay = $currentPay + $payment - $potongan;
 
         if ($sell->pay >= $grandTotal) {
             $sell->status = 'lunas';
@@ -643,7 +643,7 @@ class SellController extends Controller
 
         $sell->save();
 
-        $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name;
+        $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name . ' ' . $request->keterangan;
 
         // Handle cash and transfer payments
         if ($paymentMethod === 'split') {
