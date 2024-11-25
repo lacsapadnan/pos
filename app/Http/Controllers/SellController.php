@@ -635,7 +635,7 @@ class SellController extends Controller
             ]);
         }
 
-        $sell->pay = $currentPay + $payment - $potongan;
+        $sell->pay = $currentPay + $payment + $potongan;
 
         if ($sell->pay >= $grandTotal) {
             $sell->status = 'lunas';
