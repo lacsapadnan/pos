@@ -232,14 +232,14 @@
                                 return `
                                     <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                     <button class="btn btn-sm btn-success" onclick="openPasswordModal(${data})">Print</button>
-                                    @role('master')
+                                    @can('hapus penjualan')
                                         <form id="deleteForm_${data}" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <input type="hidden" name="id" value="${data}">
                                             <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(${data})">Delete</button>
                                         </form>
-                                    @endrole
+                                    @endcan
                                 `;
                             }
                         }
@@ -395,7 +395,7 @@
                 }
             });
         }
-    
+
         function openPasswordModal(data) {
             $('#passwordModal').modal('show');
             $('#submitPasswordBtn').attr('onclick', `checkMasterUserPassword(${data})`);
