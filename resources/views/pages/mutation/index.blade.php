@@ -81,7 +81,9 @@
                                 <th>Jumlah</th>
                                 <th>Keterangan</th>
                                 <th>Tanggal</th>
-                                <th>Aksi</th>
+                                @can('hapus mutasi kas')
+                                    <th>Aksi</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody class="text-gray-900 fw-semibold">
@@ -130,7 +132,7 @@
                         {
                             data: "from_warehouse",
                             render: function(data, type, row) {
-                                    return data.name;
+                                return data.name;
                             }
                         },
                         {
@@ -139,7 +141,7 @@
                         {
                             data: 'output_cashier',
                             render: function(data, type, row) {
-                                    return data.name;
+                                return data.name;
                             }
                         },
                         {
@@ -165,6 +167,7 @@
                                 return moment(data).format('DD MMMM YYYY');
                             }
                         },
+                        @can('hapus mutasi kas')
                         {
                             "data": null,
                             "sortable": false,
@@ -179,12 +182,9 @@
                                     </form>
                                 `;
                             }
-                        }
+                        },
+                        @endcan
                     ],
-                    columnDefs: [{
-                        target: 7,
-                        className: 'min-w-100px'
-                    }],
                 });
             }
 
