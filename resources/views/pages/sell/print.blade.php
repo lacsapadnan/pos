@@ -111,11 +111,11 @@
             @foreach ($details as $detail)
                 <tr>
                     <td width="15%">
-                        <p>{{ $detail->quantity }}  {{ $detail->unit->name }} </p>
+                        <p>{{ $detail->quantity }} {{ $detail->unit->name }} </p>
                     </td>
                     <td width="40%">
                         <p>{{ $detail->product->name }}</p>
-                        @if($detail->product->hadiah != null)
+                        @if ($detail->product->hadiah != null)
                             <p>*{{ $detail->product->hadiah }}</p>
                         @endif
                     </td>
@@ -126,7 +126,11 @@
                         <p>{{ $detail->diskon }}</p>
                     </td>
                     <td width="20%" style="text-align:right">
-                        <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
+                        @if ($sell->status == 'batal')
+                            <p>0</p>
+                        @else
+                            <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
+                        @endif
                     </td>
                 </tr>
             @endforeach
@@ -146,20 +150,10 @@
                     <p>Kasir:</p>
                 </td>
                 <td width="50%" style="text-align:right">
-                    <p>Total: {{ number_format($sell->grand_total) }}</p>
-                </td>
-            </tr>
-            <tr>
-                <td width="20%"></td>
-                <td width="20%"></td>
-                <td width="50%" style="text-align:right">
-                    @if($sell->payment_method == 'transfer')
-                        <p>Transfer: {{ number_format($sell->transfer) }}</p>
-                    @elseif($sell->payment_method == 'cash')
-                        <p>Cash: {{ number_format($sell->cash) }}</p>
+                    @if ($sell->status != 'batal')
+                        <p>Total: {{ number_format($sell->grand_total) }}</p>
                     @else
-                        <p>Cash: {{ number_format($sell->cash) }}</p>
-                        <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                        <p>0</p>
                     @endif
                 </td>
             </tr>
@@ -167,7 +161,35 @@
                 <td width="20%"></td>
                 <td width="20%"></td>
                 <td width="50%" style="text-align:right">
-                    <p>Sisa: {{ $sell->pay >= $sell->grand_total ? '0' : number_format($sell->grand_total - $sell->pay) }}</p>
+                    @if ($sell->status != 'batal')
+                        @if ($sell->payment_method == 'transfer')
+                            <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                        @elseif($sell->payment_method == 'cash')
+                            <p>Cash: {{ number_format($sell->cash) }}</p>
+                        @else
+                            <p>Cash: {{ number_format($sell->cash) }}</p>
+                            <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                        @endif
+                    @else
+                        @if ($sell->payment_method == 'transfer')
+                            <p>Transfer: 0</p>
+                        @elseif($sell->payment_method == 'cash')
+                            <p>Cash: 0</p>
+                        @else
+                            <p>Cash: 0</p>
+                            <p>Transfer: 0</p>
+                        @endif
+                    @endif
+
+                </td>
+            </tr>
+            <tr>
+                <td width="20%"></td>
+                <td width="20%"></td>
+                <td width="50%" style="text-align:right">
+                    <p>Sisa:
+                        {{ $sell->pay >= $sell->grand_total ? '0' : number_format($sell->grand_total - $sell->pay) }}
+                    </p>
                 </td>
             </tr>
             <tr>
@@ -178,7 +200,11 @@
                     <p>{{ $sell->cashier->name }}</p>
                 </td>
                 <td width="50%" style="text-align:right">
-                    <p>Kembali: {{ number_format($sell->change) ?? 0 }}</p>
+                    @if ($sell->status != 'batal')
+                        <p>Kembali: {{ number_format($sell->change) ?? 0 }}</p>
+                    @else
+                        <p>Kembali: 0</p>
+                    @endif
                 </td>
             </tr>
         </table>

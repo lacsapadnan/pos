@@ -261,6 +261,34 @@ class SellReturController extends Controller
             $inventory->update();
         }
 
+        $allReturned = true;
+
+        // Query the sell to check its current status
+        $sell = Sell::where('id', $request->sell_id)->first();
+
+        // Check if the sell has already been returned before
+        $previousRetur = SellRetur::where('sell_id', $request->sell_id)->exists();
+
+        foreach ($returCart as $rc) {
+            $sellDetail = SellDetail::where('sell_id', $request->sell_id)
+                ->where('product_id', $rc->product_id)
+                ->where('unit_id', $rc->unit_id)
+                ->first();
+
+            if ($sellDetail->quantity > 0) {
+                $allReturned = false;
+                break;
+            }
+        }
+
+        if ($allReturned) {
+            if ($previousRetur) {
+                // If this is the second return, set status to "batal"
+                $sell->status = 'batal';
+                $sell->update();
+            }
+        }
+
         if ($sell->status == 'lunas') {
             Cashflow::create([
                 'user_id' => auth()->id(),
