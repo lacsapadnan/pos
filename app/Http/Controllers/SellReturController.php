@@ -205,7 +205,6 @@ class SellReturController extends Controller
                 ->with('product')
                 ->first();
 
-
             // update grand total
             $sell->grand_total = $sell->grand_total - ($rc->quantity * ($sellDetail->price - $sellDetail->diskon));
             $sell->update();
@@ -244,7 +243,6 @@ class SellReturController extends Controller
 
         // bring back the stock
         foreach ($returCart as $rc) {
-            // check the unit_id is unit_dus, unit_pak or unit_pcs in proudct
             $product = Product::where('id', $rc->product_id)->first();
             $inventory = Inventory::where('product_id', $rc->product_id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
@@ -261,34 +259,6 @@ class SellReturController extends Controller
             $inventory->update();
         }
 
-        $allReturned = true;
-
-        // Query the sell to check its current status
-        $sell = Sell::where('id', $request->sell_id)->first();
-
-        // Check if the sell has already been returned before
-        $previousRetur = SellRetur::where('sell_id', $request->sell_id)->exists();
-
-        foreach ($returCart as $rc) {
-            $sellDetail = SellDetail::where('sell_id', $request->sell_id)
-                ->where('product_id', $rc->product_id)
-                ->where('unit_id', $rc->unit_id)
-                ->first();
-
-            if ($sellDetail->quantity > 0) {
-                $allReturned = false;
-                break;
-            }
-        }
-
-        if ($allReturned) {
-            if ($previousRetur) {
-                // If this is the second return, set status to "batal"
-                $sell->status = 'batal';
-                $sell->update();
-            }
-        }
-
         if ($sell->status == 'lunas') {
             Cashflow::create([
                 'user_id' => auth()->id(),
@@ -299,6 +269,26 @@ class SellReturController extends Controller
                 'in' => 0,
                 'payment_method' => null,
             ]);
+        }
+
+        $allReturned = true;
+
+        // Query all SellDetail items for the sell_id
+        $sellDetails = SellDetail::where('sell_id', $request->sell_id)->get();
+
+        // Check if all SellDetail quantities are 0
+        foreach ($sellDetails as $sellDetail) {
+            if ($sellDetail->quantity > 0) {
+                $allReturned = false;
+                break;
+            }
+        }
+
+        // Update status to "batal" if all items are returned
+        $sell = Sell::where('id', $request->sell_id)->first();
+        if ($allReturned) {
+            $sell->status = 'batal';
+            $sell->update();
         }
 
         // delete the cart
