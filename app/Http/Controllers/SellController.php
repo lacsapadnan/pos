@@ -154,6 +154,15 @@ class SellController extends Controller
             $status = 'lunas';
         }
 
+        $grandTotalValid = 0;
+        foreach ($sellCart as $sc) {
+            $grandTotalValid += ($sc->price * $sc->quantity) - $sc->diskon;
+        }
+
+        if ($grandtotal !== $grandTotalValid) {
+            return redirect()->back()->withInput()->withErrors('Terjadi Kesalahan Kalkulasi Total');
+        }
+
         $sell = Sell::create([
             'cashier_id' => auth()->id(),
             'warehouse_id' => auth()->user()->warehouse_id,
