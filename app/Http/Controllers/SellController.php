@@ -156,7 +156,7 @@ class SellController extends Controller
 
         $grandTotalValid = 0;
         foreach ($sellCart as $sc) {
-            $grandTotalValid += ($sc->price * $sc->quantity) - $sc->diskon;
+            $grandTotalValid += (int)preg_replace('/[,.]/', '', ($sc->price * $sc->quantity) - $sc->diskon);
         }
 
         if ($grandtotal !== $grandTotalValid) {
