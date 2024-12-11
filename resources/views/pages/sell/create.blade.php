@@ -32,6 +32,7 @@
 @section('content')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="mt-3">
+            @include('components.alert')
             <form id="form1">
                 <div class="row">
                     <div class="col-md-2">
