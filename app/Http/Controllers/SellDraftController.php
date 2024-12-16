@@ -115,6 +115,7 @@ class SellDraftController extends Controller
         $sell->status = $status;
         $sell->customer_id = $request->customer;
         $sell->grand_total = preg_replace('/[,.]/', '', $request->grand_total);
+        $sell->pay = $pay;
         $sell->cash = $cash ?? 0;
         $sell->transfer = $transfer ?? 0;
         $sell->change = $change ?? 0;
