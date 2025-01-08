@@ -94,8 +94,7 @@ class SellDraftController extends Controller
     public function update(Request $request, string $id)
     {
         $sell = Sell::where('id', $id)->first();
-        $sellCart = SellCartDraft::where('cashier_id', $request->cashier_id)
-            ->where('sell_id', $id)
+        $sellCart = SellCartDraft::where('sell_id', $id)
             ->get();
 
         $transfer = str_replace(',', '', $request->transfer ?? 0);
@@ -125,7 +124,7 @@ class SellDraftController extends Controller
 
         if ($request->status == 'draft') {
             foreach ($sellCart as $sc) {
-                $sellCart = SellCartDraft::where('cashier_id', $request->cashier_id)
+                $sellCart = SellCartDraft::where('sell_id', $id)
                     ->where('product_id', $sc->product_id)
                     ->where('unit_id', $sc->unit_id)
                     ->first();
@@ -141,6 +140,7 @@ class SellDraftController extends Controller
                         'quantity' => $sc->quantity,
                         'price' => $sc->price,
                         'diskon' => $sc->diskon,
+                        'sell_id' => $id
                     ]);
                 }
             }
