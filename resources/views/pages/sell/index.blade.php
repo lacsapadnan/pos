@@ -514,6 +514,18 @@
                         ]
                     });
 
+                    // Calculate grand total
+                    var grandTotal = response.reduce((acc, item) => {
+                        return acc + (item.quantity * item.price - item.diskon);
+                    }, 0);
+                    var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR'
+                    }).format(grandTotal).replace(",00", "");
+
+                    // Display grand total
+                    $('#kt_datatable_detail').after(`<h2>Total Penjualan: ${formattedGrandTotal}</h2>`);
+
                     // Open the modal
                     $('#kt_modal_1').modal('show');
                 },
