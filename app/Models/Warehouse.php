@@ -9,4 +9,11 @@ class Warehouse extends Model
 {
     use HasFactory;
     protected $fillable = ['name', 'address', 'phone'];
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'inventories')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 }
