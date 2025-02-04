@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\WarehouseRequest;
+use App\Models\Product;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,10 @@ class WarehouseController extends Controller
     public function store(WarehouseRequest $request)
     {
         $warehouse = Warehouse::create($request->validated());
+        $products = Product::all(); // Ambil semua produk
+        foreach ($products as $product) {
+            $warehouse->products()->attach($product->id, ['quantity' => 0]);
+        }
         return redirect()->route('cabang.index')->with('success', 'Gudang ' . $warehouse->name . ' berhasil ditambahkan.');
     }
 

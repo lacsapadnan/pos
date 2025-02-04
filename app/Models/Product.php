@@ -45,4 +45,11 @@ class Product extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_eceran');
     }
+
+    public function warehouses()
+    {
+        return $this->belongsToMany(Warehouse::class, 'inventories')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 }
