@@ -11,6 +11,7 @@ use App\Models\Unit;
 use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SendStockController extends Controller
 {
@@ -54,67 +55,52 @@ class SendStockController extends Controller
             'to_warehouse' => $toWarehouse,
         ]);
 
-        $carts = SendStockCart::with('product', 'unit')
-            ->where('user_id', auth()->id())
-            ->get();
-        $productList = [];
+        $carts = SendStockCart::with('product')->where('user_id', auth()->id())->get();
+
         foreach ($carts as $cart) {
-            $productId = $cart->product_id;
+            $product = $cart->product;
             $unit = $cart->unit_id;
             $quantity = $cart->quantity;
 
-            $productList[] = [
-                'product_id' => $productId,
-                'unit' => $unit,
-                'quantity' => $quantity,
-            ];
-        }
+            // Convert quantity to eceran
+            $quantityEceran = match ($unit) {
+                $product->unit_dus => $quantity * $product->dus_to_eceran,
+                $product->unit_pak => $quantity * $product->pak_to_eceran,
+                default => $quantity
+            };
 
-        foreach ($productList as $productData) {
-            $productId = $productData['product_id'];
-            $unit = $productData['unit'];
-            $quantity = $productData['quantity'];
-
-            $sendStockDetail = new SendStockDetail();
-            $sendStockDetail->send_stock_id = $sendStock->id;
-            $sendStockDetail->product_id = $productId;
-            $sendStockDetail->unit_id = $unit;
-            $sendStockDetail->quantity = $quantity;
-            $sendStockDetail->save();
-
-            $inventory = Inventory::where('product_id', $productId)
-                ->where('warehouse_id', $toWarehouse)
+            // Check stock before deducting
+            $fromInventory = Inventory::where('product_id', $product->id)
+                ->where('warehouse_id', $fromWarehouse)
                 ->first();
-            $product = Product::find($productId);
 
-            if ($inventory) {
-                $quantityNew = 0; // Reset quantityNew
-                if ($unit == $product->unit_dus) {
-                    $quantityNew = $quantity * $product->dus_to_eceran;
-                } elseif ($unit == $product->unit_pak) {
-                    $quantityNew = $quantity * $product->pak_to_eceran;
-                } elseif ($unit == $product->unit_eceran) {
-                    $quantityNew = $quantity;
-                }
-
-                // Convert the incoming quantity to the unit of the product
-                if ($unit == $inventory->product->unit_dus) {
-                    $quantityNew = $quantityNew * $product->dus_to_eceran;
-                } elseif ($unit == $inventory->product->unit_pak) {
-                    $quantityNew = $quantityNew * $product->pak_to_eceran;
-                }
-
-                // Update the inventory quantity
-                $inventory->quantity += $quantityNew;
-                $inventory->save();
+            if (!$fromInventory || $fromInventory->quantity < $quantityEceran) {
+                return redirect()->back()
+                    ->withErrors("Stok tidak mencukupi untuk {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($fromInventory->quantity ?? 0));
             }
+
+            // Deduct stock from source warehouse
+            $fromInventory->decrement('quantity', $quantityEceran);
+
+            // Increase stock in destination warehouse
+            Inventory::updateOrCreate(
+                ['product_id' => $product->id, 'warehouse_id' => $toWarehouse],
+                ['quantity' => DB::raw("quantity + $quantityEceran")]
+            );
+
+            // Store transfer details
+            SendStockDetail::create([
+                'send_stock_id' => $sendStock->id,
+                'product_id' => $product->id,
+                'unit_id' => $unit,
+                'quantity' => $quantity, // Keep as inputted unit
+            ]);
         }
 
+        // Clear cart
         SendStockCart::where('user_id', auth()->id())->delete();
 
-        return redirect()
-            ->route('pindah-stok.index')
-            ->with('success', 'Stok berhasil dikirim');
+        return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dipindahkan.');
     }
 
     /**
@@ -156,10 +142,6 @@ class SendStockController extends Controller
             ->where('product_id', $request->product_id)
             ->first();
 
-        $inventory = Inventory::where('product_id', $request->product_id)
-            ->where('warehouse_id', auth()->user()->warehouse_id)
-            ->first();
-
         $product = Product::find($request->product_id);
 
         if ($request->has('quantity_dus')) {
@@ -182,20 +164,9 @@ class SendStockController extends Controller
 
         $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
 
-        $quantityInventoryDus = 0;
-        $quantityInventoryPak = 0;
-        $quantityInventoryEceran = 0;
-
         if ($existingCart) {
             $existingCart->quantity += $totalQuantity;
             $existingCart->save();
-
-            $quantityInventoryDus = $quantityDus * $product->dus_to_eceran;
-            $quantityInventoryPak = $quantityPak * $product->pak_to_eceran;
-            $quantityInventoryEceran = $quantityEceran;
-
-            $inventory->quantity -= $quantityInventoryDus + $quantityInventoryPak + $quantityInventoryEceran;
-            $inventory->save();
         } else {
             $unitIdDus = $product->unit_dus;
             $unitIdPak = $product->unit_pak;
@@ -208,8 +179,6 @@ class SendStockController extends Controller
                     'unit_id' => $unitIdDus,
                     'quantity' => $quantityDus,
                 ]);
-
-                $quantityInventoryDus = $quantityDus * $product->dus_to_eceran;
             }
 
             if ($quantityPak > 0) {
@@ -219,8 +188,6 @@ class SendStockController extends Controller
                     'unit_id' => $unitIdPak,
                     'quantity' => $quantityPak,
                 ]);
-
-                $quantityInventoryPak = $quantityPak * $product->pak_to_eceran;
             }
 
             if ($quantityEceran > 0) {
@@ -230,35 +197,16 @@ class SendStockController extends Controller
                     'unit_id' => $unitIdEceran,
                     'quantity' => $quantityEceran,
                 ]);
-
-                $quantityInventoryEceran = $quantityEceran;
             }
-
-            $inventory->quantity -= $quantityInventoryDus + $quantityInventoryPak + $quantityInventoryEceran;
-            $inventory->save();
         }
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
     }
 
     public function destroyCart($id)
     {
         $cart = SendStockCart::find($id);
-        $product = Product::find($cart->product_id);
-        $inventory = Inventory::where('product_id', $cart->product_id)
-            ->where('warehouse_id', auth()->user()->warehouse_id)
-            ->first();
-
-        if ($cart->unit_id == $product->unit_dus) {
-            $inventory->quantity += $cart->quantity * $product->dus_to_eceran;
-        } elseif ($cart->unit_id == $product->unit_pak) {
-            $inventory->quantity += $cart->quantity * $product->pak_to_eceran;
-        } elseif ($cart->unit_id == $product->unit_eceran) {
-            $inventory->quantity += $cart->quantity;
-        }
-
         $cart->delete();
-        $inventory->save();
 
         return redirect()->back();
     }

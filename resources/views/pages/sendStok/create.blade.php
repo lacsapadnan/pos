@@ -32,6 +32,7 @@
                 </div>
             </form>
         </div>
+        @include('components.alert')
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
                 <!--begin::Search-->

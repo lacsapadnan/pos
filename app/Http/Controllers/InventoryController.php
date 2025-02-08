@@ -28,33 +28,22 @@ class InventoryController extends Controller
         $category = $request->input('category');
         $warehouseId = $request->input('warehouse_id');
 
-        if ($userRoles[0] == 'master') {
-            $query = Inventory::with('product', 'warehouse');
+        $query = Inventory::with(['product', 'warehouse']);
 
-            if ($category) {
-                $query->whereHas('product', function ($query) use ($category) {
-                    $query->where('group', 'LIKE', '%' . $category . '%');
-                });
-            }
-
-            if ($warehouseId) {
-                $query->where('warehouse_id', $warehouseId);
-            }
-
-            $inventory = $query->get();
-            return response()->json($inventory);
-        } else {
-            $query = Inventory::with('product', 'warehouse')->where('warehouse_id', auth()->user()->warehouse_id);
-
-            if ($category) {
-                $query->whereHas('product', function ($query) use ($category) {
-                    $query->where('group', 'LIKE', '%' . $category . '%');
-                });
-            }
-
-            $inventory = $query->get();
-            return response()->json($inventory);
+        if ($category) {
+            $query->whereHas('product', function ($query) use ($category) {
+                $query->where('group', 'LIKE', '%' . $category . '%');
+            });
         }
+
+        if ($userRoles[0] != 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id);
+        } elseif ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        $inventory = $query->get();
+        return response()->json($inventory);
     }
 
     public function dataAll(Request $request)
