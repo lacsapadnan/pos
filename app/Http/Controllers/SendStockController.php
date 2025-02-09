@@ -46,16 +46,21 @@ class SendStockController extends Controller
      */
     public function store(Request $request)
     {
-        $fromWarehouse = auth()->user()->warehouse_id;
+        $user = auth()->user();
+        $fromWarehouse = $user->warehouse_id;
         $toWarehouse = $request->input('to_warehouse');
 
-        $sendStock = SendStock::create([
-            'user_id' => auth()->id(),
-            'from_warehouse' => $fromWarehouse,
-            'to_warehouse' => $toWarehouse,
-        ]);
+        // Fetch cart items with products
+        $carts = SendStockCart::with('product')->where('user_id', $user->id)->get();
 
-        $carts = SendStockCart::with('product')->where('user_id', auth()->id())->get();
+        // Fetch all related inventory records in one query (avoid looping queries)
+        $productIds = $carts->pluck('product.id');
+        $inventories = Inventory::whereIn('product_id', $productIds)
+            ->where('warehouse_id', $fromWarehouse)
+            ->get()
+            ->keyBy('product_id'); // Store in an associative array for quick lookup
+
+        $stockErrors = [];
 
         foreach ($carts as $cart) {
             $product = $cart->product;
@@ -69,36 +74,62 @@ class SendStockController extends Controller
                 default => $quantity
             };
 
-            // Check stock before deducting
-            $fromInventory = Inventory::where('product_id', $product->id)
-                ->where('warehouse_id', $fromWarehouse)
-                ->first();
+            // Check available stock
+            $fromInventory = $inventories[$product->id] ?? null;
 
             if (!$fromInventory || $fromInventory->quantity < $quantityEceran) {
-                return redirect()->back()
-                    ->withErrors("Stok tidak mencukupi untuk {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($fromInventory->quantity ?? 0));
+                $stockErrors[] = "Stok tidak mencukupi untuk {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($fromInventory->quantity ?? 0);
             }
+        }
+
+        if (!empty($stockErrors)) {
+            return redirect()->back()->withErrors($stockErrors);
+        }
+
+        $sendStock = SendStock::create([
+            'user_id' => $user->id,
+            'from_warehouse' => $fromWarehouse,
+            'to_warehouse' => $toWarehouse,
+        ]);
+
+        $sendStockDetails = [];
+
+        foreach ($carts as $cart) {
+            $product = $cart->product;
+            $unit = $cart->unit_id;
+            $quantity = $cart->quantity;
+
+            $quantityEceran = match ($unit) {
+                $product->unit_dus => $quantity * $product->dus_to_eceran,
+                $product->unit_pak => $quantity * $product->pak_to_eceran,
+                default => $quantity
+            };
 
             // Deduct stock from source warehouse
-            $fromInventory->decrement('quantity', $quantityEceran);
+            Inventory::where('id', $inventories[$product->id]->id)->decrement('quantity', $quantityEceran);
 
-            // Increase stock in destination warehouse
+            // Increase stock in destination warehouse (efficient atomic update)
             Inventory::updateOrCreate(
                 ['product_id' => $product->id, 'warehouse_id' => $toWarehouse],
                 ['quantity' => DB::raw("quantity + $quantityEceran")]
             );
 
-            // Store transfer details
-            SendStockDetail::create([
+            // Prepare batch insert data for SendStockDetail
+            $sendStockDetails[] = [
                 'send_stock_id' => $sendStock->id,
                 'product_id' => $product->id,
                 'unit_id' => $unit,
-                'quantity' => $quantity, // Keep as inputted unit
-            ]);
+                'quantity' => $quantity,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
 
-        // Clear cart
-        SendStockCart::where('user_id', auth()->id())->delete();
+        // Insert all transfer details in one query (batch insert)
+        SendStockDetail::insert($sendStockDetails);
+
+        // Clear cart in one query
+        SendStockCart::where('user_id', $user->id)->delete();
 
         return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dipindahkan.');
     }
