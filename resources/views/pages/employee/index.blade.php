@@ -7,6 +7,8 @@
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
@@ -119,6 +121,7 @@
                     "info": false,
                     'order': [],
                     'pageLength': 10,
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     ajax: {
                         url: "{{ route('api.karyawan') }}",
                         type: 'GET',
@@ -154,7 +157,7 @@
                             <button type="button" onclick="deleteEmployee('${routeUrl}')" class="btn btn-sm btn-danger"><i class="ki-solid ki-trash"></i>Hapus</button>
                             @endcan
                             @can('update karyawan')
-                            <a href="{{ route('karyawan.index') }}/${data}/edit" class="btn btn-warning btn-sm mt-2">
+                            <a href="{{ route('karyawan.index') }}/${data}/edit" class="btn btn-warning btn-sm">
                                 <i class="ki-solid ki-pencil"></i>
                                 Edit
                             </a>
@@ -199,7 +202,7 @@
                         e.preventDefault();
                         const exportValue = e.target.getAttribute('data-kt-export');
                         const target = document.querySelector('.dt-buttons .buttons-' +
-                        exportValue);
+                            exportValue);
                         target.click();
                     });
                 });

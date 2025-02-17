@@ -8,6 +8,8 @@
     <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
@@ -131,6 +133,7 @@
                     info: true,
                     order: [],
                     pageLength: 10,
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     ajax: {
                         url: '{{ route('api.report') }}',
                         type: 'GET',
