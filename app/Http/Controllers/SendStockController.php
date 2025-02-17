@@ -25,7 +25,9 @@ class SendStockController extends Controller
 
     public function data()
     {
-        $sendStok = SendStock::with('fromWarehouse', 'toWarehouse', 'user')->get();
+        $sendStok = SendStock::with('fromWarehouse', 'toWarehouse', 'user')
+            ->orderBy('id', 'desc')
+            ->get();
         return response()->json($sendStok);
     }
 
@@ -162,9 +164,58 @@ class SendStockController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        abort(404);
+        $sendStock = SendStock::findOrFail($id);
+
+        // Fetch related details from SendStockDetail
+        $sendStockDetails = SendStockDetail::where('send_stock_id', $id)->get();
+
+        $stockErrors = [];
+
+        // Loop through the details to reverse the stock movement
+        foreach ($sendStockDetails as $detail) {
+            $product = $detail->product;
+            $unit = $detail->unit_id;
+            $quantity = $detail->quantity;
+
+            // Convert quantity to eceran
+            $quantityEceran = match ($unit) {
+                $product->unit_dus => $quantity * $product->dus_to_eceran,
+                $product->unit_pak => $quantity * $product->pak_to_eceran,
+                default => $quantity
+            };
+
+            // Fetch inventories
+            $fromInventory = Inventory::where('product_id', $product->id)
+                ->where('warehouse_id', $sendStock->from_warehouse)
+                ->first();
+
+            $toInventory = Inventory::where('product_id', $product->id)
+                ->where('warehouse_id', $sendStock->to_warehouse)
+                ->first();
+
+            // Check if there's enough stock in the destination warehouse to decrement
+            if (!$toInventory || $toInventory->quantity < $quantityEceran) {
+                $stockErrors[] = "Stok tidak mencukupi untuk mengembalikan {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($toInventory->quantity ?? 0);
+            }
+
+            // Revert stock transfer: Increase in source warehouse, Decrease in destination warehouse
+            Inventory::where('id', $fromInventory->id)->increment('quantity', $quantityEceran);
+
+            // Decrease stock in destination warehouse
+            Inventory::where('id', $toInventory->id)->decrement('quantity', $quantityEceran);
+        }
+
+        if (!empty($stockErrors)) {
+            return redirect()->back()->withErrors($stockErrors);
+        }
+
+        // Delete the SendStockDetail and SendStock entries
+        SendStockDetail::where('send_stock_id', $id)->delete();
+        $sendStock->delete();
+
+        return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dikembalikan.');
     }
 
     public function addCart(Request $request)
