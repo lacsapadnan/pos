@@ -43,16 +43,44 @@
         </div>
         <div class="mb-10">
             <label class="form-label">Permissions</label>
-            <div class="row gap-3 row-cols-2 row-cols-md-3 row-cols-lg-4 gap-3">
-                @foreach($permissions as $permission)
-                    <div class="col">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="permission_{{ $permission->id }}" {{ in_array($permission->id, $userPermissions) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="permission_{{ $permission->id }}">
-                                {{ $permission->name }}
-                            </label>
+            @php
+                // Group permissions by the word after the prefix
+                $groupedPermissions = [];
+
+                foreach($permissions as $permission) {
+                    // Split the name into the prefix and the remaining part (title)
+                    $parts = explode(' ', $permission->name, 2); // Split into 2 parts: prefix and title
+                    $prefix = $parts[0]; // The prefix (simpan, baca, update, hapus)
+                    $title = isset($parts[1]) ? ucfirst($parts[1]) : ''; // The title part (e.g., 'karyawan')
+
+                    // Group by title
+                    if ($title) {
+                        $groupedPermissions[$title][] = $permission;
+                    } else {
+                        $groupedPermissions['Others'][] = $permission;
+                    }
+                }
+            @endphp
+
+            <div class="row">
+                @foreach($groupedPermissions as $title => $group)
+                    @if(count($group) > 0)
+                        <div class="col-12 col-md-6" style="margin-bottom: 48px"> <!-- 6 col on medium and larger screens -->
+                            <h5>{{ $title }} Permissions</h5>
+                            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 gap-3">
+                                @foreach($group as $permission)
+                                    <div class="col">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="permission_{{ $permission->id }}" {{ in_array($permission->id, $userPermissions) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="permission_{{ $permission->id }}">
+                                                {{ $permission->name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 @endforeach
             </div>
         </div>

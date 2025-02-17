@@ -530,6 +530,22 @@
                                 </a>
                                 <!--end:Menu link-->
                             @endcan
+                            @can('baca karyawan')
+                                <!--begin:Menu link-->
+                                <a class="menu-link"href="{{ route('karyawan.index') }}">
+                                    <span class="menu-icon">
+                                        <i class="ki-duotone ki-people fs-2">
+                                            <i class="path1"></i>
+                                            <i class="path2"></i>
+                                            <i class="path3"></i>
+                                            <i class="path4"></i>
+                                            <i class="path5"></i>
+                                        </i>
+                                    </span>
+                                    <span class="menu-title">Data Karyawan</span>
+                                </a>
+                                <!--end:Menu link-->
+                            @endcan
                             @can('baca permission')
                                 <!--begin:Menu link-->
                                 <a class="menu-link"href="{{ route('permission.index') }}">
