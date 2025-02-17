@@ -24,6 +24,7 @@ use Mike42\Escpos\EscposImage;
 use Mike42\Escpos\ImagickEscposImage;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
+require_once app_path('Helpers/CashflowHelper.php');
 
 class SellController extends Controller
 {
@@ -657,74 +658,69 @@ class SellController extends Controller
         // Handle cash and transfer payments
         if ($paymentMethod === 'split') {
             if ($paymentCash > 0) {
-                Cashflow::create([
-                    'warehouse_id' => $sell->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar piutang',
-                    'description' => $description,
-                    'in' => $paymentCash,
-                    'out' => 0,
-                    'payment_method' => 'cash',
-                ]);
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentIn: $paymentCash,
+                    paymentMethod: 'cash',
+                    for: 'Bayar piutang'
+                );
             }
 
             if ($paymentTransfer > 0) {
-                Cashflow::create([
-                    'warehouse_id' => $sell->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar piutang',
-                    'description' => $description,
-                    'in' => $paymentTransfer,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentOut: $paymentTransfer,
+                    paymentMethod: 'transfer',
+                    for: 'Bayar piutang'
+                );
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentIn: $paymentTransfer,
+                    paymentMethod: 'transfer',
+                    for: 'Bayar piutang'
+                );
             }
         } elseif ($paymentMethod === 'transfer') {
             if ($payment > 0) {
-                Cashflow::create([
-                    'warehouse_id' => $sell->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar piutang',
-                    'description' => $description,
-                    'in' => $payment,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentOut: $payment,
+                    paymentMethod: 'transfer',
+                    for: 'Bayar piutang'
+                );
 
-                Cashflow::create([
-                    'warehouse_id' => $sell->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar piutang',
-                    'description' => $description,
-                    'in' => 0,
-                    'out' => $payment,
-                    'payment_method' => 'transfer',
-                ]);
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentIn: $payment,
+                    paymentMethod: 'transfer',
+                    for: 'Bayar piutang'
+                );
             }
         } else {
             if ($payment > 0) {
-                Cashflow::create([
-                    'warehouse_id' => $sell->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Bayar piutang',
-                    'description' => $description,
-                    'in' => $payment,
-                    'out' => 0,
-                    'payment_method' => 'cash',
-                ]);
+                create_cashflow(
+                    warehouse_id: $sell->warehouse_id,
+                    description: $description,
+                    paymentIn: $payment,
+                    paymentMethod: 'cash',
+                    for: 'Bayar piutang'
+                );
             }
         }
 
         if ($potongan !== null && $potongan > 0) {
-            Cashflow::create([
-                'warehouse_id' => $sell->warehouse_id,
-                'user_id' => auth()->id(),
-                'for' => 'Bayar piutang',
-                'description' => 'Potongan bayar piutang ' . $sell->order_number,
-                'in' => 0,
-                'out' => $potongan,
-                'payment_method' => 'cash',
-            ]);
+            create_cashflow(
+                warehouse_id: $sell->warehouse_id,
+                description: 'Potongan bayar piutang ' . $sell->order_number,
+                paymentOut: $potongan,
+                paymentMethod: 'cash',
+                for: 'Bayar piutang'
+            );
         }
 
         return response()->json([
