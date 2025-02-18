@@ -147,9 +147,13 @@
                         {
                             "data": "id",
                             "render": function(data, type, row) {
+                                const url = '/pindah-stok/' + data
                                 return `
                                     <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                     <a href="/pindah-stok/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
+                                    @can('hapus pindah stok')
+                                        <button type="button" onclick="deleteSendStock('${url}')" class="btn btn-sm btn-danger"><i class="ki-solid ki-trash"></i>Hapus</button>
+                                    @endcan
                                 `;
                             }
                         }
@@ -298,6 +302,28 @@
                 },
                 error: function(xhr, status, error) {
                     console.error(error); // Handle the error appropriately
+                }
+            });
+        }
+    </script>
+    <script>
+        function deleteSendStock(url) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = document.createElement('form');
+                    form.action = url;
+                    form.method = 'POST';
+                    form.innerHTML = '@csrf @method('delete')';
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             });
         }
