@@ -546,6 +546,16 @@
                                 </a>
                                 <!--end:Menu link-->
                             @endcan
+                            <a class="menu-link" href="{{ route('backup.database') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-lock-2 fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Backup Database</span>
+                            </a>
+                            
                             <a class="menu-link"href="{{ route('password.edit') }}">
                                 <span class="menu-icon">
                                     <i class="ki-duotone ki-key fs-2">

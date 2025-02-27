@@ -21,6 +21,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TreasuryMutationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\BackupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -151,6 +152,9 @@ Route::group(['middleware' => ['auth']], function () {
     // Customer Check
     Route::get('check-customer-status', [SellController::class, 'checkCustomerStatus'])->name('check-customer-status');
     Route::post('validate-master-password', [SellController::class, 'validateMasterPassword'])->name('validate-master-password');
+
+    // backup db
+    Route::get('/backup-database', [BackupController::class, 'backupDatabase'])->name('backup.database');
 });
 
 require __DIR__ . '/auth.php';
