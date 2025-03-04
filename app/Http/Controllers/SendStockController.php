@@ -258,69 +258,65 @@ class SendStockController extends Controller
 
     public function addCart(Request $request)
     {
-        $existingCart = SendStockCart::where('user_id', auth()->id())
-            ->where('product_id', $request->product_id)
-            ->first();
+        $items = $request->input('items', []); // Ensure $items is an array
 
-        $product = Product::find($request->product_id);
-
-        if ($request->has('quantity_dus')) {
-            $quantityDus = $request->quantity_dus;
-        } else {
-            $quantityDus = 0;
+        if (!is_array($items) || empty($items)) {
+            return response()->json(['message' => 'No items provided'], 400);
         }
 
-        if ($request->has('quantity_pak')) {
-            $quantityPak = $request->quantity_pak;
-        } else {
-            $quantityPak = 0;
-        }
-
-        if ($request->has('quantity_eceran')) {
-            $quantityEceran = $request->quantity_eceran;
-        } else {
-            $quantityEceran = 0;
-        }
-
-        $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
-
-        if ($existingCart) {
-            $existingCart->quantity += $totalQuantity;
-            $existingCart->save();
-        } else {
-            $unitIdDus = $product->unit_dus;
-            $unitIdPak = $product->unit_pak;
-            $unitIdEceran = $product->unit_eceran;
-
-            if ($quantityDus > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdDus,
-                    'quantity' => $quantityDus,
-                ]);
+        foreach ($items as $item) {
+            if (!isset($item['product_id'])) {
+                return response()->json(['message' => 'Missing product_id'], 400);
             }
 
-            if ($quantityPak > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdPak,
-                    'quantity' => $quantityPak,
-                ]);
+            $product = Product::find($item['product_id']);
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
             }
 
-            if ($quantityEceran > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdEceran,
-                    'quantity' => $quantityEceran,
-                ]);
+            $quantityDus = isset($item['quantity_dus']) ? (int)$item['quantity_dus'] : 0;
+            $quantityPak = isset($item['quantity_pak']) ? (int)$item['quantity_pak'] : 0;
+            $quantityEceran = isset($item['quantity_eceran']) ? (int)$item['quantity_eceran'] : 0;
+            $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
+
+            $existingCart = SendStockCart::where('user_id', auth()->id())
+                ->where('product_id', $item['product_id'])
+                ->first();
+
+            if ($existingCart) {
+                $existingCart->quantity += $totalQuantity;
+                $existingCart->save();
+            } else {
+                if ($quantityDus > 0) {
+                    SendStockCart::create([
+                        'user_id' => auth()->id(),
+                        'product_id' => $item['product_id'],
+                        'unit_id' => $product->unit_dus,
+                        'quantity' => $quantityDus,
+                    ]);
+                }
+
+                if ($quantityPak > 0) {
+                    SendStockCart::create([
+                        'user_id' => auth()->id(),
+                        'product_id' => $item['product_id'],
+                        'unit_id' => $product->unit_pak,
+                        'quantity' => $quantityPak,
+                    ]);
+                }
+
+                if ($quantityEceran > 0) {
+                    SendStockCart::create([
+                        'user_id' => auth()->id(),
+                        'product_id' => $item['product_id'],
+                        'unit_id' => $product->unit_eceran,
+                        'quantity' => $quantityEceran,
+                    ]);
+                }
             }
         }
 
-        return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
+        return response()->json(['message' => 'Produk berhasil dimasukkan ke keranjang']);
     }
 
     public function destroyCart($id)
