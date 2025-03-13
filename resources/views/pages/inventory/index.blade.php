@@ -159,13 +159,13 @@
                                     @can('update inventory')
                                         <button type="button" class="btn btn-primary edit-button" data-id="${data}" data-toggle="modal" data-target="#editModal">Edit</button>
                                     @endcan
-                                    @role('hapus inventory')
+                                    @can('hapus inventory')
                                         <form action="/inventori/${data}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger">Hapus</button>
                                         </form>
-                                    @endrole
+                                    @endcan
                                 `;
                             }
                         }
