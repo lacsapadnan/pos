@@ -80,7 +80,7 @@
                 <p>Telepon: {{ $sellRetur->warehouse->phone }}</p>
             </div>
             <div class="detail" style="margin-top: 24px">
-                <p>No: {{ $sellRetur->sell->order_number }}, Tanggal: {{ $sellRetur->created_at }}</p>
+                <p>No: {{ $returNumber }}, Tanggal: {{ $sellRetur->created_at }}</p>
                 <p>Customer: {{ $sellRetur->sell->customer->name }}</p>
             </div>
         </div>

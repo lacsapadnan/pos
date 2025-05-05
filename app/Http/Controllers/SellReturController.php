@@ -504,7 +504,7 @@ class SellReturController extends Controller
         $sellRetur = SellRetur::with('sell.customer', 'sell.details', 'warehouse', 'user')->where('id', $id)->first();
         // dd($sellRetur->toArray());
         $sellReturDetail = SellReturDetail::with('sellRetur.sell.details', 'product', 'unit')->where('sell_retur_id', $id)->get();
-        $returNumber = "PJR-" . date('Ymd') . "-" . str_pad(SellRetur::count() + 1, 4, '0', STR_PAD_LEFT);
+        $returNumber = "PJR-" . date('Ymd') . "-" . str_pad(SellRetur::max('id') + 1, 4, '0', STR_PAD_LEFT);
 
         $totalQuantity = $sellReturDetail->count();
         $totalPrice = 0;
