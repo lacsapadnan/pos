@@ -77,6 +77,11 @@ class SellReturController extends Controller
         }
 
         $retur = $retur->get();
+
+        $retur->each(function ($sellRetur) {
+            $sellRetur->returNumber = "PJR-" . date('Ymd') . "-" . str_pad($sellRetur->id, 4, '0', STR_PAD_LEFT);
+        });
+
         return response()->json($retur);
     }
 

@@ -110,6 +110,7 @@
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>No. Order Penjualan</th>
+                                <th>No. Retur</th>
                                 <th>Cabang</th>
                                 <th>Kasir</th>
                                 <th>Pembeli</th>
@@ -155,6 +156,9 @@
                     },
                     "columns": [{
                             "data": "sell.order_number"
+                        },
+                        {
+                            "data": "returNumber"
                         },
                         {
                             "data": "warehouse.name"
