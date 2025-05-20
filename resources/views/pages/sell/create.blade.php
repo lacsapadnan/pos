@@ -109,6 +109,7 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>Kelompok</th>
                                 <th>Nama Barang</th>
+                                <th>Promo</th>
                                 <th>Stok</th>
                                 <th>Jml Per Dus</th>
                                 <th>Jml Per Pak</th>
@@ -463,7 +464,7 @@
                     processing: true,
                     serverSide: true,
                     fixedColumns: {
-                        left: 2,
+                        left: 3,
                         right: 1
                     },
                     "ajax": {
@@ -478,6 +479,9 @@
                         },
                         {
                             data: "product.name"
+                        },
+                        {
+                            data: "product.promo"
                         },
                         {
                             data: "quantity"
@@ -582,11 +586,11 @@
                         }
                     ],
                     "columnDefs": [{
-                            target: [0, 1, 7, 10, 13],
+                            target: [0, 1, 8, 11, 14],
                             className: 'min-w-100px',
                         },
                         {
-                            target: [5, 6, 8, 9, 11, 12, 14],
+                            target: [6, 7, 9, 10, 12, 13, 15],
                             className: 'min-w-80px',
                         },
                         {

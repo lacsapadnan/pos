@@ -32,6 +32,7 @@ class ProductRequest extends FormRequest
             'dus_to_eceran' => 'required',
             'pak_to_eceran' => 'required',
             'hadiah' => 'nullable',
+            'promo' => 'nullable',
         ];
     }
 

@@ -29,6 +29,7 @@ class Product extends Model
         'price_sell_dus',
         'price_sell_pak',
         'price_sell_eceran',
+        'promo'
     ];
 
     public function unit_dus()

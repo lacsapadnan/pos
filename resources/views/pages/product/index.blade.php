@@ -111,7 +111,8 @@
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
                                 <th class="min-w-100px">Kelompok</th>
-                                <th class="min-w-200px">Nama Barang</th>
+                                <th class="min-w-150px">Nama Barang</th>
+                                <th>Promo</th>
                                 <th>Barcode Dus</th>
                                 <th>Barcode Pak</th>
                                 <th>Barcode Ecer</th>
@@ -165,7 +166,7 @@
                     processing: true,
                     serverSide: true,
                     fixedColumns: {
-                        left: 2
+                        left: 3
                     },
                     "ajax": {
                         url: '{{ route('api.produk-search') }}',
@@ -180,6 +181,9 @@
                         },
                         {
                             data: 'name'
+                        },
+                        {
+                            data: 'promo'
                         },
                         {
                             data: 'barcode_dus',
@@ -277,7 +281,7 @@
                         },
                         {
                             className: 'min-w-200px',
-                            targets: 15,
+                            targets: -1,
                             render: function(data, type, row) {
                                 var editUrl = "/produk/" + row.id + "/edit";
                                 var deleteUrl = "/produk/" + row.id;

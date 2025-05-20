@@ -9,25 +9,26 @@
             <form action="{{ route('produk.update', $product->id) }}" method="post">
                 @csrf
                 @method('PUT')
-                <div class="row">
+                <div id="otherSelectContainer" class="mb-4">
+                    <label class="form-label" for="otherSelect">Kelompok</label>
+                    <select id="otherSelect" name="category" class="form-select form-select-solid"
+                        data-control="select2">
+                        <option selected>{{ $product->group }}</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->name }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-10 row">
                     <div class="col-md-6">
-                        <div id="otherSelectContainer" class="mb-4">
-                            <label class="form-label" for="otherSelect">Kelompok</label>
-                            <select id="otherSelect" name="category" class="form-select form-select-solid"
-                                data-control="select2">
-                                <option selected>{{ $product->group }}</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->name }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-10">
-                            <label class="form-label" for="name">Nama Produk</label>
+                        <label class="form-label" for="name">Nama Produk</label>
                             <input name="name" type="text" class="form-control" placeholder="Masukan nama produk"
                                 value="{{ $product->name }}" />
-                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="promo">Promo</label>
+                            <input name="promo" type="text" class="form-control" placeholder="Masukan promo produk"
+                                value="{{ $product->promo }}" />
                     </div>
                 </div>
                 <div class="row">

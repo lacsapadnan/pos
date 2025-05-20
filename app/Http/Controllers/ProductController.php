@@ -161,6 +161,7 @@ class ProductController extends Controller
         $product->price_sell_eceran = $request->price_sell_eceran ?? $product->price_sell_eceran;
         $product->dus_to_eceran = $request->dus_to_eceran ?? $product->dus_to_eceran;
         $product->pak_to_eceran = $request->pak_to_eceran ?? $product->pak_to_eceran;
+        $product->promo = $request->promo ?? $product->promo;
         $product->update();
         return redirect()
             ->route('produk.index')

@@ -24,10 +24,18 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-10">
-                        <label class="form-label" for="name">Nama Produk</label>
-                        <input name="name" type="text" class="form-control" placeholder="Masukan nama produk" />
+                    <div class="mb-10 row">
+                        <div class="col-md-6">
+                            <label class="form-label" for="name">Nama Produk</label>
+                            <input name="name" type="text" class="form-control"
+                                placeholder="Masukan nama produk" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="name">Promo</label>
+                            <input name="promo" type="text" class="form-control" placeholder="Masukan promo" />
+                        </div>
                     </div>
+
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-10">
