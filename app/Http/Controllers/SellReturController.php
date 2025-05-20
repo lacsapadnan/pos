@@ -193,7 +193,7 @@ class SellReturController extends Controller
         ]);
 
         foreach ($returCart as $rc) {
-            SellReturDetail::create([
+            $detailRetur = SellReturDetail::create([
                 'sell_retur_id' => $sellRetur->id,
                 'product_id' => $rc->product_id,
                 'unit_id' => $rc->unit_id,
@@ -211,7 +211,7 @@ class SellReturController extends Controller
                 ->first();
 
             // update grand total
-            $sell->grand_total = $sell->grand_total - ($rc->quantity * ($sellDetail->price - $sellDetail->diskon));
+            $sell->grand_total = $sell->grand_total - ($rc->quantity * $sellDetail->price);
             $sell->update();
 
             // update the sell detail
