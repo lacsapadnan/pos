@@ -500,6 +500,9 @@
                                 }
                             },
                             {
+                                data: 'product.hadiah'
+                            },
+                            {
                                 data: null,
                                 render: function(data, type, row) {
                                     var total = data.quantity * data.price - data.diskon;

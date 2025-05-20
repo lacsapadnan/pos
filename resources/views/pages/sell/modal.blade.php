@@ -25,6 +25,7 @@
                                     <th>Harga</th>
                                     <th>Subtotal</th>
                                     <th>Diskon</th>
+                                    <th>Hadiah</th>
                                     <th>Total</th>
                                 </tr>
                             </thead>

@@ -121,6 +121,7 @@
                                 <th>Jml Jual Eceran</th>
                                 <th>Diskon Eceran</th>
                                 <th>Harga Jual Eceran</th>
+                                <th>Hadiah</th>
                                 <th class="min-w-100px">Aksi</th>
                             </tr>
                         </thead>
@@ -568,6 +569,9 @@
                                 formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             }
+                        },
+                        {
+                            data: "product.hadiah",
                         },
                         {
                             data: null,
