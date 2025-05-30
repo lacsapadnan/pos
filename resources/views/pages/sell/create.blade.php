@@ -551,7 +551,7 @@
                                 return `
                                 <input type="text" name="quantity_pak" class="form-control">
                                 <input type="hidden" name="unit_pak" value="${row.product.unit_pak}">
-                                <input type="hidden" name="price_pak" value="${row.product.priceValue}">
+                                <input type="hidden" name="price_pak" value="${priceValue}">
                                 `;
                             }
                         },
@@ -595,7 +595,7 @@
                                 return `
                                 <input type="text" name="quantity_eceran" class="form-control">
                                 <input type="hidden" name="unit_eceran" value="${row.product.unit_eceran}">
-                                <input type="hidden" name="price_eceran" value="${row.product.priceValue}">
+                                <input type="hidden" name="price_eceran" value="${priceValue}">
                                 `;
                             }
                         },

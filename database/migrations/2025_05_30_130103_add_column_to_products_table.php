@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->integer('capital_dus')->nullable();
-            $table->integer('capital_pak')->nullable();
-            $table->integer('capital_eceran')->nullable();
-            $table->integer('price_sell_dus_out_of_town')->nullable();
-            $table->integer('price_sell_pak_out_of_town')->nullable();
-            $table->integer('price_sell_eceran_out_of_town')->nullable();
+            $table->integer('capital_dus')->default(0);
+            $table->integer('capital_pak')->default(0);
+            $table->integer('capital_eceran')->default(0);
+            $table->integer('price_sell_dus_out_of_town')->default(0);
+            $table->integer('price_sell_pak_out_of_town')->default(0);
+            $table->integer('price_sell_eceran_out_of_town')->default(0);
         });
     }
 
