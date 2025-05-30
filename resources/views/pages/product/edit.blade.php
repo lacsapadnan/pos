@@ -34,21 +34,21 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Barcode DUS</label>
+                            <label class="form-label" for="barcode_dus">Barcode DUS</label>
                             <input name="barcode_dus" type="number" class="form-control" placeholder="Masukan Barcode DUS"
                                 value="{{ $product->barcode_dus }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Barcode Pak</label>
+                            <label class="form-label" for="barcode_pak">Barcode Pak</label>
                             <input name="barcode_pak" type="number" class="form-control" placeholder="Masukan Barcode PAK"
                                 value="{{ $product->barcode_pak }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Barcode Eceran</label>
+                            <label class="form-label" for="barcode_eceran">Barcode Eceran</label>
                             <input name="barcode_eceran" type="number" class="form-control"
                                 placeholder="Masukan Barcode eceran" value="{{ $product->barcode_eceran }}" />
                         </div>
@@ -57,21 +57,21 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga DUS</label>
+                            <label class="form-label" for="price_dus">Harga DUS</label>
                             <input name="price_dus" type="number" class="form-control" placeholder="Masukan Harga DUS"
                                 value="{{ $product->price_dus }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Pak</label>
+                            <label class="form-label" for="price_pak">Harga Pak</label>
                             <input name="price_pak" type="number" class="form-control" placeholder="Masukan harga Pak"
                                 value="{{ $product->price_pak }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Eceran</label>
+                            <label class="form-label" for="price_eceran">Harga Eceran</label>
                             <input name="price_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga eceran" value="{{ $product->price_eceran }}" />
                         </div>
@@ -80,7 +80,7 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Satuan Dus</label>
+                            <label class="form-label" for="unit_dus">Satuan Dus</label>
                             <select name="unit_dus" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan dus</option>
                                 @forelse($unit as $item)
@@ -95,7 +95,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Satuan Pak</label>
+                            <label class="form-label" for="unit_pak">Satuan Pak</label>
                             <select name="unit_pak" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan pak</option>
                                 @forelse($unit as $item)
@@ -110,7 +110,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Satuan Eceran</label>
+                            <label class="form-label" for="unit_eceran">Satuan Eceran</label>
                             <select name="unit_eceran" class="form-select" aria-label="Select example">
                                 <option readonly>Pilih satuan eceran</option>
                                 @forelse($unit as $item)
@@ -127,21 +127,21 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Jumlah DUS ke Eceran</label>
+                            <label class="form-label" for="dus_to_eceran">Jumlah DUS ke Eceran</label>
                             <input name="dus_to_eceran" type="number" class="form-control"
                                 placeholder="Masukan jumlah DUS ke eceran" value="{{ $product->dus_to_eceran }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Jumlah Pak ke Eceran</label>
+                            <label class="form-label" for="pak_to_eceran">Jumlah Pak ke Eceran</label>
                             <input name="pak_to_eceran" type="number" class="form-control"
                                 placeholder="Masukan jumlah pak ke eceran" value="{{ $product->pak_to_eceran }}" />
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Hadiah</label>
+                            <label class="form-label" for="hadiah">Hadiah</label>
                             <input name="hadiah" type="text" class="form-control" placeholder="Masukan hadiah"
                                 value="{{ $product->hadiah }}" />
                         </div>
@@ -150,7 +150,7 @@
                 <div class="row">
                     <div class="col-md-3">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Eceran Terakhir</label>
+                            <label class="form-label" for="lastest_price_eceran">Harga Eceran Terakhir</label>
                             <input name="lastest_price_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga eceran terakhir"
                                 value="{{ $product->lastest_price_eceran }}" />
@@ -159,7 +159,7 @@
                     </div>
                     <div class="col-md-3">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Jual Dus</label>
+                            <label class="form-label" for="price_sell_dus">Harga Jual Dus</label>
                             <input name="price_sell_dus" type="number" class="form-control"
                                 placeholder="Masukan harga jual dus" value="{{ $product->price_sell_dus }}" />
                             <span>Harga jual dus: {{ $product->price_sell_dus }}</span>
@@ -167,7 +167,7 @@
                     </div>
                     <div class="col-md-3">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Jual Pak</label>
+                            <label class="form-label" for="price_sell_pak">Harga Jual Pak</label>
                             <input name="price_sell_pak" type="number" class="form-control"
                                 placeholder="Masukan harga jual pak" value="{{ $product->price_sell_pak }}" />
                             <span>Harga Jual Pak: {{ $product->price_sell_pak }}</span>
@@ -175,10 +175,52 @@
                     </div>
                     <div class="col-md-3">
                         <div class="mb-10">
-                            <label class="form-label" for="name">Harga Jual Eceran</label>
+                            <label class="form-label" for="price_sell_eceran">Harga Jual Eceran</label>
                             <input name="price_sell_eceran" type="number" class="form-control"
                                 placeholder="Masukan harga jual eceran" value="{{ $product->price_sell_eceran }}" />
                             <span>Harga Jual Eceran: {{ $product->price_sell_eceran }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="capital_dus">Modal DUS</label>
+                            <input name="capital_dus" type="number" class="form-control"
+                                placeholder="Masukan modal DUS" value="{{ $product->capital_dus }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="capital_pak">Modal Pak</label>
+                            <input name="capital_pak" type="number" class="form-control"
+                                placeholder="Masukan modal Pak" value="{{ $product->capital_pak }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="capital_eceran">Modal Eceran</label>
+                            <input name="capital_eceran" type="number" class="form-control"
+                                placeholder="Masukan modal Eceran" value="{{ $product->capital_eceran }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="price_sell_dus_out_of_town">Harga Jual Dus Luar Kota</label>
+                            <input name="price_sell_dus_out_of_town" type="number" class="form-control"
+                                placeholder="Masukan harga jual dus luar kota" value="{{ $product->price_sell_dus_out_of_town }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="price_sell_pak_out_of_town">Harga Jual Pak Luar Kota</label>
+                            <input name="price_sell_pak_out_of_town" type="number" class="form-control"
+                                placeholder="Masukan harga jual pak luar kota" value="{{ $product->price_sell_pak_out_of_town }}" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-10">
+                            <label class="form-label" for="price_sell_eceran_out_of_town">Harga Jual Eceran Luar Kota</label>
+                            <input name="price_sell_eceran_out_of_town" type="number" class="form-control"
+                                placeholder="Masukan harga jual eceran luar kota" value="{{ $product->price_sell_eceran_out_of_town }}" />
                         </div>
                     </div>
                 </div>
@@ -194,5 +236,5 @@
                 tags: true,
             });
         });
-    </script>s
+    </script>
 @endpush
