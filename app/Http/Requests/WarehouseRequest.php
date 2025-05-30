@@ -25,6 +25,7 @@ class WarehouseRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', 'unique:warehouses,name,' . $this->id],
             'address' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
+            'isOutOfTown' => ['required', 'boolean'],
         ];
     }
 
@@ -45,6 +46,8 @@ class WarehouseRequest extends FormRequest
             'phone.required' => 'Nomor telepon gudang harus diisi.',
             'phone.string' => 'Nomor telepon gudang harus berupa string.',
             'phone.max' => 'Nomor telepon gudang maksimal 20 karakter.',
+            'isOutOfTown.required' => 'Status luar kota harus diisi.',
+            'isOutOfTown.boolean' => 'Status luar kota harus berupa nilai benar atau salah.',
         ];
     }
 }

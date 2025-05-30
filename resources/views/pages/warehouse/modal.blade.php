@@ -26,6 +26,13 @@
                         <label class="form-label" for="name">Alamat cabang</label>
                         <textarea name="address" class="form-control" placeholder="Masukan alamat cabang">{{ old('address') }}</textarea>
                     </div>
+                    <div class="mb-10">
+                        <label class="form-label" for="isOutOfTown">Luar Kota?</label>
+                        <select name="isOutOfTown" class="form-control">
+                            <option value="0" {{ old('isOutOfTown') == '0' ? 'selected' : '' }}>Tidak</option>
+                            <option value="1" {{ old('isOutOfTown') == '1' ? 'selected' : '' }}>Ya</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-success">Simpan</button>
                 </form>
 
