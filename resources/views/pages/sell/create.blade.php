@@ -545,8 +545,8 @@
                                 @php
                                     $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
                                 @endphp
-                                var priceDus = @json($isOutOfTown ? 'price_sell_dus_out_of_town' : 'price_sell_dus');
-                                var priceValue = row.product[priceDus];
+                                var pricePak = @json($isOutOfTown ? 'price_sell_pak_out_of_town' : 'price_sell_pak');
+                                var priceValue = row.product[pricePak];
 
                                 return `
                                 <input type="text" name="quantity_pak" class="form-control">
@@ -589,8 +589,8 @@
                                 @php
                                     $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
                                 @endphp
-                                var priceDus = @json($isOutOfTown ? 'price_sell_dus_out_of_town' : 'price_sell_dus');
-                                var priceValue = row.product[priceDus];
+                                var priceEceran = @json($isOutOfTown ? 'price_sell_eceran_out_of_town' : 'price_sell_eceran');
+                                var priceValue = row.product[priceEceran];
 
                                 return `
                                 <input type="text" name="quantity_eceran" class="form-control">
