@@ -116,12 +116,15 @@
                                 <th>Jml Jual Dus</th>
                                 <th>Diskon Dus</th>
                                 <th>Harga Jual Dus</th>
+                                <th>Harga Dus Luar Kota</th>
                                 <th>Jml Jual Pak</th>
                                 <th>Diskon Pak</th>
                                 <th>Harga Jual Pak</th>
+                                <th>Harga Pak Luar Kota</th>
                                 <th>Jml Jual Eceran</th>
                                 <th>Diskon Eceran</th>
                                 <th>Harga Jual Eceran</th>
+                                <th>Harga Eceran Luar Kota</th>
                                 <th>Hadiah</th>
                                 <th class="min-w-100px">Aksi</th>
                             </tr>
@@ -495,12 +498,17 @@
                         {
                             data: null,
                             render: function(data, type, row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                var priceDus = @json($isOutOfTown ? 'price_sell_dus_out_of_town' : 'price_sell_dus');
+                                var priceValue = row.product[priceDus];
+
                                 return `
                                 <input type="text" name="quantity_dus" class="form-control">
                                 <input type="hidden" name="unit_dus" value="${row.product.unit_dus}">
-                                <input type="hidden" name="price_dus" value="${row.product.price_sell_dus}">
+                                <input type="hidden" name="price_dus" value="${priceValue}">
                                 `;
-
                             }
                         },
                         {
@@ -521,12 +529,29 @@
                             }
                         },
                         {
+                            data: "product.price_sell_dus_out_of_town",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
                             data: null,
                             render: function(data, type, row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                var priceDus = @json($isOutOfTown ? 'price_sell_dus_out_of_town' : 'price_sell_dus');
+                                var priceValue = row.product[priceDus];
+
                                 return `
                                 <input type="text" name="quantity_pak" class="form-control">
                                 <input type="hidden" name="unit_pak" value="${row.product.unit_pak}">
-                                <input type="hidden" name="price_pak" value="${row.product.price_sell_pak}">
+                                <input type="hidden" name="price_pak" value="${row.product.priceValue}">
                                 `;
                             }
                         },
@@ -548,12 +573,29 @@
                             }
                         },
                         {
+                            data: "product.price_sell_pak_out_of_town",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
                             data: null,
                             render: function(data, type, row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                var priceDus = @json($isOutOfTown ? 'price_sell_dus_out_of_town' : 'price_sell_dus');
+                                var priceValue = row.product[priceDus];
+
                                 return `
                                 <input type="text" name="quantity_eceran" class="form-control">
                                 <input type="hidden" name="unit_eceran" value="${row.product.unit_eceran}">
-                                <input type="hidden" name="price_eceran" value="${row.product.price_sell_eceran}">
+                                <input type="hidden" name="price_eceran" value="${row.product.priceValue}">
                                 `;
                             }
                         },
@@ -565,6 +607,17 @@
                         },
                         {
                             data: "product.price_sell_eceran",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: "product.price_sell_eceran_out_of_town",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
