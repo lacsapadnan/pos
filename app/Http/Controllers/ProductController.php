@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductExport;
 use App\Http\Requests\ProductRequest;
 use App\Imports\ProductImport;
 use App\Models\Category;
@@ -171,5 +172,12 @@ class ProductController extends Controller
     {
         $template = public_path('assets\template\template_import_produk.xlsx');
         return response()->download($template);
+    }
+
+    public function export()
+    {
+        $date = date('Y-m-d');
+        $filename = "export_product_{$date}.xlsx";
+        return Excel::download(new ProductExport, $filename);
     }
 }

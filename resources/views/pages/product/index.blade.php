@@ -51,11 +51,10 @@
             </div>
             <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
                 <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
+                <a href="{{ route('product.export') }}" class="btn btn-light-primary" target="_blank">
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
-                </button>
+                </a>
                 @can('import produk')
                     <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
                         <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
@@ -67,40 +66,6 @@
                         Tambah Data
                     </button>
                 @endcan
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
             </div>
         </div>
         <div class="card-body">
@@ -365,7 +330,7 @@
                                     @can('hapus produk')
                                         <form action="${deleteUrl}" method="POST" class="d-inline">
                                             @csrf
-                                            @method('delete')
+                                            @method("DELETE")
                                             <button class="btn btn-sm btn-danger">Hapus</button>
                                         </form>
                                     @endcan

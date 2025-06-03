@@ -120,6 +120,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('customer/import', [CustomerController::class, 'import'])->name('customer.import');
     Route::post('produk/import', [ProductController::class, 'import'])->name('produk.import');
 
+    // Export
+    Route::get('product/export', [ProductController::class, 'export'])->name('product.export');
+
     // Download
     Route::get('supplier/download', [SupplierController::class, 'download'])->name('supplier.template.download');
     Route::get('customer/download', [CustomerController::class, 'download'])->name('customer.template.download');
