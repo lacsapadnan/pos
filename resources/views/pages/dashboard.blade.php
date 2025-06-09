@@ -25,8 +25,6 @@
         // Get PHP data into JS
         const topProducts = @json($topProducts);
 
-        console.log(topProducts);
-
         // Prepare labels and data
         const labels = topProducts.map(item => item.product ? item.product.name : 'Unknown');
         const dataValues = topProducts.map(item => item.total_sold);
