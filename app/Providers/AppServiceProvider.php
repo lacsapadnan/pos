@@ -20,6 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Config::set('cache.default', 'file');
+        // Config::set('cache.default', 'file');
     }
 }
