@@ -23,6 +23,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\BackupController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 
 /*
 |--------------------------------------------------------------------------
@@ -158,6 +159,11 @@ Route::group(['middleware' => ['auth']], function () {
 
     // backup db
     Route::get('/backup-database', [BackupController::class, 'backupDatabase'])->name('backup.database');
+    // redis
+    Route::get('/coba-redis', function () {
+    Cache::put('tes_redis', 'berhasil', 10);
+    return Cache::get('tes_redis');
+});
 });
 
 require __DIR__ . '/auth.php';
