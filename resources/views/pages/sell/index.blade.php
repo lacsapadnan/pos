@@ -159,7 +159,7 @@
                     "ajax": {
                         url: '{{ route('api.penjualan') }}',
                         type: 'GET',
-                        dataSrc: '',
+                        // dataSrc: '',
                     },
                     "columns": [{
                             "data": "order_number"

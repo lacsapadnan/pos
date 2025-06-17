@@ -24,6 +24,7 @@ use Mike42\Escpos\EscposImage;
 use Mike42\Escpos\ImagickEscposImage;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
+use DataTables;
 require_once app_path('Helpers/CashflowHelper.php');
 
 class SellController extends Controller
@@ -40,53 +41,66 @@ class SellController extends Controller
     }
 
     public function data(Request $request)
-    {
-        $role = auth()->user()->getRoleNames();
-        $user_id = $request->input('user_id');
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
-        $warehouse = $request->input('warehouse');
+{
+    $role = auth()->user()->getRoleNames();
+    $user_id = $request->input('user_id');
+    $fromDate = $request->input('from_date');
+    $toDate = $request->input('to_date');
+    $warehouse = $request->input('warehouse');
 
-        $defaultDate = now()->format('Y-m-d');
+    $defaultDate = now()->format('Y-m-d');
 
-        if (!$fromDate) {
-            $fromDate = $defaultDate;
-        }
-
-        if (!$toDate) {
-            $toDate = $defaultDate;
-        }
-
-        if ($role[0] == 'master') {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
-                ->where('status', '!=', 'draft')
-                ->orderBy('id', 'desc');
-        } else {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('cashier_id', auth()->id())
-                ->where('status', '!=', 'draft')
-                ->orderBy('id', 'desc');
-        }
-
-        if ($warehouse) {
-            $sells->where('warehouse_id', $warehouse);
-        }
-
-        if ($user_id) {
-            $sells->where('cashier_id', $user_id);
-        }
-
-        if ($fromDate && $toDate) {
-            $endDate = Carbon::parse($toDate)->endOfDay();
-
-            $sells->whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $endDate);
-        }
-
-        $sells = $sells->get();
-        return response()->json($sells);
+    if (!$fromDate) {
+        $fromDate = $defaultDate;
     }
+
+    if (!$toDate) {
+        $toDate = $defaultDate;
+    }
+
+    if ($role[0] == 'master') {
+        $query = Sell::with('warehouse', 'customer', 'cashier')
+            ->where('status', '!=', 'draft')
+            ->orderBy('id', 'desc');
+    } else {
+        $query = Sell::with('warehouse', 'customer', 'cashier')
+            ->where('warehouse_id', auth()->user()->warehouse_id)
+            ->where('cashier_id', auth()->id())
+            ->where('status', '!=', 'draft')
+            ->orderBy('id', 'desc');
+    }
+
+    if ($warehouse) {
+        $query->where('warehouse_id', $warehouse);
+    }
+
+    if ($user_id) {
+        $query->where('cashier_id', $user_id);
+    }
+
+    if ($fromDate && $toDate) {
+        $endDate = Carbon::parse($toDate)->endOfDay();
+        $query->whereBetween('created_at', [$fromDate, $endDate]);
+    }
+
+    return DataTables::of($query)
+        ->addColumn('aksi', function ($row) {
+            return '
+                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(' . $row->id . ')">Detail</a>
+                <button class="btn btn-sm btn-success" onclick="openPasswordModal(' . $row->id . ')">Print</button>
+                @can("hapus penjualan")
+                <form id="deleteForm_' . $row->id . '" class="d-inline">
+                    @csrf
+                    @method("DELETE")
+                    <input type="hidden" name="id" value="' . $row->id . '">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(' . $row->id . ')">Delete</button>
+                </form>
+                @endcan
+            ';
+        })
+        ->rawColumns(['aksi'])
+        ->make(true);
+}
 
     /**
      * Show the form for creating a new resource.
