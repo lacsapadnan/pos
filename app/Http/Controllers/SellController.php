@@ -48,26 +48,13 @@ class SellController extends Controller
     $toDate = $request->input('to_date');
     $warehouse = $request->input('warehouse');
 
-    $defaultDate = now()->format('Y-m-d');
+    $query = Sell::with(['warehouse', 'customer', 'cashier'])
+        ->where('status', '!=', 'draft')
+        ->orderBy('id', 'desc');
 
-    if (!$fromDate) {
-        $fromDate = $defaultDate;
-    }
-
-    if (!$toDate) {
-        $toDate = $defaultDate;
-    }
-
-    if ($role[0] == 'master') {
-        $query = Sell::with('warehouse', 'customer', 'cashier')
-            ->where('status', '!=', 'draft')
-            ->orderBy('id', 'desc');
-    } else {
-        $query = Sell::with('warehouse', 'customer', 'cashier')
-            ->where('warehouse_id', auth()->user()->warehouse_id)
-            ->where('cashier_id', auth()->id())
-            ->where('status', '!=', 'draft')
-            ->orderBy('id', 'desc');
+    if ($role[0] !== 'master') {
+        $query->where('warehouse_id', auth()->user()->warehouse_id)
+              ->where('cashier_id', auth()->id());
     }
 
     if ($warehouse) {
@@ -79,11 +66,11 @@ class SellController extends Controller
     }
 
     if ($fromDate && $toDate) {
-        $endDate = Carbon::parse($toDate)->endOfDay();
+        $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
         $query->whereBetween('created_at', [$fromDate, $endDate]);
     }
 
-    return DataTables::of($query)
+    return DataTables::eloquent($query)
         ->addColumn('aksi', function ($row) {
             return '
                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(' . $row->id . ')">Detail</a>

@@ -153,13 +153,14 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": false,
-                    'order': [],
-                    'pageLength': 10,
-                    "ajax": {
+                    processing: true,
+                    serverSide: true,
+                    info: false,
+                    order: [],
+                    pageLength: 10,
+                    ajax: {
                         url: '{{ route('api.penjualan') }}',
                         type: 'GET',
-                        // dataSrc: '',
                     },
                     "columns": [{
                             "data": "order_number"

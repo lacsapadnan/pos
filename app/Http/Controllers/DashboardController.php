@@ -22,24 +22,24 @@ class DashboardController extends Controller
      * Returns JSON for Chart.js.
      */
     public function topProducts()
-    {
-        $warehouseId = auth()->user()->warehouse_id;
+{
+    $warehouseId = auth()->user()->warehouse_id;
 
-        // Gunakan Cache opsional 5 menit
-        $topProducts = Cache::remember("top_products_$warehouseId", 300, function () use ($warehouseId) {
-            return SellDetail::select('sell_details.product_id', DB::raw('SUM(sell_details.quantity) as total_sold'))
-                ->join('sells', 'sell_details.sell_id', '=', 'sells.id')
-                ->join('products', 'sell_details.product_id', '=', 'products.id')
-                ->where('sells.warehouse_id', $warehouseId)
-                ->groupBy('sell_details.product_id', 'products.name')
-                ->orderByDesc('total_sold')
-                ->limit(10)
-                ->get([
-                    'products.name as product_name',
-                    DB::raw('SUM(sell_details.quantity) as total_sold')
-                ]);
-        });
+    // Cache 5 menit
+    $topProducts = Cache::remember("top_products_$warehouseId", 300, function () use ($warehouseId) {
+        return SellDetail::select(
+                'products.name as product_name',
+                DB::raw('SUM(sell_details.quantity) as total_sold')
+            )
+            ->join('sells', 'sell_details.sell_id', '=', 'sells.id')
+            ->join('products', 'sell_details.product_id', '=', 'products.id')
+            ->where('sells.warehouse_id', $warehouseId)
+            ->groupBy('sell_details.product_id', 'products.name')
+            ->orderByDesc('total_sold')
+            ->limit(10)
+            ->get();
+    });
 
-        return response()->json($topProducts);
-    }
+    return response()->json($topProducts);
+}
 }

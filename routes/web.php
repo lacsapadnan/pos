@@ -91,6 +91,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
     Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
     Route::get('penjualan-retur/api/data', [SellReturController::class, 'data'])->name('api.retur');
+    Route::get('/api/penjualan', [SellController::class, 'data'])->name('api.penjualan');
     // ramdan
     Route::get('penjualan-retur/api/dataBySaleId/{id}', [SellReturController::class, 'dataBySaleId'])->name('api.retur.byorder');
     Route::get('pembelian-retur/api/dataByPurchaseId/{id}', [PurchaseReturController::class, 'dataByPurchaseId'])->name('api.returPurchase.byorder');

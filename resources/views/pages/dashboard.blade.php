@@ -16,10 +16,9 @@
 @endsection
 
 @push('addon-script')
-    <script>
+   <script>
     var ctx = document.getElementById('kt_chartjs_1').getContext('2d');
 
-    // Init chart but empty
     var myChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -48,15 +47,14 @@
         }
     });
 
-    // Load data via AJAX
     fetch('{{ route('api.top-products') }}')
         .then(response => response.json())
         .then(data => {
-            const labels = data.map(item => item.product ? item.product.name : 'Unknown');
-            const values = data.map(item => item.total_sold);
+            const labels = data.map(item => item.product_name ?? 'Unknown');
+            const dataValues = data.map(item => item.total_sold);
 
             myChart.data.labels = labels;
-            myChart.data.datasets[0].data = values;
+            myChart.data.datasets[0].data = dataValues;
             myChart.update();
         })
         .catch(error => console.error('Error fetching chart data:', error));
