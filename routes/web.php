@@ -153,6 +153,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('password', [UserController::class, 'password'])->name('password.edit');
     Route::put('password/{id}', [UserController::class, 'passwordUpdate'])->name('newpassword.update');
 
+    // Di routes/web.php atau routes/api.php
+    Route::get('/api/top-products', [DashboardController::class, 'topProducts'])->name('api.top-products');
+
     // Customer Check
     Route::get('check-customer-status', [SellController::class, 'checkCustomerStatus'])->name('check-customer-status');
     Route::post('validate-master-password', [SellController::class, 'validateMasterPassword'])->name('validate-master-password');

@@ -17,59 +17,48 @@
 
 @push('addon-script')
     <script>
-        var ctx = document.getElementById('kt_chartjs_1');
+    var ctx = document.getElementById('kt_chartjs_1').getContext('2d');
 
-        // Define fonts
-        var fontFamily = KTUtil.getCssVariableValue('--bs-font-sans-serif');
-
-        // Get PHP data into JS
-        const topProducts = @json($topProducts);
-
-        // Prepare labels and data
-        const labels = topProducts.map(item => item.product ? item.product.name : 'Unknown');
-        const dataValues = topProducts.map(item => item.total_sold);
-
-        // Chart data
-        const data = {
-            labels: labels,
+    // Init chart but empty
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
             datasets: [{
                 label: 'Top 10 Produk Terlaris',
-                data: dataValues,
+                data: [],
                 backgroundColor: '#50cd89',
-            }],
-        };
-
-        // Chart config
-        const config = {
-            type: 'bar',
-            data: data,
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Top 10 Produk Terlaris'
-                    }
-                },
-                responsive: true,
-                interaction: {
-                    intersect: false,
-                },
-                scales: {
-                    x: {
-                        stacked: false,
-                    },
-                    y: {
-                        stacked: false
-                    }
+            }]
+        },
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Top 10 Produk Terlaris'
                 }
             },
-            defaults: {
-                global: {
-                    defaultFont: fontFamily
-                }
+            responsive: true,
+            interaction: {
+                intersect: false,
+            },
+            scales: {
+                x: { stacked: false },
+                y: { stacked: false }
             }
-        };
+        }
+    });
 
-        var myChart = new Chart(ctx, config);
-    </script>
+    // Load data via AJAX
+    fetch('{{ route('api.top-products') }}')
+        .then(response => response.json())
+        .then(data => {
+            const labels = data.map(item => item.product ? item.product.name : 'Unknown');
+            const values = data.map(item => item.total_sold);
+
+            myChart.data.labels = labels;
+            myChart.data.datasets[0].data = values;
+            myChart.update();
+        })
+        .catch(error => console.error('Error fetching chart data:', error));
+</script>
 @endpush
