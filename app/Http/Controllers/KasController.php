@@ -8,6 +8,7 @@ use App\Models\Kas;
 use App\Models\KasExpenseItem;
 use App\Models\KasIncomeItem;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class KasController extends Controller
 {
@@ -32,17 +33,24 @@ class KasController extends Controller
         return response()->json($kasExpenseItem);
     }
 
-    public function data()
-    {
-        $userRoles = auth()->user()->getRoleNames();
-        if ($userRoles[0] === 'superadmin') {
-            $kas = Kas::orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
-            return response()->json($kas);
-        } else {
-            $kas = Kas::where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
-            return response()->json($kas);
-        }
+    public function data(Request $request)
+{
+    $userRoles = auth()->user()->getRoleNames();
+    $query = Kas::with(['kas_income_item', 'kas_expense_item', 'warehouse']);
+
+    if ($userRoles[0] !== 'superadmin') {
+        $query->where('warehouse_id', auth()->user()->warehouse_id);
     }
+
+    $query->orderByDesc('id');
+
+    // Server-side for DataTables
+    if ($request->ajax()) {
+        return datatables()->of($query)->make(true);
+    }
+
+    return response()->json($query->get());
+}
 
     /**
      * Show the form for creating a new resource.

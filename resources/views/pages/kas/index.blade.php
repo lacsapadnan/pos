@@ -131,13 +131,14 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": false,
-                    'order': [],
-                    'pageLength': 10,
-                    "ajax": {
+                    processing: true,
+                    serverSide: true,
+                    info: false,
+                    order: [],
+                    pageLength: 10,
+                    ajax: {
                         url: '{{ route('api.kas') }}',
-                        type: 'GET',
-                        dataSrc: '',
+                        type: 'GET'
                     },
                     "columns": [{
                             "data": null,
