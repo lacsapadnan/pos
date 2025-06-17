@@ -41,10 +41,7 @@ class KasController extends Controller
     if ($userRoles[0] !== 'superadmin') {
         $query->where('warehouse_id', auth()->user()->warehouse_id);
     }
-
     $query->orderByDesc('id');
-
-    // Server-side for DataTables
     if ($request->ajax()) {
         return datatables()->of($query)->make(true);
     }
