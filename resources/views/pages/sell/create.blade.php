@@ -4,264 +4,274 @@
 @section('menu-title', 'Penjualan Barang')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
+<link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
 
-        .dataTables_scrollBody {
-            transform: rotateX(180deg);
-        }
+    .dataTables_scrollBody {
+        transform: rotateX(180deg);
+    }
 
-        .dataTables_scrollBody::-webkit-scrollbar {
-            height: 16px;
-        }
+    .dataTables_scrollBody::-webkit-scrollbar {
+        height: 16px;
+    }
 
-        .dataTables_scrollBody table {
-            transform: rotateX(180deg);
-        }
-    </style>
+    .dataTables_scrollBody table {
+        transform: rotateX(180deg);
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="mt-3">
-            @include('components.alert')
-            <form id="form1">
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Tanggal</label>
-                            <div class="input-group" id="kt_td_picker_date_only" data-td-target-input="nearest"
-                                data-td-target-toggle="nearest">
-                                <input id="kt_td_picker_date_only_input" type="text" class="form-control"
-                                    data-td-target="#kt_td_picker_date_only" name="transaction_date"
-                                    value="{{ date('Y-m-d') }}" disabled>
-                                <!-- Set the value to today's date and make it readonly -->
-                                <span class="input-group-text" data-td-target="#kt_td_picker_date_only"
-                                    data-td-toggle="datetimepicker">
-                                    <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span
-                                            class="path2"></span></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Marketing</label>
-                            <input id="user_id" type="text" name="user_id" class="form-control"
-                                value="{{ auth()->user()->name }}" />
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="mb-3 row align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Customer</label>
-                            <select id="customer" class="form-select" name="customer_id" data-control="select2"
-                                data-placeholder="Pilih customer" data-allow-clear="true" required>
-                                <option readonly disabled>Pilih Customer</option>
-                                @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Piutang</label>
-                            <input id="piutang" type="text" name="piutang" class="form-control"
-                                placeholder="Masukan piutang" value="0" readonly />
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">No. Order</label>
-                            <input id="order_number" type="text" name="order_number" class="form-control"
-                                placeholder="Masukan no.order" value="{{ $orderNumber }}" readonly />
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="mt-3">
+        @include('components.alert')
+        <form id="form1">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="mb-3 align-items-center">
+                        <label for="inputEmail3" class="col-form-label">Tanggal</label>
+                        <div class="input-group" id="kt_td_picker_date_only" data-td-target-input="nearest"
+                            data-td-target-toggle="nearest">
+                            <input id="kt_td_picker_date_only_input" type="text" class="form-control"
+                                data-td-target="#kt_td_picker_date_only" name="transaction_date"
+                                value="{{ date('Y-m-d') }}" disabled>
+                            <!-- Set the value to today's date and make it readonly -->
+                            <span class="input-group-text" data-td-target="#kt_td_picker_date_only"
+                                data-td-toggle="datetimepicker">
+                                <i class="ki-duotone ki-calendar fs-2"><span class="path1"></span><span
+                                        class="path2"></span></i>
+                            </span>
                         </div>
                     </div>
                 </div>
-            </form>
+                <div class="col-md-2">
+                    <div class="mb-3 align-items-center">
+                        <label for="inputEmail3" class="col-form-label">Marketing</label>
+                        <input id="user_id" type="text" name="user_id" class="form-control"
+                            value="{{ auth()->user()->name }}" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3 row align-items-center">
+                        <label for="inputEmail3" class="col-form-label">Customer</label>
+                        <select id="customer" class="form-select" name="customer_id" data-control="select2"
+                            data-placeholder="Pilih customer" data-allow-clear="true" required>
+                            <option readonly disabled>Pilih Customer</option>
+                            @foreach ($customers as $customer)
+                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3 align-items-center">
+                        <label for="inputEmail3" class="col-form-label">Piutang</label>
+                        <input id="piutang" type="text" name="piutang" class="form-control"
+                            placeholder="Masukan piutang" value="0" readonly />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3 align-items-center">
+                        <label for="inputEmail3" class="col-form-label">No. Order</label>
+                        <input id="order_number" type="text" name="order_number" class="form-control"
+                            placeholder="Masukan no.order" value="{{ $orderNumber }}" readonly />
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
+                    id="searchInput" autofocus>
+            </div>
+            <!--end::Search-->
         </div>
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
-                        id="searchInput" autofocus>
-                </div>
-                <!--end::Search-->
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-start fw-bold fs-7 text-uppercase">
+                            <th>Kelompok</th>
+                            <th>Nama Barang</th>
+                            <th>Promo</th>
+                            <th>Stok</th>
+                            <th>Jml Per Dus</th>
+                            <th>Jml Per Pak</th>
+                            <th>Jml Jual Dus</th>
+                            <th>Diskon Dus</th>
+                            @php
+                            $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                            @endphp
+                            @if(!$isOutOfTown)
+                            <th>Harga Jual Dus</th>
+                            @else
+                            <th>Harga Dus Luar Kota</th>
+                            @endif
+                            <th>Jml Jual Pak</th>
+                            <th>Diskon Pak</th>
+                            @if(!$isOutOfTown)
+                            <th>Harga Jual Pak</th>
+                            @else
+                            <th>Harga Pak Luar Kota</th>
+                            @endif
+                            <th>Jml Jual Eceran</th>
+                            <th>Diskon Eceran</th>
+                            @if(!$isOutOfTown)
+                            <th>Harga Jual Eceran</th>
+                            @else
+                            <th>Harga Eceran Luar Kota</th>
+                            @endif
+                            <th>Hadiah</th>
+                            <th class="min-w-100px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="card-body">
+    </div>
+    <div class="mt-4 row">
+        <div class="col-md-8">
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
                 <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
+                    <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                        id="kt_datatable_cart">
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
+                                <th>No</th>
                                 <th>Kelompok</th>
-                                <th>Nama Barang</th>
-                                <th>Promo</th>
-                                <th>Stok</th>
-                                <th>Jml Per Dus</th>
-                                <th>Jml Per Pak</th>
-                                <th>Jml Jual Dus</th>
-                                <th>Diskon Dus</th>
-                                <th>Harga Jual Dus</th>
-                                <th>Harga Dus Luar Kota</th>
-                                <th>Jml Jual Pak</th>
-                                <th>Diskon Pak</th>
-                                <th>Harga Jual Pak</th>
-                                <th>Harga Pak Luar Kota</th>
-                                <th>Jml Jual Eceran</th>
-                                <th>Diskon Eceran</th>
-                                <th>Harga Jual Eceran</th>
-                                <th>Harga Eceran Luar Kota</th>
-                                <th>Hadiah</th>
-                                <th class="min-w-100px">Aksi</th>
+                                <th class="min-w-100px">Nama Barang</th>
+                                <th>Jml Beli</th>
+                                <th>Satuan</th>
+                                <th>Diskon</th>
+                                <th>Subtotal</th>
+                                <th>Hapus</th>
                             </tr>
                         </thead>
                         <tbody class="fw-semibold">
+                            @foreach ($cart as $cart)
+                            <tr class="odd">
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $cart->product->group }}</td>
+                                <td>{{ $cart->product->name }}</td>
+                                <td>{{ $cart->quantity }}</td>
+                                <td>{{ $cart->unit->name }}</td>
+                                <td>{{ $cart->diskon ?? 0 }}</td>
+                                <td>
+                                    {{ number_format($cart->price * $cart->quantity - $cart->diskon) }}
+                                </td>
+                                <td>
+                                    <form action="{{ route('penjualan.destroyCart', $cart->id) }}" method="POST">
+                                        @csrf
+                                        @method('delete')
+                                        <input type="hidden" name="product_id" value="{{ $cart->product_id }}">
+                                        <button class="btn btn-sm btn-danger">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <div class="mt-4 row">
-            <div class="col-md-8">
-                <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                    <div class="table-responsive">
-                        <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                            id="kt_datatable_cart">
-                            <thead>
-                                <tr class="text-start fw-bold fs-7 text-uppercase">
-                                    <th>No</th>
-                                    <th>Kelompok</th>
-                                    <th class="min-w-100px">Nama Barang</th>
-                                    <th>Jml Beli</th>
-                                    <th>Satuan</th>
-                                    <th>Diskon</th>
-                                    <th>Subtotal</th>
-                                    <th>Hapus</th>
-                                </tr>
-                            </thead>
-                            <tbody class="fw-semibold">
-                                @foreach ($cart as $cart)
-                                    <tr class="odd">
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $cart->product->group }}</td>
-                                        <td>{{ $cart->product->name }}</td>
-                                        <td>{{ $cart->quantity }}</td>
-                                        <td>{{ $cart->unit->name }}</td>
-                                        <td>{{ $cart->diskon ?? 0 }}</td>
-                                        <td>
-                                            {{ number_format($cart->price * $cart->quantity - $cart->diskon) }}
-                                        </td>
-                                        <td>
-                                            <form action="{{ route('penjualan.destroyCart', $cart->id) }}"
-                                                method="POST">
-                                                @csrf
-                                                @method('delete')
-                                                <input type="hidden" name="product_id" value="{{ $cart->product_id }}">
-                                                <button class="btn btn-sm btn-danger">
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <form id="form2" action="{{ route('penjualan.store') }}" method="post">
-                    @csrf
-                    <input type="hidden" name="transaction_date" id="transaction_date_form2">
-                    <input type="hidden" name="order_number" id="order_number_form2">
-                    <input type="hidden" name="customer" id="customer_form2">
-                    <input type="hidden" name="user_id" id="user_id_form2">
-                    <input type="hidden" name="status" id="status_form2">
+        <div class="col-md-4">
+            <form id="form2" action="{{ route('penjualan.store') }}" method="post">
+                @csrf
+                <input type="hidden" name="transaction_date" id="transaction_date_form2">
+                <input type="hidden" name="order_number" id="order_number_form2">
+                <input type="hidden" name="customer" id="customer_form2">
+                <input type="hidden" name="user_id" id="user_id_form2">
+                <input type="hidden" name="status" id="status_form2">
 
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-1">
-                                <label for="subtotal" class="col-form-label">Subtotal</label>
-                                <input type="text" name="subtotal" class="form-control" id="subtotal"
-                                    value="{{ number_format($subtotal) }}" readonly />
-                            </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="mb-1">
+                            <label for="subtotal" class="col-form-label">Subtotal</label>
+                            <input type="text" name="subtotal" class="form-control" id="subtotal"
+                                value="{{ number_format($subtotal) }}" readonly />
+                        </div>
 
-                            <!-- Parent div with id="bayarDiv" -->
-                            <div class="mb-1" id="bayarDiv">
-                                <label for="bayar" class="col-form-label">Bayar</label>
-                                <input type="text" name="pay" class="form-control" id="bayar"
-                                    oninput="calculateTotal()" />
-                            </div>
+                        <!-- Parent div with id="bayarDiv" -->
+                        <div class="mb-1" id="bayarDiv">
+                            <label for="bayar" class="col-form-label">Bayar</label>
+                            <input type="text" name="pay" class="form-control" id="bayar" oninput="calculateTotal()" />
+                        </div>
 
-                            <div class="mb-1" style="display: none;" id="transferDiv">
-                                <label for="transfer" class="col-form-label">Transfer</label>
-                                <input type="text" name="transfer" class="form-control" id="transfer"
-                                    oninput="formatNumber(this); calculateTotal()" />
-                            </div>
+                        <div class="mb-1" style="display: none;" id="transferDiv">
+                            <label for="transfer" class="col-form-label">Transfer</label>
+                            <input type="text" name="transfer" class="form-control" id="transfer"
+                                oninput="formatNumber(this); calculateTotal()" />
+                        </div>
 
-                            <div class="mb-1" style="display: none;" id="cashDiv">
-                                <label for="cash" class="col-form-label">Cash</label>
-                                <input type="text" name="cash" class="form-control" id="cash"
-                                    oninput="formatNumber(this); calculateTotal()" />
-                            </div>
+                        <div class="mb-1" style="display: none;" id="cashDiv">
+                            <label for="cash" class="col-form-label">Cash</label>
+                            <input type="text" name="cash" class="form-control" id="cash"
+                                oninput="formatNumber(this); calculateTotal()" />
+                        </div>
 
-                            <div class="mb-1">
-                                <label for="grandTotal" class="col-form-label">Grand Total</label>
-                                <input type="text" name="grand_total" class="form-control" id="grandTotal"
-                                    readonly />
-                            </div>
+                        <div class="mb-1">
+                            <label for="grandTotal" class="col-form-label">Grand Total</label>
+                            <input type="text" name="grand_total" class="form-control" id="grandTotal" readonly />
+                        </div>
 
-                            <div class="mb-1">
-                                <label for="grandTotal" class="col-form-label">Metode Bayar</label>
-                                <select name="payment_method" class="form-select" aria-label="Select example"
-                                    onchange="togglePaymentFields()">
-                                    <option value="">Pilih Pembayaran</option>
-                                    <option value="transfer">Transfer</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="split">Split Payment</option>
-                                </select>
-                            </div>
+                        <div class="mb-1">
+                            <label for="grandTotal" class="col-form-label">Metode Bayar</label>
+                            <select name="payment_method" class="form-select" aria-label="Select example"
+                                onchange="togglePaymentFields()">
+                                <option value="">Pilih Pembayaran</option>
+                                <option value="transfer">Transfer</option>
+                                <option value="cash">Cash</option>
+                                <option value="split">Split Payment</option>
+                            </select>
+                        </div>
 
-                            <div class="mb-1">
-                                <label for="kembali" class="col-form-label">Kembali</label>
-                                <input type="text" name="change" class="form-control" id="kembali" readonly />
-                            </div>
+                        <div class="mb-1">
+                            <label for="kembali" class="col-form-label">Kembali</label>
+                            <input type="text" name="change" class="form-control" id="kembali" readonly />
                         </div>
                     </div>
-                    <div class="mt-5 row">
-                        <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan</button>
-                        <button type="button" onclick="draftForms()" class="mt-5 btn btn-danger">Draft</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="mt-5 row">
+                    <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan</button>
+                    <button type="button" onclick="draftForms()" class="mt-5 btn btn-danger">Draft</button>
+                </div>
+            </form>
         </div>
     </div>
-    @includeIf('pages.sell.modal')
-    @includeIf('pages.sell.modal-password')
+</div>
+@includeIf('pages.sell.modal')
+@includeIf('pages.sell.modal-password')
 @endsection
 
 @push('addon-script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
 
-    {{-- calculated form --}}
-    <script>
-        function formatNumber(input) {
+{{-- calculated form --}}
+<script>
+    function formatNumber(input) {
             // Hapus semua karakter non-digit
             let value = input.value.replace(/\D/g, '');
 
@@ -419,11 +429,11 @@
             // Submit form2
             document.getElementById('form2').submit();
         }
-    </script>
+</script>
 
-    {{-- Datepicker --}}
-    <script>
-        new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_date_only"), {
+{{-- Datepicker --}}
+<script>
+    new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_date_only"), {
             localization: {
                 locale: "id",
                 startOfTheWeek: 1
@@ -441,11 +451,11 @@
                 }
             }
         });
-    </script>
+</script>
 
-    {{-- Datatables Top --}}
-    <script>
-        "use strict";
+{{-- Datatables Top --}}
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -517,6 +527,7 @@
                                 return `<input type="number" name="diskon_dus" class="form-control">`;
                             }
                         },
+                        @if(!$isOutOfTown)
                         {
                             data: "product.price_sell_dus",
                             render: function(data, type, row) {
@@ -528,6 +539,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @else
                         {
                             data: "product.price_sell_dus_out_of_town",
                             render: function(data, type, row) {
@@ -539,6 +551,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @endif
                         {
                             data: null,
                             render: function(data, type, row) {
@@ -561,6 +574,7 @@
                                 return `<input type="number" name="diskon_pak" class="form-control">`;
                             }
                         },
+                        @if(!$isOutOfTown)
                         {
                             data: "product.price_sell_pak",
                             render: function(data, type, row) {
@@ -572,6 +586,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @else
                         {
                             data: "product.price_sell_pak_out_of_town",
                             render: function(data, type, row) {
@@ -583,6 +598,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @endif
                         {
                             data: null,
                             render: function(data, type, row) {
@@ -605,6 +621,7 @@
                                 return `<input type="number" name="diskon_eceran" class="form-control">`;
                             }
                         },
+                        @if(!$isOutOfTown)
                         {
                             data: "product.price_sell_eceran",
                             render: function(data, type, row) {
@@ -616,6 +633,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @else
                         {
                             data: "product.price_sell_eceran_out_of_town",
                             render: function(data, type, row) {
@@ -627,6 +645,7 @@
                                 return formattedPrice;
                             }
                         },
+                        @endif
                         {
                             data: "product.hadiah",
                         },
@@ -643,7 +662,7 @@
                             className: 'min-w-100px',
                         },
                         {
-                            target: [6, 7, 9, 10, 12, 13, 15],
+                            target: [6, 7, 9, 10, 12, 13],
                             className: 'min-w-80px',
                         },
                         {
@@ -750,11 +769,11 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
+</script>
 
-    {{-- Datatables Bottom --}}
-    <script>
-        "use strict";
+{{-- Datatables Bottom --}}
+<script>
+    "use strict";
 
         // Initialize the data table
         var KTDatatablesCart = function() {
@@ -794,5 +813,5 @@
         });
 
         // Class definition
-    </script>
+</script>
 @endpush
