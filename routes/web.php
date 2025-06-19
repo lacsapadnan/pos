@@ -4,6 +4,8 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\KasController;
+use App\Http\Controllers\KasIncomeItemController;
+use App\Http\Controllers\KasExpenseItemController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
@@ -68,6 +70,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
+    Route::resource('kas-income-item', KasIncomeItemController::class)->except(['show', 'create', 'edit']);
+    Route::resource('kas-expense-item', KasExpenseItemController::class)->except(['show', 'create', 'edit']);
     Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);
     Route::resource('settlement', SettlementController::class);
     Route::resource('penjualan-draft', SellDraftController::class);
@@ -106,6 +110,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('kas/api/data', [KasController::class, 'data'])->name('api.kas');
     Route::get('kas-income/api/data', [KasController::class, 'income'])->name('api.kas-income');
     Route::get('kas-expense/api/data', [KasController::class, 'expense'])->name('api.kas-expense');
+    Route::get('kas-income-item/api/data', [KasIncomeItemController::class, 'data'])->name('api.kas-income-item');
+    Route::get('kas-expense-item/api/data', [KasExpenseItemController::class, 'data'])->name('api.kas-expense-item');
     Route::get('hutang/api/data', [PurchaseController::class, 'dataDebt'])->name('api.hutang');
     Route::get('piutang/api/data', [SellController::class, 'dataCredit'])->name('api.piutang');
     Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');

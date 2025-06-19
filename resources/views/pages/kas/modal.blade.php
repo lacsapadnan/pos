@@ -5,7 +5,8 @@
                 <h3 class="modal-title">Tambah data kas</h3>
 
                 <!--begin::Close-->
-                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
+                    aria-label="Close">
                     <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
                 </div>
                 <!--end::Close-->
@@ -33,30 +34,70 @@
                         <label class="form-label" for="invoice">Faktur</label>
                         <input name="invoice" class="form-control" type="text" value="{{ $invoice }}" readonly>
                     </div>
+
+                    @if(auth()->user()->hasRole('master') && isset($warehouses) && count($warehouses) > 0)
                     <div class="mb-4">
-                        <label class="form-label" for="invoice">Tipe</label>
-                        <select name="type" class="form-select form-select-solid" data-control="select2" id="typeSelect" data-dropdown-parent="#kt_modal_1">
-                            <option readonly>Pilih Tipe</option>
+                        <label class="form-label" for="warehouse_id">Cabang</label>
+                        <select name="warehouse_id" class="form-select form-select-solid" data-control="select2"
+                            data-dropdown-parent="#kt_modal_1">
+                            <option value="">Pilih Cabang</option>
+                            @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+
+                    <div class="mb-4">
+                        <label class="form-label" for="type">Tipe</label>
+                        <select name="type" class="form-select form-select-solid" data-control="select2" id="typeSelect"
+                            data-dropdown-parent="#kt_modal_1">
+                            <option value="">Pilih Tipe</option>
                             <option value="Kas Masuk">Kas Masuk</option>
                             <option value="Kas Keluar">Kas Keluar</option>
                         </select>
                     </div>
-                    <div id="otherSelectContainer" class="mb-4" style="display: none;">
-                        <label class="form-label" for="otherSelect">Keperluan</label>
-                        <select id="otherSelect" name="other" class="form-select form-select-solid"
+
+                    <div id="incomeItemContainer" class="mb-4" style="display: none;">
+                        <label class="form-label" for="kas_income_item_id">Item Pendapatan</label>
+                        <select id="kas_income_item_id" name="kas_income_item_id" class="form-select form-select-solid"
                             data-control="select2" data-dropdown-parent="#kt_modal_1">
-                            <option readonly>Pilih Keperluan</option>
-                            <option value="">Select an option</option> <!-- Placeholder option -->
+                            <option value="">Pilih Item Pendapatan</option>
+                            @foreach($incomeItems as $item)
+                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                            @endforeach
                         </select>
+                        <div class="mt-2 text-end">
+                            <a href="{{ route('kas-income-item.index') }}" class="btn btn-sm btn-light-primary">
+                                Kelola Item Pendapatan
+                            </a>
+                        </div>
                     </div>
+
+                    <div id="expenseItemContainer" class="mb-4" style="display: none;">
+                        <label class="form-label" for="kas_expense_item_id">Item Pengeluaran</label>
+                        <select id="kas_expense_item_id" name="kas_expense_item_id"
+                            class="form-select form-select-solid" data-control="select2"
+                            data-dropdown-parent="#kt_modal_1">
+                            <option value="">Pilih Item Pengeluaran</option>
+                            @foreach($expenseItems as $item)
+                            <option value="{{ $item->id }}">{{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="mt-2 text-end">
+                            <a href="{{ route('kas-expense-item.index') }}" class="btn btn-sm btn-light-primary">
+                                Kelola Item Pengeluaran
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
-                        <label class="form-label" for="name">Jumlah</label>
+                        <label class="form-label" for="amount">Jumlah</label>
                         <input name="amount" type="number" class="form-control" placeholder="Masukan jumlah" />
                     </div>
                     <div class="mb-4">
-                        <label class="form-label" for="name">Deskripsi</label>
-                        <input name="description" type="text" class="form-control"
-                            placeholder="Masukan deskripsi customer" />
+                        <label class="form-label" for="description">Deskripsi</label>
+                        <input name="description" type="text" class="form-control" placeholder="Masukan deskripsi" />
                     </div>
                     <button type="submit" class="btn btn-success">Simpan</button>
                 </form>
@@ -64,3 +105,28 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeSelect = document.getElementById('typeSelect');
+        const incomeItemContainer = document.getElementById('incomeItemContainer');
+        const expenseItemContainer = document.getElementById('expenseItemContainer');
+
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'Kas Masuk') {
+                incomeItemContainer.style.display = 'block';
+                expenseItemContainer.style.display = 'none';
+                document.getElementById('kas_expense_item_id').value = '';
+            } else if (this.value === 'Kas Keluar') {
+                incomeItemContainer.style.display = 'none';
+                expenseItemContainer.style.display = 'block';
+                document.getElementById('kas_income_item_id').value = '';
+            } else {
+                incomeItemContainer.style.display = 'none';
+                expenseItemContainer.style.display = 'none';
+                document.getElementById('kas_income_item_id').value = '';
+                document.getElementById('kas_expense_item_id').value = '';
+            }
+        });
+    });
+</script>
