@@ -25,6 +25,7 @@ use Mike42\Escpos\ImagickEscposImage;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
 use DataTables;
+
 require_once app_path('Helpers/CashflowHelper.php');
 
 class SellController extends Controller
@@ -41,38 +42,38 @@ class SellController extends Controller
     }
 
     public function data(Request $request)
-{
-    $role = auth()->user()->getRoleNames();
-    $user_id = $request->input('user_id');
-    $fromDate = $request->input('from_date');
-    $toDate = $request->input('to_date');
-    $warehouse = $request->input('warehouse');
+    {
+        $role = auth()->user()->getRoleNames();
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date') ?? date('Y-m-d');
+        $toDate = $request->input('to_date') ?? date('Y-m-d');
+        $warehouse = $request->input('warehouse');
 
-    $query = Sell::with(['warehouse', 'customer', 'cashier'])
-        ->where('status', '!=', 'draft')
-        ->orderBy('id', 'desc');
+        $query = Sell::with(['warehouse', 'customer', 'cashier'])
+            ->where('status', '!=', 'draft')
+            ->orderBy('id', 'desc');
 
-    if ($role[0] !== 'master') {
-        $query->where('warehouse_id', auth()->user()->warehouse_id)
-              ->where('cashier_id', auth()->id());
-    }
+        if ($role[0] !== 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('cashier_id', auth()->id());
+        }
 
-    if ($warehouse) {
-        $query->where('warehouse_id', $warehouse);
-    }
+        if ($warehouse) {
+            $query->where('warehouse_id', $warehouse);
+        }
 
-    if ($user_id) {
-        $query->where('cashier_id', $user_id);
-    }
+        if ($user_id) {
+            $query->where('cashier_id', $user_id);
+        }
 
-    if ($fromDate && $toDate) {
-        $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
-        $query->whereBetween('created_at', [$fromDate, $endDate]);
-    }
+        if ($fromDate && $toDate) {
+            $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
+            $query->whereBetween('created_at', [$fromDate, $endDate]);
+        }
 
-    return DataTables::eloquent($query)
-        ->addColumn('aksi', function ($row) {
-            return '
+        return DataTables::eloquent($query)
+            ->addColumn('aksi', function ($row) {
+                return '
                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(' . $row->id . ')">Detail</a>
                 <button class="btn btn-sm btn-success" onclick="openPasswordModal(' . $row->id . ')">Print</button>
                 @can("hapus penjualan")
@@ -84,10 +85,10 @@ class SellController extends Controller
                 </form>
                 @endcan
             ';
-        })
-        ->rawColumns(['aksi'])
-        ->make(true);
-}
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
+    }
 
     /**
      * Show the form for creating a new resource.
