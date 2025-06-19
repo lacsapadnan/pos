@@ -109,30 +109,38 @@
     <div class="p-3">
         <table width="100%">
             @foreach ($details as $detail)
-                <tr>
-                    <td width="15%">
-                        <p>{{ $detail->quantity }} {{ $detail->unit->name }} </p>
-                    </td>
-                    <td width="40%">
-                        <p>{{ $detail->product->name }}</p>
-                        @if ($detail->product->hadiah != null)
-                            <p>*{{ $detail->product->hadiah }}</p>
-                        @endif
-                    </td>
-                    <td width="15%">
-                        <p>{{ number_format($detail->price) }}</p>
-                    </td>
-                    <td width="10%">
-                        <p>{{ $detail->diskon }}</p>
-                    </td>
-                    <td width="20%" style="text-align:right">
-                        @if ($sell->status == 'batal')
-                            <p>0</p>
-                        @else
-                            <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
-                        @endif
-                    </td>
-                </tr>
+            <tr>
+                <td width="15%">
+                    <p>{{ $detail->quantity }} {{ $detail->unit->name }} </p>
+                </td>
+                <td width="40%">
+                    <p>{{ $detail->product->name }}</p>
+                    @if ($detail->product->hadiah != null)
+                    <p>*{{ $detail->product->hadiah }}</p>
+                    @endif
+                    {{-- Show returned quantity if exists --}}
+                    @php
+                    $returnKey = $detail->product_id . '_' . $detail->unit_id;
+                    @endphp
+                    @if (isset($returnedItems[$returnKey]))
+                    <p style="color: red; font-size: 10px;">*Retur: {{ $returnedItems[$returnKey]['qty'] }} {{
+                        $returnedItems[$returnKey]['unit_name'] }}</p>
+                    @endif
+                </td>
+                <td width="15%">
+                    <p>{{ number_format($detail->price) }}</p>
+                </td>
+                <td width="10%">
+                    <p>{{ $detail->diskon }}</p>
+                </td>
+                <td width="20%" style="text-align:right">
+                    @if ($sell->status == 'batal')
+                    <p>0</p>
+                    @else
+                    <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
+                    @endif
+                </td>
+            </tr>
             @endforeach
             <tr>
                 <td colspan="4">
@@ -140,6 +148,38 @@
                 </td>
             </tr>
         </table>
+
+        {{-- Show returned items summary if any exist --}}
+        @if ($returnedItems->count() > 0)
+        <hr class="dotted-hr">
+        <table width="100%" style="margin: 8px 0px;">
+            <tr>
+                <td colspan="5" style="text-align: center;">
+                    <p style="font-weight: bold; color: red;">BARANG DIRETUR</p>
+                </td>
+            </tr>
+            @foreach ($returnedItems as $returnedItem)
+            <tr>
+                <td width="15%">
+                    <p style="color: red;">{{ $returnedItem['qty'] }} {{ $returnedItem['unit_name'] }}</p>
+                </td>
+                <td width="40%">
+                    <p style="color: red;">{{ $returnedItem['product_name'] }}</p>
+                </td>
+                <td width="15%">
+                    <p style="color: red;">{{ number_format($returnedItem['price']) }}</p>
+                </td>
+                <td width="10%">
+                    <p style="color: red;">-</p>
+                </td>
+                <td width="20%" style="text-align:right">
+                    <p style="color: red;">-{{ number_format($returnedItem['price'] * $returnedItem['qty']) }}</p>
+                </td>
+            </tr>
+            @endforeach
+        </table>
+        @endif
+
         <hr class="dotted-hr">
         <table width="100%" style="margin: 8px 0px;">
             <tr>
@@ -151,9 +191,9 @@
                 </td>
                 <td width="50%" style="text-align:right">
                     @if ($sell->status != 'batal')
-                        <p>Total: {{ number_format($sell->grand_total) }}</p>
+                    <p>Total: {{ number_format($sell->grand_total) }}</p>
                     @else
-                        <p>0</p>
+                    <p>0</p>
                     @endif
                 </td>
             </tr>
@@ -162,23 +202,23 @@
                 <td width="20%"></td>
                 <td width="50%" style="text-align:right">
                     @if ($sell->status != 'batal')
-                        @if ($sell->payment_method == 'transfer')
-                            <p>Transfer: {{ number_format($sell->transfer) }}</p>
-                        @elseif($sell->payment_method == 'cash')
-                            <p>Cash: {{ number_format($sell->cash) }}</p>
-                        @else
-                            <p>Cash: {{ number_format($sell->cash) }}</p>
-                            <p>Transfer: {{ number_format($sell->transfer) }}</p>
-                        @endif
+                    @if ($sell->payment_method == 'transfer')
+                    <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                    @elseif($sell->payment_method == 'cash')
+                    <p>Cash: {{ number_format($sell->cash) }}</p>
                     @else
-                        @if ($sell->payment_method == 'transfer')
-                            <p>Transfer: 0</p>
-                        @elseif($sell->payment_method == 'cash')
-                            <p>Cash: 0</p>
-                        @else
-                            <p>Cash: 0</p>
-                            <p>Transfer: 0</p>
-                        @endif
+                    <p>Cash: {{ number_format($sell->cash) }}</p>
+                    <p>Transfer: {{ number_format($sell->transfer) }}</p>
+                    @endif
+                    @else
+                    @if ($sell->payment_method == 'transfer')
+                    <p>Transfer: 0</p>
+                    @elseif($sell->payment_method == 'cash')
+                    <p>Cash: 0</p>
+                    @else
+                    <p>Cash: 0</p>
+                    <p>Transfer: 0</p>
+                    @endif
                     @endif
 
                 </td>
@@ -201,9 +241,9 @@
                 </td>
                 <td width="50%" style="text-align:right">
                     @if ($sell->status != 'batal')
-                        <p>Kembali: {{ number_format($sell->change) ?? 0 }}</p>
+                    <p>Kembali: {{ number_format($sell->change) ?? 0 }}</p>
                     @else
-                        <p>Kembali: 0</p>
+                    <p>Kembali: 0</p>
                     @endif
                 </td>
             </tr>

@@ -11,6 +11,7 @@ use App\Models\Sell;
 use App\Models\SellCart;
 use App\Models\SellCartDraft;
 use App\Models\SellDetail;
+use App\Models\SellRetur;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -323,9 +324,35 @@ class SellController extends Controller
     {
         $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+
+        // Get return data for this sale
+        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+            ->where('sell_id', $id)
+            ->get();
+
+        // Create a collection of returned items with their quantities
+        $returnedItems = collect();
+        foreach ($sellReturs as $sellRetur) {
+            foreach ($sellRetur->detail as $returDetail) {
+                $key = $returDetail->product_id . '_' . $returDetail->unit_id;
+                if ($returnedItems->has($key)) {
+                    $returnedItems[$key]['qty'] += $returDetail->qty;
+                } else {
+                    $returnedItems[$key] = [
+                        'product_id' => $returDetail->product_id,
+                        'unit_id' => $returDetail->unit_id,
+                        'product_name' => $returDetail->product->name,
+                        'unit_name' => $returDetail->unit->name,
+                        'qty' => $returDetail->qty,
+                        'price' => $returDetail->price
+                    ];
+                }
+            }
+        }
+
         $totalQuantity = 0;
         $totalQuantity += $details->count();
-        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity', 'returnedItems'));
 
         // Save the PDF to a file
         $pdf->save("receipt.pdf");
@@ -535,9 +562,35 @@ class SellController extends Controller
     {
         $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+
+        // Get return data for this sale
+        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+            ->where('sell_id', $id)
+            ->get();
+
+        // Create a collection of returned items with their quantities
+        $returnedItems = collect();
+        foreach ($sellReturs as $sellRetur) {
+            foreach ($sellRetur->detail as $returDetail) {
+                $key = $returDetail->product_id . '_' . $returDetail->unit_id;
+                if ($returnedItems->has($key)) {
+                    $returnedItems[$key]['qty'] += $returDetail->qty;
+                } else {
+                    $returnedItems[$key] = [
+                        'product_id' => $returDetail->product_id,
+                        'unit_id' => $returDetail->unit_id,
+                        'product_name' => $returDetail->product->name,
+                        'unit_name' => $returDetail->unit->name,
+                        'qty' => $returDetail->qty,
+                        'price' => $returDetail->price
+                    ];
+                }
+            }
+        }
+
         $totalQuantity = 0;
         $totalQuantity += $details->count();
-        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity', 'returnedItems'));
         return response()->stream(function () use ($pdf) {
             echo $pdf->output();
         }, 200, [

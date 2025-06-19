@@ -43,4 +43,9 @@ class Sell extends Model
     {
         return $this->belongsTo(Warehouse::class);
     }
+
+    public function sellReturs()
+    {
+        return $this->hasMany(SellRetur::class);
+    }
 }
