@@ -91,7 +91,7 @@ class SellReturController extends Controller
 
         $query = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user');
 
-        if ($userRoles[0] != 'superadmin') {
+        if ($userRoles[0] != 'master') {
             $query->where('warehouse_id', auth()->user()->warehouse_id);
         }
 
