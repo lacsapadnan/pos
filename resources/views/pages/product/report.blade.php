@@ -113,7 +113,6 @@
                             <th>Supplier</th>
                             <th>Untuk</th>
                             <th class="w-250px">Keterangan</th>
-                            <th class="w-100px">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="text-gray-900 fw-semibold">
@@ -225,25 +224,6 @@
                         },
                         {
                             data: "description"
-                        },
-                        {
-                            data: null,
-                            orderable: false,
-                            searchable: false,
-                            render: function(data, type, row) {
-                                return `
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteRecord(${row.id})">
-                                        <i class="ki-duotone ki-trash fs-2">
-                                            <span class="path1"></span>
-                                            <span class="path2"></span>
-                                            <span class="path3"></span>
-                                            <span class="path4"></span>
-                                            <span class="path5"></span>
-                                        </i>
-                                        Hapus
-                                    </button>
-                                `;
-                            }
                         },
                     ],
                 });
@@ -358,59 +338,6 @@
                 }
             };
         }();
-
-        // Delete function
-        function deleteRecord(id) {
-            console.log(id);
-            Swal.fire({
-                title: 'Apakah anda yakin?',
-                text: "Data yang dihapus tidak dapat dikembalikan!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '{{ route("produk.laporan.destroy", ":id") }}'.replace(':id', id),
-                        type: 'DELETE',
-                        data: {
-                            _token: '{{ csrf_token() }}'
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire(
-                                    'Terhapus!',
-                                    response.message,
-                                    'success'
-                                );
-                                // Reload the datatable
-                                datatable.ajax.reload();
-                            } else {
-                                Swal.fire(
-                                    'Error!',
-                                    response.message,
-                                    'error'
-                                );
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            let errorMessage = 'Terjadi kesalahan saat menghapus data';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            }
-                            Swal.fire(
-                                'Error!',
-                                errorMessage,
-                                'error'
-                            );
-                        }
-                    });
-                }
-            });
-        }
 
         // On document ready
         KTUtil.onDOMContentLoaded(function() {
