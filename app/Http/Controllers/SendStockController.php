@@ -26,6 +26,7 @@ class SendStockController extends Controller
     public function data()
     {
         $sendStok = SendStock::with('fromWarehouse', 'toWarehouse', 'user')
+            ->completed()
             ->orderBy('id', 'desc')
             ->get();
         return response()->json($sendStok);
@@ -51,9 +52,45 @@ class SendStockController extends Controller
         $user = auth()->user();
         $fromWarehouse = $user->warehouse_id;
         $toWarehouse = $request->input('to_warehouse');
+        $saveAsDraft = $request->has('save_as_draft');
 
         // Fetch cart items with products
         $carts = SendStockCart::with('product')->where('user_id', $user->id)->get();
+
+        if ($carts->isEmpty()) {
+            return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
+        }
+
+        // If saving as draft, create draft without inventory changes
+        if ($saveAsDraft) {
+            $sendStock = SendStock::create([
+                'user_id' => $user->id,
+                'from_warehouse' => $fromWarehouse,
+                'to_warehouse' => $toWarehouse,
+                'status' => 'draft',
+            ]);
+
+            $sendStockDetails = [];
+
+            foreach ($carts as $cart) {
+                $sendStockDetails[] = [
+                    'send_stock_id' => $sendStock->id,
+                    'product_id' => $cart->product_id,
+                    'unit_id' => $cart->unit_id,
+                    'quantity' => $cart->quantity,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Insert all draft details in one query
+            SendStockDetail::insert($sendStockDetails);
+
+            // Clear cart
+            SendStockCart::where('user_id', $user->id)->delete();
+
+            return redirect()->route('pindah-stok-draft.index')->with('success', 'Draft pindah stok berhasil disimpan.');
+        }
 
         // Fetch all related inventory records in one query (avoid looping queries)
         $productIds = $carts->pluck('product.id');
@@ -92,6 +129,8 @@ class SendStockController extends Controller
             'user_id' => $user->id,
             'from_warehouse' => $fromWarehouse,
             'to_warehouse' => $toWarehouse,
+            'status' => 'completed',
+            'completed_at' => now(),
         ]);
 
         $sendStockDetails = [];

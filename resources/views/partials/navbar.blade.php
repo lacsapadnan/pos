@@ -373,10 +373,21 @@
                         @endcan
                         @can('baca pindah stok')
                         <!--begin:Menu item-->
-                        <div class="menu-item {{ request()->routeIs('pindah-stok.*') ? ' here' : '' }}">
+                        <div
+                            class="menu-item {{ request()->routeIs('pindah-stok.*') && !request()->routeIs('pindah-stok-draft.*') ? ' here' : '' }}">
                             <!--begin:Menu link-->
                             <a class="menu-link" href="{{ route('pindah-stok.index') }}">
                                 <span class="menu-title">Pindah Stok</span>
+                            </a>
+                            <!--end:Menu link-->
+                        </div>
+                        <!--end:Menu item-->
+
+                        <!--begin:Menu item-->
+                        <div class="menu-item {{ request()->routeIs('pindah-stok-draft.*') ? ' here' : '' }}">
+                            <!--begin:Menu link-->
+                            <a class="menu-link" href="{{ route('pindah-stok-draft.index') }}">
+                                <span class="menu-title">Draft Pindah Stok</span>
                             </a>
                             <!--end:Menu link-->
                         </div>

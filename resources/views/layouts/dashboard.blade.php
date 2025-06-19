@@ -13,24 +13,24 @@
 
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled">
     <div class="d-flex flex-column flex-root">
-        <div class="page d-flex flex-row flex-column-fluid">
+        <div class="flex-row page d-flex flex-column-fluid">
             <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
                 @include('partials.navbar')
-                <div id="kt_toolbar_container" class="container-xxl d-flex flex-stack flex-wrap mt-5">
+                <div id="kt_toolbar_container" class="flex-wrap mt-5 container-xxl d-flex flex-stack">
                     <!--begin::Page title-->
                     <div class="page-title d-flex flex-column me-3">
                         <!--begin::Title-->
-                        <h1 class="d-flex text-dark fw-bold my-1 fs-3">@yield('menu-title')</h1>
+                        <h1 class="my-1 d-flex text-dark fw-bold fs-3">@yield('menu-title')</h1>
                         <!--end::Title-->
                         <!--begin::Breadcrumb-->
-                        <ul class="breadcrumb breadcrumb-dot fw-semibold text-gray-600 fs-7 my-1">
+                        <ul class="my-1 text-gray-600 breadcrumb breadcrumb-dot fw-semibold fs-7">
                             <!--begin::Item-->
-                            <li class="breadcrumb-item text-gray-600">
+                            <li class="text-gray-600 breadcrumb-item">
                                 <a href="/dashboard" class="text-gray-600 text-hover-primary">Dashboard</a>
                             </li>
                             <!--end::Item-->
                             <!--begin::Item-->
-                            <li class="breadcrumb-item text-gray-600">@yield('menu-title')</li>
+                            <li class="text-gray-600 breadcrumb-item">@yield('menu-title')</li>
                             <!--end::Item-->
                         </ul>
                         <!--end::Breadcrumb-->

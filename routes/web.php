@@ -18,6 +18,7 @@ use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellDraftController;
 use App\Http\Controllers\SellReturController;
 use App\Http\Controllers\SendStockController;
+use App\Http\Controllers\SendStockDraftController;
 use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TreasuryMutationController;
@@ -67,6 +68,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('konfirmReturn', [SellReturController::class, 'konfirmReturn'])->name('konfirmReturn');
     Route::get('view-return-penjualan', [SellReturController::class, 'viewReturnPenjualan'])->name('viewReturnPenjualan');
     Route::resource('pindah-stok', SendStockController::class);
+    Route::resource('pindah-stok-draft', SendStockDraftController::class)->except(['create']);
+    Route::post('pindah-stok-draft/{id}/complete', [SendStockDraftController::class, 'complete'])->name('pindah-stok-draft.complete');
+    Route::post('pindah-stok-draft/{id}/add-item', [SendStockDraftController::class, 'addToExistingDraft'])->name('pindah-stok-draft.addItem');
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
@@ -122,6 +126,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('penjualan/retur/api/data', [SellReturController::class, 'dataSell'])->name('api.penjualan-retur');
     Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
+    Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
+    Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
@@ -142,12 +148,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('penjualan-retur/cart', [SellReturController::class, 'addCart'])->name('penjualan-retur.addCart');
     Route::post('pembelian-retur/cart', [PurchaseReturController::class, 'addCart'])->name('pembelian-retur.addCart');
     Route::post('pindah-stok/cart', [SendStockController::class, 'addCart'])->name('pindah-stok.addCart');
+    Route::post('pindah-stok-draft/cart', [SendStockDraftController::class, 'addCart'])->name('pindah-stok-draft.addCart');
     Route::post('penjualan-draft/cart', [SellDraftController::class, 'addCart'])->name('penjualan-draft.addCart');
     Route::delete('penjualan/cart/hapus/{id}', [SellController::class, 'destroyCart'])->name('penjualan.destroyCart');
     Route::delete('pembelian/cart/hapus/{id}', [PurchaseController::class, 'destroyCart'])->name('pembelian.destroyCart');
     Route::delete('penjualan-retur/cart/hapus/{id}', [SellReturController::class, 'destroyCart'])->name('penjualan-retur.destroyCart');
     Route::delete('pembelian-retur/cart/hapus/{id}', [PurchaseReturController::class, 'destroyCart'])->name('pembelian-retur.destroyCart');
     Route::delete('pindah-stok/cart/hapus/{id}', [SendStockController::class, 'destroyCart'])->name('pindah-stok.destroyCart');
+    Route::delete('pindah-stok-draft/cart/hapus/{id}', [SendStockDraftController::class, 'destroyCart'])->name('pindah-stok-draft.destroyCart');
     Route::delete('penjualan-draft/cart/hapus/{id}', [SellDraftController::class, 'destroyCart'])->name('penjualan-draft.destroyCart');
 
     // Print
