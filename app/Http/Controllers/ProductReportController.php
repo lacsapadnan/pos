@@ -33,10 +33,10 @@ class ProductReportController extends Controller
         $product = $request->input('product');
 
         $query = ProductReport::with(['user:id,name', 'supplier:id,name', 'customer:id,name', 'product:id,name'])
-            ->select('product_id', 'unit_type', 'user_id', 'type', 'description', 'supplier_id', 'customer_id', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(qty * price) as total_value'))
+            ->select('id', 'product_id', 'unit_type', 'user_id', 'type', 'description', 'supplier_id', 'customer_id', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(qty * price) as total_value'))
             ->whereDate('created_at', '>=', $fromDate)
             ->whereDate('created_at', '<=', $toDate)
-            ->groupBy('product_id', 'unit_type', 'user_id', 'supplier_id', 'customer_id', 'type', 'description');
+            ->groupBy('id', 'product_id', 'unit_type', 'user_id', 'supplier_id', 'customer_id', 'type', 'description');
 
         if ($role[0] !== 'master') {
             $query->where('user_id', auth()->user()->id)
@@ -76,5 +76,42 @@ class ProductReportController extends Controller
         ];
 
         return response()->json($response);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        try {
+            $productReport = ProductReport::findOrFail($id);
+
+            // Check if user has permission to delete this record
+            $userRoles = auth()->user()->getRoleNames();
+            if ($userRoles[0] !== 'master') {
+                // Non-master users can only delete their own records from their warehouse
+                if (
+                    $productReport->user_id !== auth()->user()->id ||
+                    $productReport->warehouse_id !== auth()->user()->warehouse_id
+                ) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk menghapus data ini'
+                    ], 403);
+                }
+            }
+
+            $productReport->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data laporan produk berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

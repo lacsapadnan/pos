@@ -88,6 +88,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
     Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');
     Route::get('produk/laporan', [ProductReportController::class, 'index'])->name('produk.laporan');
+    Route::delete('produk/laporan/{id}', [ProductReportController::class, 'destroy'])->name('produk.laporan.destroy');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
