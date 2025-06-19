@@ -32,8 +32,6 @@ class CalculatedLastestPriceOutOfTown extends Command
             })
             ->get();
 
-        dd($purchaseDetails->toArray());
-
         foreach ($purchaseDetails as $purchaseDetail) {
             if ($purchaseDetail->unit_id == $purchaseDetail->product->unit_dus && $purchaseDetail->product->dus_to_eceran) {
                 $purchaseDetail->product->update([
