@@ -32,18 +32,20 @@ class CalculatedLastestPriceOutOfTown extends Command
             })
             ->get();
 
+        dd($purchaseDetails->toArray());
+
         foreach ($purchaseDetails as $purchaseDetail) {
             if ($purchaseDetail->unit_id == $purchaseDetail->product->unit_dus && $purchaseDetail->product->dus_to_eceran) {
                 $purchaseDetail->product->update([
-                    'lastest_price_eceran_out_of_town' => $purchaseDetail->product->price_sell_dus_out_of_town / $purchaseDetail->product->dus_to_eceran
+                    'lastest_price_eceran_out_of_town' => $purchaseDetail->price_unit / $purchaseDetail->product->dus_to_eceran
                 ]);
             } elseif ($purchaseDetail->unit_id == $purchaseDetail->product->unit_pak && $purchaseDetail->product->pak_to_eceran) {
                 $purchaseDetail->product->update([
-                    'lastest_price_eceran_out_of_town' => $purchaseDetail->product->price_sell_pak_out_of_town / $purchaseDetail->product->pak_to_eceran
+                    'lastest_price_eceran_out_of_town' => $purchaseDetail->price_unit / $purchaseDetail->product->pak_to_eceran
                 ]);
             } elseif ($purchaseDetail->unit_id == $purchaseDetail->product->unit_eceran) {
                 $purchaseDetail->product->update([
-                    'lastest_price_eceran_out_of_town' => $purchaseDetail->product->price_sell_eceran_out_of_town
+                    'lastest_price_eceran_out_of_town' => $purchaseDetail->price_unit
                 ]);
             }
         }
