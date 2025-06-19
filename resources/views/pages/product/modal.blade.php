@@ -126,42 +126,24 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-10">
-                                <label class="form-label" for="capital_dus">Modal DUS</label>
-                                <input name="capital_dus" type="number" class="form-control"
-                                    placeholder="Masukan Modal DUS" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-10">
-                                <label class="form-label" for="capital_pak">Modal Pak</label>
-                                <input name="capital_pak" type="number" class="form-control"
-                                    placeholder="Masukan Modal Pak" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-10">
-                                <label class="form-label" for="capital_eceran">Modal Eceran</label>
-                                <input name="capital_eceran" type="number" class="form-control"
-                                    placeholder="Masukan Modal Eceran" />
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-10">
-                                <label class="form-label" for="price_sell_dus_out_of_town">Harga Jual DUS Luar Kota</label>
+                                <label class="form-label" for="price_sell_dus_out_of_town">Harga Jual DUS Luar
+                                    Kota</label>
                                 <input name="price_sell_dus_out_of_town" type="number" class="form-control"
                                     placeholder="Masukan Harga Jual DUS Luar Kota" />
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-10">
-                                <label class="form-label" for="price_sell_pak_out_of_town">Harga Jual PAK Luar Kota</label>
+                                <label class="form-label" for="price_sell_pak_out_of_town">Harga Jual PAK Luar
+                                    Kota</label>
                                 <input name="price_sell_pak_out_of_town" type="number" class="form-control"
                                     placeholder="Masukan Harga Jual PAK Luar Kota" />
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-10">
-                                <label class="form-label" for="price_sell_eceran_out_of_town">Harga Jual ECERAN Luar Kota</label>
+                                <label class="form-label" for="price_sell_eceran_out_of_town">Harga Jual ECERAN Luar
+                                    Kota</label>
                                 <input name="price_sell_eceran_out_of_town" type="number" class="form-control"
                                     placeholder="Masukan Harga Jual ECERAN Luar Kota" />
                             </div>

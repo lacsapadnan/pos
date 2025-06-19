@@ -182,14 +182,33 @@ class PurchaseController extends Controller
 
                 // update product price
                 $product = Product::find($cart->product_id);
+
+                // Get the warehouse to check if it's out of town
+                $warehouse = auth()->user()->warehouse;
+
                 if ($cart->unit_id == $product->unit_dus) {
                     $product->price_dus = $cart->price_unit;
                     $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
+
+                    // Update out of town latest price if warehouse is out of town
+                    if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->lastest_price_eceran_out_of_town = $product->price_sell_dus_out_of_town / $product->dus_to_eceran;
+                    }
                 } elseif ($cart->unit_id == $product->unit_pak) {
                     $product->price_pak = $cart->price_unit;
                     $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
+
+                    // Update out of town latest price if warehouse is out of town
+                    if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->lastest_price_eceran_out_of_town = $product->price_sell_pak_out_of_town / $product->pak_to_eceran;
+                    }
                 } elseif ($cart->unit_id == $product->unit_eceran) {
                     $product->price_eceran = $cart->price_unit;
+
+                    // Update out of town latest price if warehouse is out of town
+                    if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->lastest_price_eceran_out_of_town = $product->price_sell_eceran_out_of_town;
+                    }
                 }
                 $product->update();
 
