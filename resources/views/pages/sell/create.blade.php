@@ -650,9 +650,6 @@
                             data: "product.hadiah",
                         },
                         {
-                            data: "product.hadiah"
-                        },
-                        {
                             data: null,
                             className: 'text-center',
                             render: function(data, type, row) {

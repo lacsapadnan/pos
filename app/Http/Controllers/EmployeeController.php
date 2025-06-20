@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -37,13 +38,27 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'nickname' => 'nullable|string|max:255',
+            'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'warehouse_id' => 'required|exists:warehouses,id',
+        ]);
+
         try {
             DB::beginTransaction();
+
+            $ktpPath = null;
+            if ($request->hasFile('ktp')) {
+                $ktpPath = $request->file('ktp')->store('ktp-images', 'public');
+            }
 
             Employee::create([
                 'name' => $request->name,
                 'phone' => $request->phone,
-                'email' => $request->email,
+                'nickname' => $request->nickname,
+                'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
             ]);
 
@@ -79,14 +94,34 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'nickname' => 'nullable|string|max:255',
+            'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'warehouse_id' => 'required|exists:warehouses,id',
+        ]);
+
         try {
             DB::beginTransaction();
 
             $employee = Employee::findOrFail($id);
+
+            $ktpPath = $employee->ktp; // Keep existing path if no new file
+            if ($request->hasFile('ktp')) {
+                // Delete old KTP image if exists
+                if ($employee->ktp && Storage::disk('public')->exists($employee->ktp)) {
+                    Storage::disk('public')->delete($employee->ktp);
+                }
+
+                $ktpPath = $request->file('ktp')->store('ktp-images', 'public');
+            }
+
             $employee->update([
                 'name' => $request->name,
                 'phone' => $request->phone,
-                'email' => $request->email,
+                'nickname' => $request->nickname,
+                'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
             ]);
 
@@ -103,9 +138,23 @@ class EmployeeController extends Controller
      */
     public function destroy(string $id)
     {
-        $employee = Employee::findOrFail($id);
-        $employee->delete();
+        try {
+            DB::beginTransaction();
 
-        return redirect()->back()->withSuccess('Karyawan berhasil dihapus');
+            $employee = Employee::findOrFail($id);
+
+            // Delete KTP image if exists
+            if ($employee->ktp && Storage::disk('public')->exists($employee->ktp)) {
+                Storage::disk('public')->delete($employee->ktp);
+            }
+
+            $employee->delete();
+
+            DB::commit();
+            return redirect()->back()->withSuccess('Karyawan berhasil dihapus');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return redirect()->back()->withErrors($th->getMessage());
+        }
     }
 }
