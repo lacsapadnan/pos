@@ -112,11 +112,8 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "processing": true,
-                    "serverSide": true,
                     "info": true,
-                    'order': [],
-                    'pageLength': 10,
+                    "order": [],
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "ajax": {
                         "url": "{{ route('api.pindah-stok') }}",
@@ -237,76 +234,126 @@
 <script>
     var datatable;
 
-        function openModal(id) {
-            // Clear the table body
-            $('#kt_datatable_detail tbody').empty();
+            function openModal(id) {
+        // Clear the table body
+        $('#kt_datatable_detail tbody').empty();
 
-            // Check if DataTable instance exists and destroy it
-            if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
-                datatable.destroy();
-            }
+        // Remove any existing total display
+        $('#kt_datatable_detail').next('h2').remove();
 
-            // Send a request to fetch the sell details for the given ID
-            $.ajax({
-                url: '/pindah-stok/' + id,
-                method: 'GET',
-                success: function(response) {
-                    // Initialize the DataTable on the table
-                    datatable = $('#kt_datatable_detail').DataTable({
-                        data: response,
-                        columns: [{
-                                data: 'product.name'
-                            },
-                            {
-                                data: 'unit.name'
-                            },
-                            {
-                                data: 'quantity'
-                            },
-                            {
-                                data: 'product.price_sell_dus',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'product.price_sell_pak',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'product.price_sell_eceran',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                        ]
-                    });
-
-                    // Open the modal
-                    $('#kt_modal_1').modal('show');
-                },
-                error: function(xhr, status, error) {
-                    console.error(error); // Handle the error appropriately
-                }
-            });
+        // Check if DataTable instance exists and destroy it
+        if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
+            datatable.destroy();
         }
+
+        // Send a request to fetch the sell details for the given ID
+        $.ajax({
+            url: '/pindah-stok/' + id,
+            method: 'GET',
+            success: function(response) {
+                // Initialize the DataTable on the table
+                datatable = $('#kt_datatable_detail').DataTable({
+                    data: response,
+                    columns: [{
+                            data: 'product.name'
+                        },
+                        {
+                            data: 'unit.name'
+                        },
+                        {
+                            data: 'quantity'
+                        },
+                        {
+                            data: 'product.price_sell_dus',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'product.price_sell_pak',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'product.price_sell_eceran',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                var price = 0;
+
+                                // Determine price based on unit
+                                if (row.unit_id === row.product.unit_dus) {
+                                    price = row.product.price_sell_dus;
+                                } else if (row.unit_id === row.product.unit_pak) {
+                                    price = row.product.price_sell_pak;
+                                } else {
+                                    price = row.product.price_sell_eceran;
+                                }
+
+                                var total = row.quantity * price;
+                                var formattedTotal = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                                formattedTotal = formattedTotal.replace(",00", "");
+                                return formattedTotal;
+                            }
+                        },
+                    ]
+                });
+
+                // Calculate grand total based on quantity and appropriate unit price
+                var grandTotal = response.reduce((acc, item) => {
+                    var price = 0;
+
+                    // Determine price based on unit
+                    if (item.unit_id === item.product.unit_dus) {
+                        price = item.product.price_sell_dus;
+                    } else if (item.unit_id === item.product.unit_pak) {
+                        price = item.product.price_sell_pak;
+                    } else {
+                        price = item.product.price_sell_eceran;
+                    }
+
+                    return acc + (item.quantity * price);
+                }, 0);
+
+                var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR'
+                }).format(grandTotal).replace(",00", "");
+
+                // Display grand total with red styling like in the reference
+                $('#kt_datatable_detail').after(`<h2 style="color: #d33; border: 2px solid #d33; padding: 10px; text-align: center; margin-top: 15px;">Total Pindah Stok: ${formattedGrandTotal}</h2>`);
+
+                // Open the modal
+                $('#kt_modal_1').modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.error(error); // Handle the error appropriately
+            }
+        });
+    }
 </script>
 <script>
     function deleteSendStock(url) {
