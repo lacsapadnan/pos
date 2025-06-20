@@ -26,6 +26,7 @@ use App\Http\Controllers\TreasuryMutationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
@@ -90,7 +91,19 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
     Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');
     Route::get('produk/laporan', [ProductReportController::class, 'index'])->name('produk.laporan');
-    Route::delete('produk/laporan/{id}', [ProductReportController::class, 'destroy'])->name('produk.laporan.destroy');
+
+    // Attendance routes
+    Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('attendance/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::post('attendance/start-break', [AttendanceController::class, 'startBreak'])->name('attendance.start-break');
+    Route::post('attendance/end-break', [AttendanceController::class, 'endBreak'])->name('attendance.end-break');
+    Route::get('attendance/today-status', [AttendanceController::class, 'getTodayStatus'])->name('attendance.today-status');
+    Route::get('attendance/recap', [AttendanceController::class, 'recap'])->name('attendance.recap');
+    Route::get('attendance/data', [AttendanceController::class, 'data'])->name('attendance.data');
+    Route::get('attendance/{id}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
+    Route::put('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
+    Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');

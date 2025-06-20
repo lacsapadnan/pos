@@ -50,15 +50,19 @@ class User extends Authenticatable
     {
         return $this->hasOne(Warehouse::class, 'id', 'warehouse_id');
     }
-    
+
     public function cashflows()
     {
         return $this->hasMany(Cashflow::class, 'user_id');
     }
-    
+
     public function sellReturs()
     {
         return $this->hasMany(SellRetur::class, 'user_id');
     }
-    
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 }

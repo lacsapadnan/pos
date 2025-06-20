@@ -469,6 +469,45 @@
                 </div>
                 <!--end:Menu item-->
                 @endcan
+                @if (auth()->user()->hasAnyDirectPermission(['absen masuk keluar', 'baca rekap absensi']))
+                <!--begin:Menu item-->
+                <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+                    class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
+                    <!--begin:Menu link-->
+                    <span class="py-3 menu-link">
+                        <span class="menu-title">Absensi</span>
+                        <span class="menu-arrow d-lg-none"></span>
+                    </span>
+                    <!--end:Menu link-->
+                    <!--begin:Menu sub-->
+                    <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
+                        @can('absen masuk keluar')
+                        <!--begin:Menu item-->
+                        <div class="menu-item {{ request()->routeIs('attendance.index') ? ' here' : '' }}">
+                            <!--begin:Menu link-->
+                            <a class="menu-link" href="{{ route('attendance.index') }}">
+                                <span class="menu-title">Absen Masuk/Keluar</span>
+                            </a>
+                            <!--end:Menu link-->
+                        </div>
+                        <!--end:Menu item-->
+                        @endcan
+                        @can('baca rekap absensi')
+                        <!--begin:Menu item-->
+                        <div class="menu-item {{ request()->routeIs('attendance.recap') ? ' here' : '' }}">
+                            <!--begin:Menu link-->
+                            <a class="menu-link" href="{{ route('attendance.recap') }}">
+                                <span class="menu-title">Rekap Absensi</span>
+                            </a>
+                            <!--end:Menu link-->
+                        </div>
+                        <!--end:Menu item-->
+                        @endcan
+                    </div>
+                    <!--end:Menu sub-->
+                </div>
+                <!--end:Menu item-->
+                @endif
                 {{-- @can('baca laporan')
                 <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('laporan.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->
@@ -558,20 +597,20 @@
                             <!--end:Menu link-->
                             @endcan
                             @can('baca karyawan')
-                                <!--begin:Menu link-->
-                                <a class="menu-link"href="{{ route('karyawan.index') }}">
-                                    <span class="menu-icon">
-                                        <i class="ki-duotone ki-people fs-2">
-                                            <i class="path1"></i>
-                                            <i class="path2"></i>
-                                            <i class="path3"></i>
-                                            <i class="path4"></i>
-                                            <i class="path5"></i>
-                                        </i>
-                                    </span>
-                                    <span class="menu-title">Data Karyawan</span>
-                                </a>
-                                <!--end:Menu link-->
+                            <!--begin:Menu link-->
+                            <a class="menu-link" href="{{ route('karyawan.index') }}">
+                                <span class="menu-icon">
+                                    <i class="ki-duotone ki-people fs-2">
+                                        <i class="path1"></i>
+                                        <i class="path2"></i>
+                                        <i class="path3"></i>
+                                        <i class="path4"></i>
+                                        <i class="path5"></i>
+                                    </i>
+                                </span>
+                                <span class="menu-title">Data Karyawan</span>
+                            </a>
+                            <!--end:Menu link-->
                             @endcan
                             @can('baca permission')
                             <!--begin:Menu link-->
