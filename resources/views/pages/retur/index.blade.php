@@ -4,136 +4,137 @@
 @section('menu-title', 'Retur Penjualan')
 
 @push('addon-style')
-    <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data retur">
-                </div>
-                <!--end::Search-->
-                @role('master')
-                    <div class="ms-2">
-                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                            <option value="">All Cabang</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-2">
-                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
-                    </div>
-                @endrole
-                @role('master')
-                    <div class="ms-3">
-                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                            <option value="">All Users</option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-3">
-                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
-                    </div>
-                @endrole
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data retur">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                <a href="{{ route('penjualan-retur.create') }}" type="button" class="btn btn-primary">
-                    Tambah retur
-                </a>
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
+            <!--end::Search-->
+            @role('master')
+            <div class="ms-2">
+                <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                    <option value="">All Cabang</option>
+                    @foreach ($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+            <div class="ms-2">
+                <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}"
+                    disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+            </div>
+            @endrole
+            @role('master')
+            <div class="ms-3">
+                <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+            <div class="ms-3">
+                <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+            </div>
+            @endrole
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                    data-kt-filter="date" placeholder="Dari Tanggal">
+                <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2" data-kt-filter="date"
+                    placeholder="Ke Tanggal">
             </div>
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-start fw-bold fs-7 text-uppercase">
-                                <th>No. Order Penjualan</th>
-                                <th>No. Retur</th>
-                                <th>Cabang</th>
-                                <th>Kasir</th>
-                                <th>Pembeli</th>
-                                <th>Tanggal</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                data-kt-menu-placement="bottom-end">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </button>
+            <a href="{{ route('penjualan-retur.create') }}" type="button" class="btn btn-primary">
+                Tambah retur
+            </a>
+            <!--begin::Menu-->
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
                 </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-start fw-bold fs-7 text-uppercase">
+                            <th>No. Order Penjualan</th>
+                            <th>No. Retur</th>
+                            <th>Cabang</th>
+                            <th>Kasir</th>
+                            <th>Pembeli</th>
+                            <th>Tanggal</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    @includeIf('pages.retur.modal')
+</div>
+@includeIf('pages.retur.modal')
 @endsection
 
 @push('addon-script')
-    <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
-    <script>
-        "use strict";
+<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -185,6 +186,9 @@
                                 return `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                 <a href="/penjualan-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
+                                <button type="button" onclick="deleteSellRetur(${data})" class="btn btn-sm btn-danger">
+                                    <i class="ki-solid ki-trash"></i>Hapus
+                                </button>
                                 `;
                             }
                         },
@@ -295,10 +299,10 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
+</script>
 
-    <script>
-        var datatable;
+<script>
+    var datatable;
 
         function openModal(id) {
             // Clear the table body
@@ -357,7 +361,29 @@
                 error: function(xhr, status, error) {
                     console.error(error); // Handle the error appropriately
                 }
+                        });
+        }
+
+        function deleteSellRetur(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data retur ini akan dihapus dan stok akan dikembalikan ke kondisi sebelum retur!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = document.createElement('form');
+                    form.action = '/penjualan-retur/' + id;
+                    form.method = 'POST';
+                    form.innerHTML = '@csrf @method("DELETE")';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
             });
         }
-    </script>
+</script>
 @endpush

@@ -428,7 +428,95 @@ class SellReturController extends Controller
      */
     public function destroy(string $id)
     {
-        abort(404);
+        try {
+            DB::beginTransaction();
+
+            // Find the sell retur record
+            $sellRetur = SellRetur::with('sell')->findOrFail($id);
+
+            // Get all retur details
+            $sellReturDetails = SellReturDetail::where('sell_retur_id', $id)->get();
+
+            $totalPrice = 0;
+
+            // Reverse the retur process
+            foreach ($sellReturDetails as $detail) {
+                // Find the original sell detail
+                $sellDetail = SellDetail::where('sell_id', $sellRetur->sell_id)
+                    ->where('product_id', $detail->product_id)
+                    ->where('unit_id', $detail->unit_id)
+                    ->first();
+
+                if ($sellDetail) {
+                    // Restore the quantity back to the original sell
+                    $sellDetail->quantity += $detail->qty;
+                    $sellDetail->save();
+
+                    // Add back to the grand total
+                    $sellRetur->sell->grand_total += ($detail->qty * $detail->price);
+                }
+
+                // Remove stock from inventory (reverse the return)
+                $product = Product::find($detail->product_id);
+                $inventory = Inventory::where('product_id', $detail->product_id)
+                    ->where('warehouse_id', $sellRetur->warehouse_id)
+                    ->first();
+
+                if ($inventory && $product) {
+                    if ($product->unit_dus == $detail->unit_id) {
+                        $inventory->quantity -= $detail->qty * $product->dus_to_eceran;
+                    } elseif ($product->unit_pak == $detail->unit_id) {
+                        $inventory->quantity -= $detail->qty * $product->pak_to_eceran;
+                    } elseif ($product->unit_pcs == $detail->unit_id) {
+                        $inventory->quantity -= $detail->qty;
+                    }
+                    $inventory->save();
+                }
+
+                $totalPrice += $detail->qty * $detail->price;
+
+                // Remove the product report entry
+                ProductReport::where('product_id', $detail->product_id)
+                    ->where('warehouse_id', $sellRetur->warehouse_id)
+                    ->where('user_id', $sellRetur->user_id)
+                    ->where('type', 'RETUR PENJUALAN')
+                    ->where('qty', $detail->qty)
+                    ->where('description', 'LIKE', '%' . $sellRetur->sell->order_number . '%')
+                    ->delete();
+            }
+
+            // Update the sell status back to original if it was 'batal'
+            if ($sellRetur->sell->status == 'batal') {
+                // Check if there are any remaining items with quantity > 0
+                $hasRemainingItems = SellDetail::where('sell_id', $sellRetur->sell_id)
+                    ->where('quantity', '>', 0)
+                    ->exists();
+
+                if ($hasRemainingItems) {
+                    $sellRetur->sell->status = 'lunas'; // or whatever the original status was
+                }
+            }
+
+            $sellRetur->sell->save();
+
+            // Reverse the cashflow if it was 'lunas'
+            if ($sellRetur->sell->status == 'lunas') {
+                Cashflow::where('description', 'LIKE', '%Retur Penjualan ' . $sellRetur->sell->order_number . '%')
+                    ->where('out', $totalPrice)
+                    ->delete();
+            }
+
+            // Delete the retur details and retur record
+            SellReturDetail::where('sell_retur_id', $id)->delete();
+            $sellRetur->delete();
+
+            DB::commit();
+
+            return redirect()->route('penjualan-retur.index')->with('success', 'Data retur berhasil dihapus');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function addCart(Request $request)
