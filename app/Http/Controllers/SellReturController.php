@@ -428,18 +428,7 @@ class SellReturController extends Controller
      */
     public function destroy(string $id)
     {
-        try {
-            // Find the sell retur record
-            $sellRetur = SellRetur::findOrFail($id);
-
-            // Delete the retur details and retur record
-            SellReturDetail::where('sell_retur_id', $id)->delete();
-            $sellRetur->delete();
-
-            return redirect()->route('penjualan-retur.index')->with('success', 'Data retur berhasil dihapus');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
+        abort(404);
     }
 
     public function addCart(Request $request)

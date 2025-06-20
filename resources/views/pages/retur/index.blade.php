@@ -186,9 +186,6 @@
                                 return `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                 <a href="/penjualan-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
-                                <button type="button" onclick="deleteSellRetur(${data})" class="btn btn-sm btn-danger">
-                                    <i class="ki-solid ki-trash"></i>Hapus
-                                </button>
                                 `;
                             }
                         },
