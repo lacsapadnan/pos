@@ -4,8 +4,6 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    <x-alert />
-
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">

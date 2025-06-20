@@ -5,7 +5,6 @@
 
 @section('content')
 <div class="mt-5 card">
-    <x-alert />
     <div class="card-body">
         <form action="{{ route('produk.update', $product->id) }}" method="post">
             @csrf
