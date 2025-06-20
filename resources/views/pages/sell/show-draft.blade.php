@@ -110,6 +110,7 @@
                             <tr class="text-start fw-bold fs-7 text-uppercase">
                                 <th>Kelompok</th>
                                 <th>Nama Barang</th>
+                                <th>Promo</th>
                                 <th>Stok</th>
                                 <th>Jml Per Dus</th>
                                 <th>Jml Per Pak</th>
@@ -208,12 +209,14 @@
                             <!-- Additional input fields initially hidden -->
                             <div class="mb-1" style="display: none;" id="transferDiv">
                                 <label for="transfer" class="col-form-label">Transfer</label>
-                                <input type="text" name="transfer" class="form-control" id="transfer" oninput="formatNumber(this); calculateTotal()" />
+                                <input type="text" name="transfer" class="form-control" id="transfer"
+                                    oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1" style="display: none;" id="cashDiv">
                                 <label for="cash" class="col-form-label">Cash</label>
-                                <input type="text" name="cash" class="form-control" id="cash" oninput="formatNumber(this); calculateTotal()" />
+                                <input type="text" name="cash" class="form-control" id="cash"
+                                    oninput="formatNumber(this); calculateTotal()" />
                             </div>
 
                             <div class="mb-1">
@@ -267,7 +270,8 @@
 
             // Set nilai input dengan format yang baru
             input.value = value;
-            }
+        }
+
         function calculateTotal() {
             var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
             var grandTotal = subtotal;
@@ -452,7 +456,7 @@
                     processing: true,
                     serverSide: true,
                     fixedColumns: {
-                        left: 2,
+                        left: 3,
                         right: 1
                     },
                     "ajax": {
@@ -467,6 +471,9 @@
                         },
                         {
                             data: "product.name"
+                        },
+                        {
+                            data: "product.promo"
                         },
                         {
                             data: "quantity"
@@ -568,39 +575,11 @@
                         }
                     ],
                     "columnDefs": [{
-                            target: 0,
+                            target: [0, 1, 8, 11, 14],
                             className: 'min-w-100px',
                         },
                         {
-                            target: 1,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 5,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 7,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 8,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 10,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 11,
-                            className: 'min-w-80px',
-                        },
-                        {
-                            target: 13,
-                            className: 'min-w-100px',
-                        },
-                        {
-                            target: 14,
+                            target: [6, 7, 9, 10, 12, 13, 15],
                             className: 'min-w-80px',
                         },
                         {

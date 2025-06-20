@@ -30,7 +30,7 @@ class SellReturController extends Controller
     {
         $userRoles = auth()->user()->getRoleNames();
 
-        if ($userRoles[0] == 'superadmin') {
+        if ($userRoles[0] == 'master') {
             $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')->orderBy('id', 'asc')->get();
             return response()->json($retur);
         } else {
@@ -48,7 +48,7 @@ class SellReturController extends Controller
     public function dataSell()
     {
         $userRoles = auth()->user()->getRoleNames();
-        if ($userRoles[0] == 'superadmin') {
+        if ($userRoles[0] == 'master') {
             $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer')
                 ->orderBy('id', 'desc')
                 ->get();

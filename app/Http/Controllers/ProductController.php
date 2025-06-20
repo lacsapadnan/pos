@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductExport;
 use App\Http\Requests\ProductRequest;
 use App\Imports\ProductImport;
 use App\Models\Category;
@@ -10,6 +11,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
@@ -83,30 +85,42 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
-        $category = Category::where('name', $request->category)->first();
-        if (!$category) {
-            $category = Category::create([
-                'name' => $request->category,
-            ]);
-        } else {
+        try {
+            DB::beginTransaction();
+
             $category = Category::where('name', $request->category)->first();
-        }
-        $data = $request->validated();
-        $data['group'] = $category->name;
-        $product = Product::create($data);
+            if (!$category) {
+                $category = Category::create([
+                    'name' => $request->category,
+                ]);
+            } else {
+                $category = Category::where('name', $request->category)->first();
+            }
+            $data = $request->validated();
+            $data['group'] = $category->name;
+            $product = Product::create($data);
 
-        $warehouses = Warehouse::all();
-        foreach ($warehouses as $warehouse) {
-            Inventory::create([
-                'product_id' => $product->id,
-                'warehouse_id' => $warehouse->id,
-                'quantity' => 0,
-            ]);
-        }
+            $warehouses = Warehouse::all();
+            foreach ($warehouses as $warehouse) {
+                Inventory::create([
+                    'product_id' => $product->id,
+                    'warehouse_id' => $warehouse->id,
+                    'quantity' => 0,
+                ]);
+            }
 
-        return redirect()
-            ->back()
-            ->with('success', 'Produk berhasil ditambahkan');
+            DB::commit();
+
+            return redirect()
+                ->back()
+                ->with('success', 'Produk berhasil ditambahkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menambahkan produk: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -131,40 +145,26 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(ProductRequest $request, string $id)
     {
-        $product = Product::findOrFail($id);
-        $category = Category::where('name', $request->category)->first();
-        if (!$category) {
-            $category = Category::create([
-                'name' => $request->category,
-            ]);
-        } else {
-            $category = Category::where('name', $request->category)->first();
+        try {
+            DB::beginTransaction();
+
+            $product = Product::findOrFail($id);
+            $category = Category::firstOrCreate(['name' => $request->category]);
+
+            $product->fill($request->validated());
+            $product->group = $category->name;
+            $product->isShow = $request->has('isShow') ? true : false;
+            $product->update();
+
+            DB::commit();
+
+            return redirect()->route('produk.index')->with('success', 'Produk berhasil diubah');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengubah produk: ' . $e->getMessage());
         }
-        $product->group = $category->name;
-        $product->name = $request->name ?? $product->name;
-        $product->barcode_dus = $request->barcode_dus ?? $product->barcode_dus;
-        $product->barcode_pak = $request->barcode_pak ?? $product->barcode_pak;
-        $product->barcode_eceran = $request->barcode_eceran ?? $product->barcode_eceran;
-        $product->unit_dus = $request->unit_dus ?? $product->unit_dus;
-        $product->unit_pak = $request->unit_pak ?? $product->unit_pak;
-        $product->unit_eceran = $request->unit_eceran ?? $product->unit_eceran;
-        $product->price_dus = $request->price_dus ?? $product->price_dus;
-        $product->price_pak = $request->price_pak ?? $product->price_pak;
-        $product->price_eceran = $request->price_eceran ?? $product->price_eceran;
-        $product->sales_price = $request->sales_price ?? $product->sales_price;
-        $product->lastest_price_eceran = $request->lastest_price_eceran ?? $product->lastest_price_eceran;
-        $product->hadiah = $request->hadiah ?? $product->hadiah ?? null;
-        $product->price_sell_dus = $request->price_sell_dus ?? $product->price_sell_dus;
-        $product->price_sell_pak = $request->price_sell_pak ?? $product->price_sell_pak;
-        $product->price_sell_eceran = $request->price_sell_eceran ?? $product->price_sell_eceran;
-        $product->dus_to_eceran = $request->dus_to_eceran ?? $product->dus_to_eceran;
-        $product->pak_to_eceran = $request->pak_to_eceran ?? $product->pak_to_eceran;
-        $product->update();
-        return redirect()
-            ->route('produk.index')
-            ->with('success', 'Produk berhasil diubah');
     }
 
     /**
@@ -195,5 +195,12 @@ class ProductController extends Controller
     {
         $template = public_path('assets\template\template_import_produk.xlsx');
         return response()->download($template);
+    }
+
+    public function export()
+    {
+        $date = date('Y-m-d');
+        $filename = "export_product_{$date}.xlsx";
+        return Excel::download(new ProductExport, $filename);
     }
 }

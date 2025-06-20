@@ -11,6 +11,7 @@ use App\Models\Sell;
 use App\Models\SellCart;
 use App\Models\SellCartDraft;
 use App\Models\SellDetail;
+use App\Models\SellRetur;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -24,6 +25,8 @@ use Mike42\Escpos\EscposImage;
 use Mike42\Escpos\ImagickEscposImage;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
+use DataTables;
+
 require_once app_path('Helpers/CashflowHelper.php');
 
 class SellController extends Controller
@@ -43,49 +46,49 @@ class SellController extends Controller
     {
         $role = auth()->user()->getRoleNames();
         $user_id = $request->input('user_id');
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
+        $fromDate = $request->input('from_date') ?? date('Y-m-d');
+        $toDate = $request->input('to_date') ?? date('Y-m-d');
         $warehouse = $request->input('warehouse');
 
-        $defaultDate = now()->format('Y-m-d');
+        $query = Sell::with(['warehouse', 'customer', 'cashier'])
+            ->where('status', '!=', 'draft')
+            ->orderBy('id', 'desc');
 
-        if (!$fromDate) {
-            $fromDate = $defaultDate;
-        }
-
-        if (!$toDate) {
-            $toDate = $defaultDate;
-        }
-
-        if ($role[0] == 'master') {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
-                ->where('status', '!=', 'draft')
-                ->orderBy('id', 'desc');
-        } else {
-            $sells = Sell::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'warehouse', 'customer', 'cashier')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('cashier_id', auth()->id())
-                ->where('status', '!=', 'draft')
-                ->orderBy('id', 'desc');
+        if ($role[0] !== 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id)
+                ->where('cashier_id', auth()->id());
         }
 
         if ($warehouse) {
-            $sells->where('warehouse_id', $warehouse);
+            $query->where('warehouse_id', $warehouse);
         }
 
         if ($user_id) {
-            $sells->where('cashier_id', $user_id);
+            $query->where('cashier_id', $user_id);
         }
 
         if ($fromDate && $toDate) {
-            $endDate = Carbon::parse($toDate)->endOfDay();
-
-            $sells->whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $endDate);
+            $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
+            $query->whereBetween('created_at', [$fromDate, $endDate]);
         }
 
-        $sells = $sells->get();
-        return response()->json($sells);
+        return DataTables::eloquent($query)
+            ->addColumn('aksi', function ($row) {
+                return '
+                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(' . $row->id . ')">Detail</a>
+                <button class="btn btn-sm btn-success" onclick="openPasswordModal(' . $row->id . ')">Print</button>
+                @can("hapus penjualan")
+                <form id="deleteForm_' . $row->id . '" class="d-inline">
+                    @csrf
+                    @method("DELETE")
+                    <input type="hidden" name="id" value="' . $row->id . '">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(' . $row->id . ')">Delete</button>
+                </form>
+                @endcan
+            ';
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
     }
 
     /**
@@ -95,8 +98,12 @@ class SellController extends Controller
     {
         $inventories = Inventory::with('product')
             ->where('warehouse_id', auth()->user()->warehouse_id)
+            ->whereHas('product', function ($query) {
+                $query->where('isShow', true);
+            })
             ->get();
-        $products = Product::all();
+
+        $products = Product::where('isShow', true)->get();
         $customers = Customer::all();
         $today = date('Ymd');
         $year = substr($today, 2, 2);
@@ -321,9 +328,35 @@ class SellController extends Controller
     {
         $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+
+        // Get return data for this sale
+        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+            ->where('sell_id', $id)
+            ->get();
+
+        // Create a collection of returned items with their quantities
+        $returnedItems = collect();
+        foreach ($sellReturs as $sellRetur) {
+            foreach ($sellRetur->detail as $returDetail) {
+                $key = $returDetail->product_id . '_' . $returDetail->unit_id;
+                if ($returnedItems->has($key)) {
+                    $returnedItems[$key]['qty'] += $returDetail->qty;
+                } else {
+                    $returnedItems[$key] = [
+                        'product_id' => $returDetail->product_id,
+                        'unit_id' => $returDetail->unit_id,
+                        'product_name' => $returDetail->product->name,
+                        'unit_name' => $returDetail->unit->name,
+                        'qty' => $returDetail->qty,
+                        'price' => $returDetail->price
+                    ];
+                }
+            }
+        }
+
         $totalQuantity = 0;
         $totalQuantity += $details->count();
-        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity', 'returnedItems'));
 
         // Save the PDF to a file
         $pdf->save("receipt.pdf");
@@ -533,9 +566,35 @@ class SellController extends Controller
     {
         $sell = Sell::with('warehouse', 'customer', 'cashier')->find($id);
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+
+        // Get return data for this sale
+        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+            ->where('sell_id', $id)
+            ->get();
+
+        // Create a collection of returned items with their quantities
+        $returnedItems = collect();
+        foreach ($sellReturs as $sellRetur) {
+            foreach ($sellRetur->detail as $returDetail) {
+                $key = $returDetail->product_id . '_' . $returDetail->unit_id;
+                if ($returnedItems->has($key)) {
+                    $returnedItems[$key]['qty'] += $returDetail->qty;
+                } else {
+                    $returnedItems[$key] = [
+                        'product_id' => $returDetail->product_id,
+                        'unit_id' => $returDetail->unit_id,
+                        'product_name' => $returDetail->product->name,
+                        'unit_name' => $returDetail->unit->name,
+                        'qty' => $returDetail->qty,
+                        'price' => $returDetail->price
+                    ];
+                }
+            }
+        }
+
         $totalQuantity = 0;
         $totalQuantity += $details->count();
-        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity'));
+        $pdf = Pdf::loadView('pages.sell.print', compact('sell', 'details', 'totalQuantity', 'returnedItems'));
         return response()->stream(function () use ($pdf) {
             echo $pdf->output();
         }, 200, [

@@ -129,46 +129,37 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "order": [],
-                    "pageLength": 10,
-                    "ajax": {
+                    serverSide: true,     // <-- PENTING
+                    processing: true,     // <-- Tambah ini untuk spinner
+                    order: [],
+                    pageLength: 10,
+                    ajax: {
                         url: '{{ route('api.inventori') }}',
                         type: 'GET',
-                        dataSrc: '',
                     },
-                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
-                    "columns": [{
-                            data: 'warehouse.name'
-                        },
-                        {
-                            data: 'product.group'
-                        },
-                        {
-                            data: 'product.name'
-                        },
-                        {
-                            data: 'product.dus_to_eceran'
-                        },
-                        {
-                            data: 'product.pak_to_eceran'
-                        },
-                        {
-                            data: 'quantity'
-                        },
+                    columns: [
+                        { data: 'warehouse.name', name: 'warehouse.name' },
+                        { data: 'product.group', name: 'product.group' },
+                        { data: 'product.name', name: 'product.name' },
+                        { data: 'product.dus_to_eceran', name: 'product.dus_to_eceran' },
+                        { data: 'product.pak_to_eceran', name: 'product.pak_to_eceran' },
+                        { data: 'quantity', name: 'quantity' },
                         {
                             data: 'id',
+                            orderable: false,
+                            searchable: false,
                             render: function(data, type, row) {
                                 return `
                                     @can('update inventory')
                                         <button type="button" class="btn btn-primary edit-button" data-id="${data}" data-toggle="modal" data-target="#editModal">Edit</button>
                                     @endcan
-                                    @role('hapus inventory')
+                                    @can('hapus inventory')
                                         <form action="/inventori/${data}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger">Hapus</button>
                                         </form>
-                                    @endrole
+                                    @endcan
                                 `;
                             }
                         }

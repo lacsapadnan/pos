@@ -31,8 +31,8 @@ class InventoryController extends Controller
         $query = Inventory::with(['product', 'warehouse']);
 
         if ($category) {
-            $query->whereHas('product', function ($query) use ($category) {
-                $query->where('group', 'LIKE', '%' . $category . '%');
+            $query->whereHas('product', function ($q) use ($category) {
+                $q->where('group', 'LIKE', '%' . $category . '%');
             });
         }
 
@@ -42,8 +42,7 @@ class InventoryController extends Controller
             $query->where('warehouse_id', $warehouseId);
         }
 
-        $inventory = $query->get();
-        return response()->json($inventory);
+        return datatables()->eloquent($query)->toJson();
     }
 
     public function dataAll(Request $request)
@@ -51,14 +50,20 @@ class InventoryController extends Controller
         $searchQuery = $request->input('searchQuery');
 
         $query = Inventory::with('product', 'warehouse')
-            ->where('warehouse_id', auth()->user()->warehouse_id);
+            ->where('warehouse_id', auth()->user()->warehouse_id)
+            ->whereHas('product', function ($query) {
+                $query->where('isShow', true);
+            });
 
         if ($searchQuery) {
             $query->whereHas('product', function ($query) use ($searchQuery) {
-                $query->where('name', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
+                $query->where('isShow', true)
+                    ->where(function ($subQuery) use ($searchQuery) {
+                        $subQuery->where('name', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
+                    });
             });
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided

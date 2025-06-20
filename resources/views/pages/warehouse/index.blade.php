@@ -79,6 +79,7 @@
                                 <th>Nama Cabang</th>
                                 <th>Alamat</th>
                                 <th>No. Telp</th>
+                                <th>Cabang Luar Kota</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -89,6 +90,7 @@
                                     <td>{{ $item->name }}</td>
                                     <td>{{ $item->address }}</td>
                                     <td>{{ $item->phone }}</td>
+                                    <td>{{ $item->isOutOfTown ? 'Ya' : 'Tidak' }}</td>
                                     <td>
                                         @can('update cabang')
                                             <a href="{{ route('cabang.edit', $item->id) }}" type="button"

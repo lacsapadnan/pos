@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\KasController;
+use App\Http\Controllers\KasIncomeItemController;
+use App\Http\Controllers\KasExpenseItemController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReportController;
@@ -17,12 +19,15 @@ use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellDraftController;
 use App\Http\Controllers\SellReturController;
 use App\Http\Controllers\SendStockController;
+use App\Http\Controllers\SendStockDraftController;
 use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TreasuryMutationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\BackupController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,9 +70,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('konfirmReturn', [SellReturController::class, 'konfirmReturn'])->name('konfirmReturn');
     Route::get('view-return-penjualan', [SellReturController::class, 'viewReturnPenjualan'])->name('viewReturnPenjualan');
     Route::resource('pindah-stok', SendStockController::class);
+    Route::resource('pindah-stok-draft', SendStockDraftController::class)->except(['create']);
+    Route::post('pindah-stok-draft/{id}/complete', [SendStockDraftController::class, 'complete'])->name('pindah-stok-draft.complete');
+    Route::post('pindah-stok-draft/{id}/add-item', [SendStockDraftController::class, 'addToExistingDraft'])->name('pindah-stok-draft.addItem');
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
     Route::resource('kas', KasController::class)->except(['show', 'create']);
+    Route::resource('kas-income-item', KasIncomeItemController::class)->except(['show', 'create', 'edit']);
+    Route::resource('kas-expense-item', KasExpenseItemController::class)->except(['show', 'create', 'edit']);
     Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);
     Route::resource('settlement', SettlementController::class);
     Route::resource('penjualan-draft', SellDraftController::class);
@@ -80,6 +90,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
     Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');
     Route::get('produk/laporan', [ProductReportController::class, 'index'])->name('produk.laporan');
+    Route::delete('produk/laporan/{id}', [ProductReportController::class, 'destroy'])->name('produk.laporan.destroy');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -91,6 +102,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
     Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
     Route::get('penjualan-retur/api/data', [SellReturController::class, 'data'])->name('api.retur');
+    Route::get('/api/penjualan', [SellController::class, 'data'])->name('api.penjualan');
     // ramdan
     Route::get('penjualan-retur/api/dataBySaleId/{id}', [SellReturController::class, 'dataBySaleId'])->name('api.retur.byorder');
     Route::get('pembelian-retur/api/dataByPurchaseId/{id}', [PurchaseReturController::class, 'dataByPurchaseId'])->name('api.returPurchase.byorder');
@@ -105,6 +117,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('kas/api/data', [KasController::class, 'data'])->name('api.kas');
     Route::get('kas-income/api/data', [KasController::class, 'income'])->name('api.kas-income');
     Route::get('kas-expense/api/data', [KasController::class, 'expense'])->name('api.kas-expense');
+    Route::get('kas-income-item/api/data', [KasIncomeItemController::class, 'data'])->name('api.kas-income-item');
+    Route::get('kas-expense-item/api/data', [KasExpenseItemController::class, 'data'])->name('api.kas-expense-item');
     Route::get('hutang/api/data', [PurchaseController::class, 'dataDebt'])->name('api.hutang');
     Route::get('piutang/api/data', [SellController::class, 'dataCredit'])->name('api.piutang');
     Route::get('mutasi-kas/api/data', [TreasuryMutationController::class, 'data'])->name('api.mutasi-kas');
@@ -116,11 +130,16 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
     Route::get('karyawan/api/data', [EmployeeController::class, 'data'])->name('api.karyawan');
+    Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
+    Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');
     Route::post('customer/import', [CustomerController::class, 'import'])->name('customer.import');
     Route::post('produk/import', [ProductController::class, 'import'])->name('produk.import');
+
+    // Export
+    Route::get('product/export', [ProductController::class, 'export'])->name('product.export');
 
     // Download
     Route::get('supplier/download', [SupplierController::class, 'download'])->name('supplier.template.download');
@@ -133,12 +152,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('penjualan-retur/cart', [SellReturController::class, 'addCart'])->name('penjualan-retur.addCart');
     Route::post('pembelian-retur/cart', [PurchaseReturController::class, 'addCart'])->name('pembelian-retur.addCart');
     Route::post('pindah-stok/cart', [SendStockController::class, 'addCart'])->name('pindah-stok.addCart');
+    Route::post('pindah-stok-draft/cart', [SendStockDraftController::class, 'addCart'])->name('pindah-stok-draft.addCart');
     Route::post('penjualan-draft/cart', [SellDraftController::class, 'addCart'])->name('penjualan-draft.addCart');
     Route::delete('penjualan/cart/hapus/{id}', [SellController::class, 'destroyCart'])->name('penjualan.destroyCart');
     Route::delete('pembelian/cart/hapus/{id}', [PurchaseController::class, 'destroyCart'])->name('pembelian.destroyCart');
     Route::delete('penjualan-retur/cart/hapus/{id}', [SellReturController::class, 'destroyCart'])->name('penjualan-retur.destroyCart');
     Route::delete('pembelian-retur/cart/hapus/{id}', [PurchaseReturController::class, 'destroyCart'])->name('pembelian-retur.destroyCart');
     Route::delete('pindah-stok/cart/hapus/{id}', [SendStockController::class, 'destroyCart'])->name('pindah-stok.destroyCart');
+    Route::delete('pindah-stok-draft/cart/hapus/{id}', [SendStockDraftController::class, 'destroyCart'])->name('pindah-stok-draft.destroyCart');
     Route::delete('penjualan-draft/cart/hapus/{id}', [SellDraftController::class, 'destroyCart'])->name('penjualan-draft.destroyCart');
 
     // Print
@@ -154,6 +175,14 @@ Route::group(['middleware' => ['auth']], function () {
     // Customer Check
     Route::get('check-customer-status', [SellController::class, 'checkCustomerStatus'])->name('check-customer-status');
     Route::post('validate-master-password', [SellController::class, 'validateMasterPassword'])->name('validate-master-password');
+
+    // backup db
+    Route::get('/backup-database', [BackupController::class, 'backupDatabase'])->name('backup.database');
+    // redis
+    Route::get('/coba-redis', function () {
+        Cache::put('tes_redis', 'berhasil', 10);
+        return Cache::get('tes_redis');
+    });
 });
 
 require __DIR__ . '/auth.php';

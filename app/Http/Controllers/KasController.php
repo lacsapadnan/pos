@@ -7,7 +7,9 @@ use App\Models\Cashflow;
 use App\Models\Kas;
 use App\Models\KasExpenseItem;
 use App\Models\KasIncomeItem;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class KasController extends Controller
 {
@@ -17,31 +19,44 @@ class KasController extends Controller
     public function index()
     {
         $invoice = 'KAS.' . date('Ymd.') . rand(1000, 9999);
-        return view('pages.kas.index', compact('invoice'));
+        $incomeItems = KasIncomeItem::orderBy('name')->get();
+        $expenseItems = KasExpenseItem::orderBy('name')->get();
+
+        // Get warehouses for master
+        $warehouses = [];
+        if (auth()->user()->hasRole('master')) {
+            $warehouses = Warehouse::orderBy('name')->get();
+        }
+
+        return view('pages.kas.index', compact('invoice', 'incomeItems', 'expenseItems', 'warehouses'));
     }
 
     public function income()
     {
-        $kasIncomeItem = KasIncomeItem::orderBy('id', 'ASC')->get();
+        $kasIncomeItem = KasIncomeItem::orderBy('name', 'ASC')->get();
         return response()->json($kasIncomeItem);
     }
 
     public function expense()
     {
-        $kasExpenseItem = KasExpenseItem::orderBy('id', 'ASC')->get();
+        $kasExpenseItem = KasExpenseItem::orderBy('name', 'ASC')->get();
         return response()->json($kasExpenseItem);
     }
 
-    public function data()
+    public function data(Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
-        if ($userRoles[0] === 'superadmin') {
-            $kas = Kas::orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
-            return response()->json($kas);
-        } else {
-            $kas = Kas::where('warehouse_id', auth()->user()->warehouse_id)->orderBy('id', 'ASC')->with('kas_income_item', 'kas_expense_item', 'warehouse')->get();
-            return response()->json($kas);
+        $query = Kas::with(['kas_income_item', 'kas_expense_item', 'warehouse']);
+
+        if ($userRoles[0] !== 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id);
         }
+        $query->orderByDesc('id');
+        if ($request->ajax()) {
+            return datatables()->of($query)->make(true);
+        }
+
+        return response()->json($query->get());
     }
 
     /**
@@ -59,54 +74,31 @@ class KasController extends Controller
     {
         $kasIncomeItemId = null;
         $kasExpenseItemId = null;
+        $type = $request->input('type');
+        $warehouseId = auth()->user()->hasRole('master') && $request->filled('warehouse_id')
+            ? $request->warehouse_id
+            : auth()->user()->warehouse_id;
 
-        if ($request->filled('other')) {
-            $type = $request->input('type');
-            $itemName = $request->input('other');
-
-            if ($type === 'Kas Masuk') {
-                // Check if the item already exists
-                $kasIncomeItem = KasIncomeItem::where('id', $itemName)->first();
-
-                if ($kasIncomeItem) {
-                    $kasIncomeItemId = $kasIncomeItem->id;
-                } else {
-                    // Save new KasIncomeItem
-                    $kasIncomeItem = new KasIncomeItem();
-                    $kasIncomeItem->name = $itemName;
-                    $kasIncomeItem->save();
-                    $kasIncomeItemId = $kasIncomeItem->id;
-                }
-            } else if ($type === 'Kas Keluar') {
-                // Check if the item already exists
-                $kasExpenseItem = KasExpenseItem::where('id', $itemName)->first();
-
-                if ($kasExpenseItem) {
-                    $kasExpenseItemId = $kasExpenseItem->id;
-                } else {
-                    // Save new KasExpenseItem
-                    $kasExpenseItem = new KasExpenseItem();
-                    $kasExpenseItem->name = $itemName;
-                    $kasExpenseItem->save();
-                    $kasExpenseItemId = $kasExpenseItem->id;
-                }
-            }
+        if ($type === 'Kas Masuk') {
+            $kasIncomeItemId = $request->kas_income_item_id;
+        } else if ($type === 'Kas Keluar') {
+            $kasExpenseItemId = $request->kas_expense_item_id;
         }
 
         $kas = Kas::create([
             'kas_income_item_id' => $kasIncomeItemId,
             'kas_expense_item_id' => $kasExpenseItemId,
-            'warehouse_id' => auth()->user()->warehouse_id,
+            'warehouse_id' => $warehouseId,
             'date' => $request->date,
             'invoice' => $request->invoice,
-            'type' => $request->type,
+            'type' => $type,
             'amount' => $request->amount,
             'description' => $request->description,
         ]);
 
         if ($type === 'Kas Masuk') {
             Cashflow::create([
-                'warehouse_id' => auth()->user()->warehouse_id,
+                'warehouse_id' => $warehouseId,
                 'user_id' => auth()->id(),
                 'for' => 'Kas Masuk',
                 'description' => $request->description,
@@ -116,7 +108,7 @@ class KasController extends Controller
             ]);
         } else {
             Cashflow::create([
-                'warehouse_id' => auth()->user()->warehouse_id,
+                'warehouse_id' => $warehouseId,
                 'user_id' => auth()->id(),
                 'for' => 'Kas Keluar',
                 'description' => $request->description,
@@ -128,7 +120,6 @@ class KasController extends Controller
 
         return redirect()->back()->with('success', 'Kas ' . $kas->invoice . ' berhasil ditambahkan.');
     }
-
 
     /**
      * Display the specified resource.

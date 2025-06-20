@@ -32,6 +32,17 @@ class ProductRequest extends FormRequest
             'dus_to_eceran' => 'required',
             'pak_to_eceran' => 'required',
             'hadiah' => 'nullable',
+            'promo' => 'nullable',
+            'capital_dus' => 'nullable|integer',
+            'capital_pak' => 'nullable|integer',
+            'capital_eceran' => 'nullable|integer',
+            'price_sell_dus' => 'nullable|integer',
+            'price_sell_pak' => 'nullable|integer',
+            'price_sell_eceran' => 'nullable|integer',
+            'price_sell_dus_out_of_town' => 'nullable|integer',
+            'price_sell_pak_out_of_town' => 'nullable|integer',
+            'price_sell_eceran_out_of_town' => 'nullable|integer',
+            'isShow' => 'nullable|boolean',
         ];
     }
 

@@ -11,4 +11,12 @@ class KasExpenseItem extends Model
     protected $fillable = [
         'name',
     ];
+
+    /**
+     * Get the kas records associated with this expense item.
+     */
+    public function kas()
+    {
+        return $this->hasMany(Kas::class);
+    }
 }

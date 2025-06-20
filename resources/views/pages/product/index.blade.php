@@ -4,148 +4,118 @@
 @section('menu-title', 'Produk')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
+<link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
 
-        .dataTables_scrollBody {
-            transform: rotateX(180deg);
-        }
+    .dataTables_scrollBody {
+        transform: rotateX(180deg);
+    }
 
-        .dataTables_scrollBody::-webkit-scrollbar {
-            height: 16px;
-        }
+    .dataTables_scrollBody::-webkit-scrollbar {
+        height: 16px;
+    }
 
-        .dataTables_scrollBody table {
-            transform: rotateX(180deg);
-        }
-    </style>
+    .dataTables_scrollBody table {
+        transform: rotateX(180deg);
+    }
+</style>
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    @include('components.alert')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk"
-                        id="searchInput">
-                </div>
-                <!--end::Search-->
-                <select id="categoryFilter" class="form-select" aria-label="Category filter" data-control="select2">
-                    <option>All Categories</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->name }}">{{ $category->name }}</option>
-                    @endforeach
-                </select>
+@include('components.alert')
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk"
+                    id="searchInput">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                @can('import produk')
-                    <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
-                        <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
-                        Import Data Data
-                    </button>
-                @endcan
-                @can('simpan produk')
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
-                        Tambah Data
-                    </button>
-                @endcan
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
-            </div>
+            <!--end::Search-->
+            <select id="categoryFilter" class="form-select" aria-label="Category filter" data-control="select2">
+                <option>All Categories</option>
+                @foreach ($categories as $category)
+                <option value="{{ $category->name }}">{{ $category->name }}</option>
+                @endforeach
+            </select>
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th class="min-w-100px">Kelompok</th>
-                                <th class="min-w-200px">Nama Barang</th>
-                                <th>Barcode Dus</th>
-                                <th>Barcode Pak</th>
-                                <th>Barcode Ecer</th>
-                                <th>Satuan Dus</th>
-                                <th>Satuan Pak</th>
-                                <th>Satuan Eceran</th>
-                                <th>Jml. Dus ke Eceran</th>
-                                <th>Jml. Pak ke Eceran</th>
-                                <th>Harga Eceran Terakhir</th>
-                                <th>Harga Jual Dus</th>
-                                <th>Harga Jual Pak</th>
-                                <th>Harga Jual Eceran</th>
-                                <th>Hadiah</th>
-                                <th class="min-w-200px">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
-                </div>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <a href="{{ route('product.export') }}" class="btn btn-light-primary" target="_blank">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </a>
+            @can('import produk')
+            <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
+                <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Import Data Data
+            </button>
+            @endcan
+            @can('simpan produk')
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
+                Tambah Data
+            </button>
+            @endcan
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                            <th class="min-w-100px">Kelompok</th>
+                            <th class="min-w-150px">Nama Barang</th>
+                            <th>Promo</th>
+                            <th>Barcode Dus</th>
+                            <th>Barcode Pak</th>
+                            <th>Barcode Ecer</th>
+                            <th>Satuan Dus</th>
+                            <th>Satuan Pak</th>
+                            <th>Satuan Eceran</th>
+                            <th>Jml. Dus ke Eceran</th>
+                            <th>Jml. Pak ke Eceran</th>
+                            <th>Harga Eceran Terakhir</th>
+                            <th>Harga Jual Dus</th>
+                            <th>Harga Jual Pak</th>
+                            <th>Harga Jual Eceran</th>
+                            <th>Harga Jual Dus Luar Kota</th>
+                            <th>Harga Jual Pak Luar Kota</th>
+                            <th>Harga Jual Eceran Luar Kota</th>
+                            <th>Hadiah</th>
+                            <th class="min-w-200px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    @includeIf('pages.product.modal')
-    @includeIf('pages.product.import')
+</div>
+@includeIf('pages.product.modal')
+@includeIf('pages.product.import')
 @endsection
 
 @push('addon-script')
-    <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
-    <script>
-        "use strict";
+<script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -167,7 +137,7 @@
                     processing: true,
                     serverSide: true,
                     fixedColumns: {
-                        left: 2
+                        left: 3
                     },
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "ajax": {
@@ -183,6 +153,9 @@
                         },
                         {
                             data: 'name'
+                        },
+                        {
+                            data: 'promo'
                         },
                         {
                             data: 'barcode_dus',
@@ -259,6 +232,39 @@
                             }
                         },
                         {
+                            data: 'price_sell_dus_out_of_town',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'price_sell_pak_out_of_town',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'price_sell_eceran_out_of_town',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
                             data: 'hadiah',
                             defaultContent: '-'
                         },
@@ -280,7 +286,7 @@
                         },
                         {
                             className: 'min-w-200px',
-                            targets: 15,
+                            targets: -1,
                             render: function(data, type, row) {
                                 var editUrl = "/produk/" + row.id + "/edit";
                                 var deleteUrl = "/produk/" + row.id;
@@ -292,7 +298,7 @@
                                     @can('hapus produk')
                                         <form action="${deleteUrl}" method="POST" class="d-inline">
                                             @csrf
-                                            @method('delete')
+                                            @method('DELETE')
                                             <button class="btn btn-sm btn-danger">Hapus</button>
                                         </form>
                                     @endcan
@@ -378,12 +384,12 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-    <script>
-        $(document).ready(function() {
+</script>
+<script>
+    $(document).ready(function() {
             $('#otherSelect').select2({
                 tags: true,
             });
         });
-    </script>
+</script>
 @endpush

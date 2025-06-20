@@ -24,10 +24,18 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-10">
-                        <label class="form-label" for="name">Nama Produk</label>
-                        <input name="name" type="text" class="form-control" placeholder="Masukan nama produk" />
+                    <div class="mb-10 row">
+                        <div class="col-md-6">
+                            <label class="form-label" for="name">Nama Produk</label>
+                            <input name="name" type="text" class="form-control"
+                                placeholder="Masukan nama produk" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="name">Promo</label>
+                            <input name="promo" type="text" class="form-control" placeholder="Masukan promo" />
+                        </div>
                     </div>
+
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-10">
@@ -112,6 +120,32 @@
                                 <label class="form-label" for="name">Hadiah</label>
                                 <input name="hadiah" type="text" class="form-control"
                                     placeholder="Masukan hadiah" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-10">
+                                <label class="form-label" for="price_sell_dus_out_of_town">Harga Jual DUS Luar
+                                    Kota</label>
+                                <input name="price_sell_dus_out_of_town" type="number" class="form-control"
+                                    placeholder="Masukan Harga Jual DUS Luar Kota" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-10">
+                                <label class="form-label" for="price_sell_pak_out_of_town">Harga Jual PAK Luar
+                                    Kota</label>
+                                <input name="price_sell_pak_out_of_town" type="number" class="form-control"
+                                    placeholder="Masukan Harga Jual PAK Luar Kota" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-10">
+                                <label class="form-label" for="price_sell_eceran_out_of_town">Harga Jual ECERAN Luar
+                                    Kota</label>
+                                <input name="price_sell_eceran_out_of_town" type="number" class="form-control"
+                                    placeholder="Masukan Harga Jual ECERAN Luar Kota" />
                             </div>
                         </div>
                     </div>

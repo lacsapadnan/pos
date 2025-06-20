@@ -4,158 +4,178 @@
 @section('menu-title', 'Pindah Stok')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
-    </style>
+<link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="mt-3">
-            <form id="form1">
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="mb-3 align-items-center">
-                            <label for="inputEmail3" class="col-form-label">Marketing</label>
-                            <input id="user_id" type="text" name="user_id" class="form-control"
-                                value="{{ auth()->user()->name }}" readonly />
-                        </div>
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="mt-3">
+        <form id="form1">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="mb-3 align-items-center">
+                        <label for="inputEmail3" class="col-form-label">Marketing</label>
+                        <input id="user_id" type="text" name="user_id" class="form-control"
+                            value="{{ auth()->user()->name }}" readonly />
                     </div>
                 </div>
-            </form>
+            </div>
+        </form>
+    </div>
+    @include('components.alert')
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
+                    id="searchInput">
+                <button type="button" id="addSelectedItems" class="btn btn-success ms-3">
+                    <i class="fas fa-cart-plus"></i> Tambah Semua Item Terpilih
+                </button>
+            </div>
+            <!--end::Search-->
         </div>
-        @include('components.alert')
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
-                        id="searchInput">
-                </div>
-                <!--end::Search-->
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-start fw-bold fs-7 text-uppercase">
+                            <th>Kelompok</th>
+                            <th>Nama Barang</th>
+                            <th>Barcode Dus</th>
+                            <th>Barcode Eceran</th>
+                            <th>Stok</th>
+                            <th>Jml Pindah Dus</th>
+                            <th>Jml Pindah Pak</th>
+                            <th>Jml Pindah Eceran</th>
+                            <th class="min-w-100px">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="card-body">
+    </div>
+    <div class="mt-4 row">
+        <div class="col-md-8">
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
                 <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
+                    <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                        id="kt_datatable_cart">
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
+                                <th>No</th>
                                 <th>Kelompok</th>
-                                <th>Nama Barang</th>
-                                <th>Barcode Dus</th>
-                                <th>Barcode Eceran</th>
-                                <th>Stok</th>
-                                <th>Jml Pindah Dus</th>
-                                <th>Jml Pindah Pak</th>
-                                <th>Jml Pindah Eceran</th>
-                                <th class="min-w-100px">Aksi</th>
+                                <th class="min-w-100px">Nama Barang</th>
+                                <th>Jml Stok Pindah</th>
+                                <th>Satuan</th>
+                                <th>Hapus</th>
                             </tr>
                         </thead>
                         <tbody class="fw-semibold">
+                            @foreach ($cart as $cart)
+                            <tr class="odd">
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $cart->product->group }}</td>
+                                <td>{{ $cart->product->name }}</td>
+                                <td>{{ $cart->quantity }}</td>
+                                <td>{{ $cart->unit->name }}</td>
+                                <td>
+                                    <form action="{{ route('pindah-stok.destroyCart', $cart->id) }}" method="POST">
+                                        @csrf
+                                        @method('delete')
+                                        <button class="btn btn-sm btn-danger">
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <div class="mt-4 row">
-            <div class="col-md-8">
-                <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                    <div class="table-responsive">
-                        <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                            id="kt_datatable_cart">
-                            <thead>
-                                <tr class="text-start fw-bold fs-7 text-uppercase">
-                                    <th>No</th>
-                                    <th>Kelompok</th>
-                                    <th class="min-w-100px">Nama Barang</th>
-                                    <th>Jml Stok Pindah</th>
-                                    <th>Satuan</th>
-                                    <th>Hapus</th>
-                                </tr>
-                            </thead>
-                            <tbody class="fw-semibold">
-                                @foreach ($cart as $cart)
-                                    <tr class="odd">
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $cart->product->group }}</td>
-                                        <td>{{ $cart->product->name }}</td>
-                                        <td>{{ $cart->quantity }}</td>
-                                        <td>{{ $cart->unit->name }}</td>
-                                        <td>
-                                            <form action="{{ route('pindah-stok.destroyCart', $cart->id) }}" method="POST">
-                                                @csrf
-                                                @method('delete')
-                                                <button class="btn btn-sm btn-danger">
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
+        <div class="col-md-4">
+            <form id="form2" action="{{ route('pindah-stok.store') }}" method="post">
+                @csrf
+                <div class="row">
+                    <div class="col">
+                        <div class="mb-1">
+                            <label class="form-label">Cabang Tujuan</label>
+                            <select name="to_warehouse" class="form-select" data-control="select2"
+                                data-placeholder="Pilih cabang tujuan">
+                                <option></option>
+                                @foreach ($warehouses as $warehouse)
+                                <option
+                                    value="{{ $warehouse->id }} {{ old('to_warehouse') == $warehouse->id ? 'selected' : '' }}">
+                                    {{ $warehouse->name }}</option>
                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <form id="form2" action="{{ route('pindah-stok.store') }}" method="post">
-                    @csrf
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-1">
-                                <label class="form-label">Cabang Tujuan</label>
-                                <select name="to_warehouse" class="form-select" data-control="select2"
-                                    data-placeholder="Pilih cabang tujuan">
-                                    <option></option>
-                                    @foreach ($warehouses as $warehouse)
-                                        <option
-                                            value="{{ $warehouse->id }} {{ old('to_warehouse') == $warehouse->id ? 'selected' : '' }}">
-                                            {{ $warehouse->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            </select>
                         </div>
                     </div>
-                    <div class="mt-5 row">
-                        <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan</button>
-                        <button type="button" class="mt-5 btn btn-danger" disabled>Draft</button>
+                </div>
+                <div class="mt-5 row">
+                    <div class="gap-2 d-flex">
+                        <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan dan Proses</button>
+                        <button type="button" onclick="submitAsDraft()" class="btn btn-warning">Simpan sebagai
+                            Draft</button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     </div>
-    @includeIf('pages.sell.modal')
+</div>
+@includeIf('pages.sell.modal')
 @endsection
 
 @push('addon-script')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
 
-    {{-- calculated form --}}
-    <script>
-        function submitForms() {
-            // Submit form2
-            document.getElementById('form2').submit();
-        }
-    </script>
+{{-- calculated form --}}
+<script>
+    function submitForms() {
+        // Submit form2 for processing immediately
+        document.getElementById('form2').submit();
+    }
+
+    function submitAsDraft() {
+        // Add a hidden input to indicate draft save
+        var form = document.getElementById('form2');
+        var draftInput = document.createElement('input');
+        draftInput.type = 'hidden';
+        draftInput.name = 'save_as_draft';
+        draftInput.value = '1';
+        form.appendChild(draftInput);
+
+        // Submit form as draft
+        form.submit();
+    }
+</script>
 
 
-    {{-- Datepicker --}}
-    <script>
-        new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_date_only"), {
+{{-- Datepicker --}}
+<script>
+    new tempusDominus.TempusDominus(document.getElementById("kt_td_picker_date_only"), {
             localization: {
                 locale: "id",
                 startOfTheWeek: 1
@@ -173,11 +193,11 @@
                 }
             }
         });
-    </script>
+</script>
 
-    {{-- Datatables Top --}}
-    <script>
-        "use strict";
+{{-- Datatables Top --}}
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -317,6 +337,79 @@
                         }
                     });
                 });
+
+                // Handle bulk item addition
+                $('#addSelectedItems').on('click', function() {
+                    var requests = [];
+                    var hasItems = false;
+
+                    // Loop through all visible rows in the datatable
+                    datatable.rows({ search: 'applied' }).every(function() {
+                        var row = this.node();
+                        var rowData = this.data();
+
+                        var quantityDus = $(row).find('input[name="quantity_dus"]').val();
+                        var quantityPak = $(row).find('input[name="quantity_pak"]').val();
+                        var quantityEceran = $(row).find('input[name="quantity_eceran"]').val();
+
+                        // Check if any quantity is filled
+                        if (quantityDus || quantityPak || quantityEceran) {
+                            hasItems = true;
+                            requests.push({
+                                product_id: rowData.product.id,
+                                unit_dus: rowData.product.unit_dus,
+                                unit_pak: rowData.product.unit_pak,
+                                unit_eceran: rowData.product.unit_eceran,
+                                quantity_dus: quantityDus || 0,
+                                quantity_pak: quantityPak || 0,
+                                quantity_eceran: quantityEceran || 0
+                            });
+                        }
+                    });
+
+                    if (!hasItems) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tidak ada item yang dipilih',
+                            text: 'Silakan isi quantity untuk produk yang ingin ditambahkan ke keranjang'
+                        });
+                        return;
+                    }
+
+                    // Send bulk AJAX request
+                    $.ajax({
+                        url: '{{ route('pindah-stok.addCart') }}',
+                        type: 'POST',
+                        data: {
+                            requests: requests
+                        },
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: 'Item berhasil ditambahkan ke keranjang',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            var errorMessage = 'Terjadi kesalahan saat menambahkan item';
+                            if (xhr.responseJSON && xhr.responseJSON.error) {
+                                errorMessage = xhr.responseJSON.error;
+                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: errorMessage
+                            });
+                        }
+                    });
+                });
             }
 
             // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
@@ -353,11 +446,11 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
+</script>
 
-    {{-- Datatables Bottom --}}
-    <script>
-        "use strict";
+{{-- Datatables Bottom --}}
+<script>
+    "use strict";
 
         // Initialize the data table
         var KTDatatablesCart = function() {
@@ -408,5 +501,5 @@
         });
 
         // Class definition
-    </script>
+</script>
 @endpush

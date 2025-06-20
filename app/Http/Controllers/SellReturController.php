@@ -77,6 +77,11 @@ class SellReturController extends Controller
         }
 
         $retur = $retur->get();
+
+        $retur->each(function ($sellRetur) {
+            $sellRetur->returNumber = "PJR-" . date('Ymd') . "-" . str_pad($sellRetur->id, 4, '0', STR_PAD_LEFT);
+        });
+
         return response()->json($retur);
     }
 
@@ -86,7 +91,7 @@ class SellReturController extends Controller
 
         $query = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user');
 
-        if ($userRoles[0] != 'superadmin') {
+        if ($userRoles[0] != 'master') {
             $query->where('warehouse_id', auth()->user()->warehouse_id);
         }
 
@@ -188,7 +193,7 @@ class SellReturController extends Controller
         ]);
 
         foreach ($returCart as $rc) {
-            SellReturDetail::create([
+            $detailRetur = SellReturDetail::create([
                 'sell_retur_id' => $sellRetur->id,
                 'product_id' => $rc->product_id,
                 'unit_id' => $rc->unit_id,
@@ -206,7 +211,7 @@ class SellReturController extends Controller
                 ->first();
 
             // update grand total
-            $sell->grand_total = $sell->grand_total - ($rc->quantity * ($sellDetail->price - $sellDetail->diskon));
+            $sell->grand_total = $sell->grand_total - ($rc->quantity * $sellDetail->price);
             $sell->update();
 
             // update the sell detail
@@ -502,9 +507,8 @@ class SellReturController extends Controller
     public function print($id)
     {
         $sellRetur = SellRetur::with('sell.customer', 'sell.details', 'warehouse', 'user')->where('id', $id)->first();
-        // dd($sellRetur->toArray());
         $sellReturDetail = SellReturDetail::with('sellRetur.sell.details', 'product', 'unit')->where('sell_retur_id', $id)->get();
-        $returNumber = "PJR-" . date('Ymd') . "-" . str_pad(SellRetur::count() + 1, 4, '0', STR_PAD_LEFT);
+        $returNumber = "PJR-" . date('Ymd') . "-" . str_pad($sellRetur->id, 4, '0', STR_PAD_LEFT);
 
         $totalQuantity = $sellReturDetail->count();
         $totalPrice = 0;

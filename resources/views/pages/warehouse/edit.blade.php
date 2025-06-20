@@ -23,6 +23,13 @@
             <label class="form-label" for="name">Alamat cabang</label>
             <textarea name="address" class="form-control" placeholder="Masukan alamat cabang">{{ $warehouse->address }}</textarea>
         </div>
+        <div class="mb-10">
+            <label class="form-label" for="isOutOfTown">Luar Kota?</label>
+            <select name="isOutOfTown" class="form-control">
+                <option value="0" {{ $warehouse->isOutOfTown == 0 ? 'selected' : '' }}>Tidak</option>
+                <option value="1" {{ $warehouse->isOutOfTown == 1 ? 'selected' : '' }}>Ya</option>
+            </select>
+        </div>
         <button type="submit" class="btn btn-success">Update Cabang</button>
     </form>
 @endsection

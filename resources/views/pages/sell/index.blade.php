@@ -155,13 +155,14 @@
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
-                    "info": false,
-                    'order': [],
-                    'pageLength': 10,
-                    "ajax": {
+                    processing: true,
+                    serverSide: true,
+                    info: false,
+                    order: [],
+                    pageLength: 10,
+                    ajax: {
                         url: '{{ route('api.penjualan') }}',
                         type: 'GET',
-                        dataSrc: '',
                     },
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
@@ -501,6 +502,9 @@
                                     formattedPrice = formattedPrice.replace(",00", "");
                                     return formattedPrice;
                                 }
+                            },
+                            {
+                                data: 'product.hadiah'
                             },
                             {
                                 data: null,
