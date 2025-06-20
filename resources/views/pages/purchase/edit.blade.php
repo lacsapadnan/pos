@@ -60,16 +60,10 @@
                         @foreach ($purchase->details as $key => $purchase_detail)
                         <tr>
                             <td>
-                                <select class="form-select product-select" name="product_id[]" data-control="select2"
-                                    data-placeholder="Pilih Produk" data-allow-clear="true">
-                                    <option></option>
-                                    @foreach ($productOptions as $productId => $productName)
-                                    <option value="{{ $productId }}" {{ $productId==$purchase_detail->product_id ?
-                                        'selected' : '' }}>
-                                        {{ $productName }}
-                                    </option>
-                                    @endforeach
-                                </select>
+                                <div class="form-control-plaintext fw-bold">
+                                    {{ $purchase_detail->product->name }}
+                                </div>
+                                <input type="hidden" name="product_id[]" value="{{ $purchase_detail->product_id }}" />
                             </td>
                             <td>
                                 <select class="form-select unit-select" name="unit_id[]" data-control="select2"
@@ -124,7 +118,7 @@
         setupPriceFormatting();
 
         // Enable lazy loading for Select2
-        $('.product-select, .unit-select').select2({
+        $('.unit-select').select2({
             width: '100%',
             placeholder: function() {
                 return $(this).data('placeholder');
@@ -136,14 +130,6 @@
 
     function initializeSelect2() {
         // Initialize select2 with optimized settings
-        $('.product-select').select2({
-            width: '100%',
-            placeholder: 'Pilih Produk',
-            allowClear: true,
-            minimumInputLength: 0,
-            escapeMarkup: function (markup) { return markup; }
-        });
-
         $('.unit-select').select2({
             width: '100%',
             placeholder: 'Pilih Unit',
