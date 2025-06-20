@@ -123,7 +123,7 @@ class SendStockDraftController extends Controller
         }
 
         $warehouses = Warehouse::orderBy('id', 'asc')->get();
-        $products = Product::orderBy('id', 'asc')->get();
+        $products = Product::where('isShow', true)->orderBy('id', 'asc')->get();
         $units = Unit::orderBy('id', 'asc')->get();
 
         // Get existing details and convert to cart format for editing
@@ -264,54 +264,90 @@ class SendStockDraftController extends Controller
      */
     public function addCart(Request $request)
     {
-        $existingCart = SendStockCart::where('user_id', auth()->id())
-            ->where('product_id', $request->product_id)
-            ->first();
+        try {
+            DB::beginTransaction();
 
-        $product = Product::find($request->product_id);
+            // Check if this is a bulk request (multiple items) or single item
+            if ($request->has('requests')) {
+                // Handle bulk items
+                $requests = $request->input('requests');
 
-        $quantityDus = $request->quantity_dus ?? 0;
-        $quantityPak = $request->quantity_pak ?? 0;
-        $quantityEceran = $request->quantity_eceran ?? 0;
+                foreach ($requests as $inputRequest) {
+                    $productId = $inputRequest['product_id'];
 
-        if ($existingCart) {
-            $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
-            $existingCart->quantity += $totalQuantity;
-            $existingCart->save();
-        } else {
-            $unitIdDus = $product->unit_dus;
-            $unitIdPak = $product->unit_pak;
-            $unitIdEceran = $product->unit_eceran;
+                    // Process quantity_dus if it exists
+                    if (isset($inputRequest['quantity_dus']) && $inputRequest['quantity_dus'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_dus'], $inputRequest['unit_dus']);
+                    }
 
-            if ($quantityDus > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdDus,
-                    'quantity' => $quantityDus,
-                ]);
+                    // Process quantity_pak if it exists
+                    if (isset($inputRequest['quantity_pak']) && $inputRequest['quantity_pak'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_pak'], $inputRequest['unit_pak']);
+                    }
+
+                    // Process quantity_eceran if it exists
+                    if (isset($inputRequest['quantity_eceran']) && $inputRequest['quantity_eceran'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_eceran'], $inputRequest['unit_eceran']);
+                    }
+                }
+
+                DB::commit();
+                return response()->json(['success' => 'Items added to cart successfully.'], 200);
+            } else {
+                // Handle single item (original format)
+                $productId = $request->product_id;
+                $product = Product::find($productId);
+
+                if (!$product) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Product not found');
+                }
+
+                // Process each unit type
+                if ($request->has('quantity_dus') && $request->quantity_dus > 0) {
+                    $this->processCartItem($productId, $request->quantity_dus, $product->unit_dus);
+                }
+
+                if ($request->has('quantity_pak') && $request->quantity_pak > 0) {
+                    $this->processCartItem($productId, $request->quantity_pak, $product->unit_pak);
+                }
+
+                if ($request->has('quantity_eceran') && $request->quantity_eceran > 0) {
+                    $this->processCartItem($productId, $request->quantity_eceran, $product->unit_eceran);
+                }
+
+                DB::commit();
+                return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
             }
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-            if ($quantityPak > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdPak,
-                    'quantity' => $quantityPak,
-                ]);
-            }
-
-            if ($quantityEceran > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdEceran,
-                    'quantity' => $quantityEceran,
-                ]);
+            if ($request->has('requests')) {
+                return response()->json(['error' => 'Failed to add items to cart: ' . $e->getMessage()], 500);
+            } else {
+                return redirect()->back()->with('error', 'Failed to add item to cart: ' . $e->getMessage());
             }
         }
+    }
 
-        return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
+    private function processCartItem($productId, $quantity, $unitId)
+    {
+        $existingCart = SendStockCart::where('user_id', auth()->id())
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
+            ->first();
+
+        if ($existingCart) {
+            $existingCart->quantity += $quantity;
+            $existingCart->save();
+        } else {
+            SendStockCart::create([
+                'user_id' => auth()->id(),
+                'product_id' => $productId,
+                'unit_id' => $unitId,
+                'quantity' => $quantity,
+            ]);
+        }
     }
 
     /**
@@ -355,57 +391,95 @@ class SendStockDraftController extends Controller
             $sendStock = SendStock::findOrFail($draftId);
 
             if ($sendStock->status !== 'draft') {
-                return redirect()->back()->with('error', 'Hanya draft yang dapat diedit.');
+                if ($request->has('requests')) {
+                    return response()->json(['error' => 'Hanya draft yang dapat diedit.'], 400);
+                } else {
+                    return redirect()->back()->with('error', 'Hanya draft yang dapat diedit.');
+                }
             }
 
-            $product = Product::find($request->product_id);
-            $quantityDus = $request->quantity_dus ?? 0;
-            $quantityPak = $request->quantity_pak ?? 0;
-            $quantityEceran = $request->quantity_eceran ?? 0;
+            DB::beginTransaction();
 
-            // Check if product already exists in this draft
-            $existingDetail = SendStockDetail::where('send_stock_id', $draftId)
-                ->where('product_id', $request->product_id)
-                ->first();
+            // Check if this is a bulk request (multiple items) or single item
+            if ($request->has('requests')) {
+                // Handle bulk items
+                $requests = $request->input('requests');
 
-            if ($existingDetail) {
-                // Update existing detail
-                $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
-                $existingDetail->quantity += $totalQuantity;
-                $existingDetail->save();
+                foreach ($requests as $inputRequest) {
+                    $productId = $inputRequest['product_id'];
+
+                    // Process quantity_dus if it exists
+                    if (isset($inputRequest['quantity_dus']) && $inputRequest['quantity_dus'] > 0) {
+                        $this->processDraftItem($draftId, $productId, $inputRequest['quantity_dus'], $inputRequest['unit_dus']);
+                    }
+
+                    // Process quantity_pak if it exists
+                    if (isset($inputRequest['quantity_pak']) && $inputRequest['quantity_pak'] > 0) {
+                        $this->processDraftItem($draftId, $productId, $inputRequest['quantity_pak'], $inputRequest['unit_pak']);
+                    }
+
+                    // Process quantity_eceran if it exists
+                    if (isset($inputRequest['quantity_eceran']) && $inputRequest['quantity_eceran'] > 0) {
+                        $this->processDraftItem($draftId, $productId, $inputRequest['quantity_eceran'], $inputRequest['unit_eceran']);
+                    }
+                }
+
+                DB::commit();
+                return response()->json(['success' => 'Items added to draft successfully.'], 200);
             } else {
-                // Create new details for each unit type
-                if ($quantityDus > 0) {
-                    SendStockDetail::create([
-                        'send_stock_id' => $draftId,
-                        'product_id' => $request->product_id,
-                        'unit_id' => $product->unit_dus,
-                        'quantity' => $quantityDus,
-                    ]);
+                // Handle single item (original format)
+                $productId = $request->product_id;
+                $product = Product::find($productId);
+
+                if (!$product) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Product not found');
                 }
 
-                if ($quantityPak > 0) {
-                    SendStockDetail::create([
-                        'send_stock_id' => $draftId,
-                        'product_id' => $request->product_id,
-                        'unit_id' => $product->unit_pak,
-                        'quantity' => $quantityPak,
-                    ]);
+                // Process each unit type
+                if ($request->has('quantity_dus') && $request->quantity_dus > 0) {
+                    $this->processDraftItem($draftId, $productId, $request->quantity_dus, $product->unit_dus);
                 }
 
-                if ($quantityEceran > 0) {
-                    SendStockDetail::create([
-                        'send_stock_id' => $draftId,
-                        'product_id' => $request->product_id,
-                        'unit_id' => $product->unit_eceran,
-                        'quantity' => $quantityEceran,
-                    ]);
+                if ($request->has('quantity_pak') && $request->quantity_pak > 0) {
+                    $this->processDraftItem($draftId, $productId, $request->quantity_pak, $product->unit_pak);
                 }
+
+                if ($request->has('quantity_eceran') && $request->quantity_eceran > 0) {
+                    $this->processDraftItem($draftId, $productId, $request->quantity_eceran, $product->unit_eceran);
+                }
+
+                DB::commit();
+                return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke draft');
             }
-
-            return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke draft');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            DB::rollBack();
+
+            if ($request->has('requests')) {
+                return response()->json(['error' => 'Failed to add items to draft: ' . $e->getMessage()], 500);
+            } else {
+                return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function processDraftItem($draftId, $productId, $quantity, $unitId)
+    {
+        $existingDetail = SendStockDetail::where('send_stock_id', $draftId)
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
+            ->first();
+
+        if ($existingDetail) {
+            $existingDetail->quantity += $quantity;
+            $existingDetail->save();
+        } else {
+            SendStockDetail::create([
+                'send_stock_id' => $draftId,
+                'product_id' => $productId,
+                'unit_id' => $unitId,
+                'quantity' => $quantity,
+            ]);
         }
     }
 }

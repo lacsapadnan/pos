@@ -42,6 +42,9 @@
                         class="path2"></span></i> <input type="text" data-kt-filter="search"
                     class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
                     id="searchInput">
+                <button type="button" id="addSelectedItems" class="btn btn-success ms-3">
+                    <i class="fas fa-cart-plus"></i> Tambah Semua Item Terpilih
+                </button>
             </div>
             <!--end::Search-->
         </div>
@@ -49,7 +52,7 @@
     <div class="card-body">
         <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
             <div class="table-responsive">
-                <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
                     id="kt_datatable_example">
                     <thead>
                         <tr class="text-start fw-bold fs-7 text-uppercase">
@@ -74,7 +77,7 @@
         <div class="col-md-8">
             <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
                 <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                    <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
                         id="kt_datatable_cart">
                         <thead>
                             <tr class="text-start fw-bold fs-7 text-uppercase">
@@ -130,7 +133,7 @@
                     </div>
                 </div>
                 <div class="mt-5 row">
-                    <div class="d-flex gap-2">
+                    <div class="gap-2 d-flex">
                         <button type="button" onclick="submitForms()" class="btn btn-primary">Simpan dan Proses</button>
                         <button type="button" onclick="submitAsDraft()" class="btn btn-warning">Simpan sebagai
                             Draft</button>
@@ -322,6 +325,79 @@
                             location.reload();
                         },
                         error: function(xhr, status, error) {}
+                    });
+                });
+
+                // Handle bulk item addition
+                $('#addSelectedItems').on('click', function() {
+                    var requests = [];
+                    var hasItems = false;
+
+                    // Loop through all visible rows in the datatable
+                    datatable.rows({ search: 'applied' }).every(function() {
+                        var row = this.node();
+                        var rowData = this.data();
+
+                        var quantityDus = $(row).find('input[name="quantity_dus"]').val();
+                        var quantityPak = $(row).find('input[name="quantity_pak"]').val();
+                        var quantityEceran = $(row).find('input[name="quantity_eceran"]').val();
+
+                        // Check if any quantity is filled
+                        if (quantityDus || quantityPak || quantityEceran) {
+                            hasItems = true;
+                            requests.push({
+                                product_id: rowData.product.id,
+                                unit_dus: rowData.product.unit_dus,
+                                unit_pak: rowData.product.unit_pak,
+                                unit_eceran: rowData.product.unit_eceran,
+                                quantity_dus: quantityDus || 0,
+                                quantity_pak: quantityPak || 0,
+                                quantity_eceran: quantityEceran || 0
+                            });
+                        }
+                    });
+
+                    if (!hasItems) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tidak ada item yang dipilih',
+                            text: 'Silakan isi quantity untuk produk yang ingin ditambahkan ke keranjang'
+                        });
+                        return;
+                    }
+
+                    // Send bulk AJAX request
+                    $.ajax({
+                        url: '{{ route('pindah-stok.addCart') }}',
+                        type: 'POST',
+                        data: {
+                            requests: requests
+                        },
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: 'Item berhasil ditambahkan ke keranjang',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            var errorMessage = 'Terjadi kesalahan saat menambahkan item';
+                            if (xhr.responseJSON && xhr.responseJSON.error) {
+                                errorMessage = xhr.responseJSON.error;
+                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: errorMessage
+                            });
+                        }
                     });
                 });
             }

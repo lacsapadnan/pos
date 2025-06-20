@@ -38,7 +38,7 @@ class SendStockController extends Controller
     public function create()
     {
         $warehouses = Warehouse::orderBy('id', 'asc')->get();
-        $products = Product::orderBy('id', 'asc')->get();
+        $products = Product::where('isShow', true)->orderBy('id', 'asc')->get();
         $units = Unit::orderBy('id', 'asc')->get();
         $cart = SendStockCart::with('product', 'unit')->where('user_id', auth()->id())->get();
         return view('pages.sendStok.create', compact('warehouses', 'products', 'units', 'cart'));
@@ -49,130 +49,140 @@ class SendStockController extends Controller
      */
     public function store(Request $request)
     {
-        $user = auth()->user();
-        $fromWarehouse = $user->warehouse_id;
-        $toWarehouse = $request->input('to_warehouse');
-        $saveAsDraft = $request->has('save_as_draft');
+        try {
+            DB::beginTransaction();
 
-        // Fetch cart items with products
-        $carts = SendStockCart::with('product')->where('user_id', $user->id)->get();
+            $user = auth()->user();
+            $fromWarehouse = $user->warehouse_id;
+            $toWarehouse = $request->input('to_warehouse');
+            $saveAsDraft = $request->has('save_as_draft');
 
-        if ($carts->isEmpty()) {
-            return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
-        }
+            // Fetch cart items with products
+            $carts = SendStockCart::with('product')->where('user_id', $user->id)->get();
 
-        // If saving as draft, create draft without inventory changes
-        if ($saveAsDraft) {
+            if ($carts->isEmpty()) {
+                return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
+            }
+
+            // If saving as draft, create draft without inventory changes
+            if ($saveAsDraft) {
+                $sendStock = SendStock::create([
+                    'user_id' => $user->id,
+                    'from_warehouse' => $fromWarehouse,
+                    'to_warehouse' => $toWarehouse,
+                    'status' => 'draft',
+                ]);
+
+                $sendStockDetails = [];
+
+                foreach ($carts as $cart) {
+                    $sendStockDetails[] = [
+                        'send_stock_id' => $sendStock->id,
+                        'product_id' => $cart->product_id,
+                        'unit_id' => $cart->unit_id,
+                        'quantity' => $cart->quantity,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                // Insert all draft details in one query
+                SendStockDetail::insert($sendStockDetails);
+
+                // Clear cart
+                SendStockCart::where('user_id', $user->id)->delete();
+
+                DB::commit();
+                return redirect()->route('pindah-stok-draft.index')->with('success', 'Draft pindah stok berhasil disimpan.');
+            }
+
+            // Fetch all related inventory records in one query (avoid looping queries)
+            $productIds = $carts->pluck('product.id');
+            $inventories = Inventory::whereIn('product_id', $productIds)
+                ->where('warehouse_id', $fromWarehouse)
+                ->get()
+                ->keyBy('product_id'); // Store in an associative array for quick lookup
+
+            $stockErrors = [];
+
+            foreach ($carts as $cart) {
+                $product = $cart->product;
+                $unit = $cart->unit_id;
+                $quantity = $cart->quantity;
+
+                // Convert quantity to eceran
+                $quantityEceran = match ($unit) {
+                    $product->unit_dus => $quantity * $product->dus_to_eceran,
+                    $product->unit_pak => $quantity * $product->pak_to_eceran,
+                    default => $quantity
+                };
+
+                // Check available stock
+                $fromInventory = $inventories[$product->id] ?? null;
+
+                if (!$fromInventory || $fromInventory->quantity < $quantityEceran) {
+                    $stockErrors[] = "Stok tidak mencukupi untuk {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($fromInventory->quantity ?? 0);
+                }
+            }
+
+            if (!empty($stockErrors)) {
+                DB::rollBack();
+                return redirect()->back()->withErrors($stockErrors);
+            }
+
             $sendStock = SendStock::create([
                 'user_id' => $user->id,
                 'from_warehouse' => $fromWarehouse,
                 'to_warehouse' => $toWarehouse,
-                'status' => 'draft',
+                'status' => 'completed',
+                'completed_at' => now(),
             ]);
 
             $sendStockDetails = [];
 
             foreach ($carts as $cart) {
+                $product = $cart->product;
+                $unit = $cart->unit_id;
+                $quantity = $cart->quantity;
+
+                $quantityEceran = match ($unit) {
+                    $product->unit_dus => $quantity * $product->dus_to_eceran,
+                    $product->unit_pak => $quantity * $product->pak_to_eceran,
+                    default => $quantity
+                };
+
+                // Deduct stock from source warehouse
+                Inventory::where('id', $inventories[$product->id]->id)->decrement('quantity', $quantityEceran);
+
+                // Increase stock in destination warehouse (efficient atomic update)
+                Inventory::updateOrCreate(
+                    ['product_id' => $product->id, 'warehouse_id' => $toWarehouse],
+                    ['quantity' => DB::raw("quantity + $quantityEceran")]
+                );
+
+                // Prepare batch insert data for SendStockDetail
                 $sendStockDetails[] = [
                     'send_stock_id' => $sendStock->id,
-                    'product_id' => $cart->product_id,
-                    'unit_id' => $cart->unit_id,
-                    'quantity' => $cart->quantity,
+                    'product_id' => $product->id,
+                    'unit_id' => $unit,
+                    'quantity' => $quantity,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
             }
 
-            // Insert all draft details in one query
+            // Insert all transfer details in one query (batch insert)
             SendStockDetail::insert($sendStockDetails);
 
-            // Clear cart
+            // Clear cart in one query
             SendStockCart::where('user_id', $user->id)->delete();
 
-            return redirect()->route('pindah-stok-draft.index')->with('success', 'Draft pindah stok berhasil disimpan.');
+            DB::commit();
+            return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dipindahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Fetch all related inventory records in one query (avoid looping queries)
-        $productIds = $carts->pluck('product.id');
-        $inventories = Inventory::whereIn('product_id', $productIds)
-            ->where('warehouse_id', $fromWarehouse)
-            ->get()
-            ->keyBy('product_id'); // Store in an associative array for quick lookup
-
-        $stockErrors = [];
-
-        foreach ($carts as $cart) {
-            $product = $cart->product;
-            $unit = $cart->unit_id;
-            $quantity = $cart->quantity;
-
-            // Convert quantity to eceran
-            $quantityEceran = match ($unit) {
-                $product->unit_dus => $quantity * $product->dus_to_eceran,
-                $product->unit_pak => $quantity * $product->pak_to_eceran,
-                default => $quantity
-            };
-
-            // Check available stock
-            $fromInventory = $inventories[$product->id] ?? null;
-
-            if (!$fromInventory || $fromInventory->quantity < $quantityEceran) {
-                $stockErrors[] = "Stok tidak mencukupi untuk {$product->name}. Dibutuhkan: $quantityEceran, Tersedia: " . ($fromInventory->quantity ?? 0);
-            }
-        }
-
-        if (!empty($stockErrors)) {
-            return redirect()->back()->withErrors($stockErrors);
-        }
-
-        $sendStock = SendStock::create([
-            'user_id' => $user->id,
-            'from_warehouse' => $fromWarehouse,
-            'to_warehouse' => $toWarehouse,
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
-
-        $sendStockDetails = [];
-
-        foreach ($carts as $cart) {
-            $product = $cart->product;
-            $unit = $cart->unit_id;
-            $quantity = $cart->quantity;
-
-            $quantityEceran = match ($unit) {
-                $product->unit_dus => $quantity * $product->dus_to_eceran,
-                $product->unit_pak => $quantity * $product->pak_to_eceran,
-                default => $quantity
-            };
-
-            // Deduct stock from source warehouse
-            Inventory::where('id', $inventories[$product->id]->id)->decrement('quantity', $quantityEceran);
-
-            // Increase stock in destination warehouse (efficient atomic update)
-            Inventory::updateOrCreate(
-                ['product_id' => $product->id, 'warehouse_id' => $toWarehouse],
-                ['quantity' => DB::raw("quantity + $quantityEceran")]
-            );
-
-            // Prepare batch insert data for SendStockDetail
-            $sendStockDetails[] = [
-                'send_stock_id' => $sendStock->id,
-                'product_id' => $product->id,
-                'unit_id' => $unit,
-                'quantity' => $quantity,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        // Insert all transfer details in one query (batch insert)
-        SendStockDetail::insert($sendStockDetails);
-
-        // Clear cart in one query
-        SendStockCart::where('user_id', $user->id)->delete();
-
-        return redirect()->route('pindah-stok.index')->with('success', 'Stok berhasil dipindahkan.');
     }
 
     /**
@@ -259,69 +269,90 @@ class SendStockController extends Controller
 
     public function addCart(Request $request)
     {
+        try {
+            DB::beginTransaction();
+
+            // Check if this is a bulk request (multiple items) or single item
+            if ($request->has('requests')) {
+                // Handle bulk items
+                $requests = $request->input('requests');
+
+                foreach ($requests as $inputRequest) {
+                    $productId = $inputRequest['product_id'];
+
+                    // Process quantity_dus if it exists
+                    if (isset($inputRequest['quantity_dus']) && $inputRequest['quantity_dus'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_dus'], $inputRequest['unit_dus']);
+                    }
+
+                    // Process quantity_pak if it exists
+                    if (isset($inputRequest['quantity_pak']) && $inputRequest['quantity_pak'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_pak'], $inputRequest['unit_pak']);
+                    }
+
+                    // Process quantity_eceran if it exists
+                    if (isset($inputRequest['quantity_eceran']) && $inputRequest['quantity_eceran'] > 0) {
+                        $this->processCartItem($productId, $inputRequest['quantity_eceran'], $inputRequest['unit_eceran']);
+                    }
+                }
+
+                DB::commit();
+                return response()->json(['success' => 'Items added to cart successfully.'], 200);
+            } else {
+                // Handle single item (original format)
+                $productId = $request->product_id;
+                $product = Product::find($productId);
+
+                if (!$product) {
+                    DB::rollBack();
+                    return redirect()->back()->with('error', 'Product not found');
+                }
+
+                // Process each unit type
+                if ($request->has('quantity_dus') && $request->quantity_dus > 0) {
+                    $this->processCartItem($productId, $request->quantity_dus, $product->unit_dus);
+                }
+
+                if ($request->has('quantity_pak') && $request->quantity_pak > 0) {
+                    $this->processCartItem($productId, $request->quantity_pak, $product->unit_pak);
+                }
+
+                if ($request->has('quantity_eceran') && $request->quantity_eceran > 0) {
+                    $this->processCartItem($productId, $request->quantity_eceran, $product->unit_eceran);
+                }
+
+                DB::commit();
+                return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($request->has('requests')) {
+                return response()->json(['error' => 'Failed to add items to cart: ' . $e->getMessage()], 500);
+            } else {
+                return redirect()->back()->with('error', 'Failed to add item to cart: ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function processCartItem($productId, $quantity, $unitId)
+    {
         $existingCart = SendStockCart::where('user_id', auth()->id())
-            ->where('product_id', $request->product_id)
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
             ->first();
 
-        $product = Product::find($request->product_id);
-
-        if ($request->has('quantity_dus')) {
-            $quantityDus = $request->quantity_dus;
-        } else {
-            $quantityDus = 0;
-        }
-
-        if ($request->has('quantity_pak')) {
-            $quantityPak = $request->quantity_pak;
-        } else {
-            $quantityPak = 0;
-        }
-
-        if ($request->has('quantity_eceran')) {
-            $quantityEceran = $request->quantity_eceran;
-        } else {
-            $quantityEceran = 0;
-        }
-
-        $totalQuantity = $quantityDus + $quantityPak + $quantityEceran;
-
         if ($existingCart) {
-            $existingCart->quantity += $totalQuantity;
+            $existingCart->quantity += $quantity;
             $existingCart->save();
         } else {
-            $unitIdDus = $product->unit_dus;
-            $unitIdPak = $product->unit_pak;
-            $unitIdEceran = $product->unit_eceran;
-
-            if ($quantityDus > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdDus,
-                    'quantity' => $quantityDus,
-                ]);
-            }
-
-            if ($quantityPak > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdPak,
-                    'quantity' => $quantityPak,
-                ]);
-            }
-
-            if ($quantityEceran > 0) {
-                SendStockCart::create([
-                    'user_id' => auth()->id(),
-                    'product_id' => $request->product_id,
-                    'unit_id' => $unitIdEceran,
-                    'quantity' => $quantityEceran,
-                ]);
-            }
+            SendStockCart::create([
+                'user_id' => auth()->id(),
+                'product_id' => $productId,
+                'unit_id' => $unitId,
+                'quantity' => $quantity,
+            ]);
         }
-
-        return redirect()->back()->with('success', 'Produk berhasil dimasukan ke keranjang');
     }
 
     public function destroyCart($id)
