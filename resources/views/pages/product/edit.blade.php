@@ -5,6 +5,7 @@
 
 @section('content')
 <div class="mt-5 card">
+    <x-alert />
     <div class="card-body">
         <form action="{{ route('produk.update', $product->id) }}" method="post">
             @csrf
@@ -19,15 +20,25 @@
                 </select>
             </div>
             <div class="mb-10 row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label" for="name">Nama Produk</label>
                     <input name="name" type="text" class="form-control" placeholder="Masukan nama produk"
                         value="{{ $product->name }}" />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label" for="promo">Promo</label>
                     <input name="promo" type="text" class="form-control" placeholder="Masukan promo produk"
                         value="{{ $product->promo }}" />
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check form-switch form-check-custom form-check-solid">
+                        <input class="form-check-input" type="checkbox" name="isShow" value="1" id="isShowToggle" {{
+                            $product->isShow ? 'checked' : '' }} />
+                        <label class="form-check-label" for="isShowToggle">
+                            Tampilkan Produk
+                        </label>
+                    </div>
+                    <div class="form-text">Aktifkan untuk menampilkan produk di form penjualan dan pembelian</div>
                 </div>
             </div>
             <div class="row">

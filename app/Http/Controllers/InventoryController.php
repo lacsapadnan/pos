@@ -22,42 +22,48 @@ class InventoryController extends Controller
         return view('pages.inventory.index', compact('product', 'warehouse', 'categories'));
     }
 
-   public function data(Request $request)
-{
-    $userRoles = auth()->user()->roles->pluck('name');
-    $category = $request->input('category');
-    $warehouseId = $request->input('warehouse_id');
+    public function data(Request $request)
+    {
+        $userRoles = auth()->user()->roles->pluck('name');
+        $category = $request->input('category');
+        $warehouseId = $request->input('warehouse_id');
 
-    $query = Inventory::with(['product', 'warehouse']);
+        $query = Inventory::with(['product', 'warehouse']);
 
-    if ($category) {
-        $query->whereHas('product', function ($q) use ($category) {
-            $q->where('group', 'LIKE', '%' . $category . '%');
-        });
+        if ($category) {
+            $query->whereHas('product', function ($q) use ($category) {
+                $q->where('group', 'LIKE', '%' . $category . '%');
+            });
+        }
+
+        if ($userRoles[0] != 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id);
+        } elseif ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        return datatables()->eloquent($query)->toJson();
     }
-
-    if ($userRoles[0] != 'master') {
-        $query->where('warehouse_id', auth()->user()->warehouse_id);
-    } elseif ($warehouseId) {
-        $query->where('warehouse_id', $warehouseId);
-    }
-
-    return datatables()->eloquent($query)->toJson();
-}
 
     public function dataAll(Request $request)
     {
         $searchQuery = $request->input('searchQuery');
 
         $query = Inventory::with('product', 'warehouse')
-            ->where('warehouse_id', auth()->user()->warehouse_id);
+            ->where('warehouse_id', auth()->user()->warehouse_id)
+            ->whereHas('product', function ($query) {
+                $query->where('isShow', true);
+            });
 
         if ($searchQuery) {
             $query->whereHas('product', function ($query) use ($searchQuery) {
-                $query->where('name', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
+                $query->where('isShow', true)
+                    ->where(function ($subQuery) use ($searchQuery) {
+                        $subQuery->where('name', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_dus', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_pak', 'LIKE', '%' . $searchQuery . '%')
+                            ->orWhere('barcode_eceran', 'LIKE', '%' . $searchQuery . '%');
+                    });
             });
         } else {
             $query->whereRaw('1 = 0'); // Return no results when no search query is provided

@@ -90,8 +90,11 @@ class PurchaseController extends Controller
         $suppliers = Supplier::all();
         $inventories = Inventory::with('product')
             ->where('warehouse_id', auth()->user()->warehouse_id)
+            ->whereHas('product', function ($query) {
+                $query->where('isShow', true);
+            })
             ->get();
-        $products = Product::all();
+        $products = Product::where('isShow', true)->get();
         $units = Unit::all();
         $today = date('Ymd');
         $year = substr($today, 2, 2);

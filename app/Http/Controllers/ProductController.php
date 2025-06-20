@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
@@ -84,30 +85,42 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
-        $category = Category::where('name', $request->category)->first();
-        if (!$category) {
-            $category = Category::create([
-                'name' => $request->category,
-            ]);
-        } else {
+        try {
+            DB::beginTransaction();
+
             $category = Category::where('name', $request->category)->first();
-        }
-        $data = $request->validated();
-        $data['group'] = $category->name;
-        $product = Product::create($data);
+            if (!$category) {
+                $category = Category::create([
+                    'name' => $request->category,
+                ]);
+            } else {
+                $category = Category::where('name', $request->category)->first();
+            }
+            $data = $request->validated();
+            $data['group'] = $category->name;
+            $product = Product::create($data);
 
-        $warehouses = Warehouse::all();
-        foreach ($warehouses as $warehouse) {
-            Inventory::create([
-                'product_id' => $product->id,
-                'warehouse_id' => $warehouse->id,
-                'quantity' => 0,
-            ]);
-        }
+            $warehouses = Warehouse::all();
+            foreach ($warehouses as $warehouse) {
+                Inventory::create([
+                    'product_id' => $product->id,
+                    'warehouse_id' => $warehouse->id,
+                    'quantity' => 0,
+                ]);
+            }
 
-        return redirect()
-            ->back()
-            ->with('success', 'Produk berhasil ditambahkan');
+            DB::commit();
+
+            return redirect()
+                ->back()
+                ->with('success', 'Produk berhasil ditambahkan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal menambahkan produk: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -134,14 +147,24 @@ class ProductController extends Controller
      */
     public function update(ProductRequest $request, string $id)
     {
-        $product = Product::findOrFail($id);
-        $category = Category::firstOrCreate(['name' => $request->category]);
+        try {
+            DB::beginTransaction();
 
-        $product->fill($request->validated());
-        $product->group = $category->name;
-        $product->update();
+            $product = Product::findOrFail($id);
+            $category = Category::firstOrCreate(['name' => $request->category]);
 
-        return redirect()->route('produk.index')->with('success', 'Produk berhasil diubah');
+            $product->fill($request->validated());
+            $product->group = $category->name;
+            $product->isShow = $request->has('isShow') ? true : false;
+            $product->update();
+
+            DB::commit();
+
+            return redirect()->route('produk.index')->with('success', 'Produk berhasil diubah');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengubah produk: ' . $e->getMessage());
+        }
     }
 
     /**

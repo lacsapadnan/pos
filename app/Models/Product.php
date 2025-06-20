@@ -34,6 +34,7 @@ class Product extends Model
         'price_sell_dus_out_of_town',
         'price_sell_pak_out_of_town',
         'price_sell_eceran_out_of_town',
+        'isShow',
     ];
 
     public function unit_dus()
@@ -56,5 +57,10 @@ class Product extends Model
         return $this->belongsToMany(Warehouse::class, 'inventories')
             ->withPivot('quantity')
             ->withTimestamps();
+    }
+
+    public function getIsShowAttribute($value)
+    {
+        return (bool) $value;
     }
 }
