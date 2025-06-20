@@ -7,6 +7,8 @@
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     {{-- session success --}}
     @include('components.alert')
@@ -122,6 +124,7 @@
                         type: 'GET',
                         dataSrc: '',
                     },
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
                             "data": null,
                             "sortable": false,

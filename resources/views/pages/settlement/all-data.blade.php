@@ -16,6 +16,8 @@
     </style>
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
@@ -124,6 +126,7 @@
                     "fixedColumns": {
                         "rightColumns": 1
                     },
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "ajax": {
                         url: '{{ route('api.settlement') }}',
                         type: 'GET',

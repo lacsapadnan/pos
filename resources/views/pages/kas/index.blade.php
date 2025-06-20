@@ -7,6 +7,8 @@
 <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
 {{-- session success --}}
 @if (session()->has('success'))
@@ -138,6 +140,7 @@
                         url: '{{ route('api.kas') }}',
                         type: 'GET'
                     },
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
                             "data": null,
                             "sortable": false,

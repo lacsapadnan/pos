@@ -16,6 +16,8 @@
     </style>
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
@@ -171,6 +173,7 @@
                     "fixedColumns": {
                         "rightColumns": 1
                     },
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "ajax": {
                         url: '{{ route('api.pembelian') }}',
                         type: 'GET',

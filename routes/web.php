@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\KasController;
 use App\Http\Controllers\KasIncomeItemController;
@@ -59,6 +60,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('penjualan', SellController::class);
     Route::resource('pembelian', PurchaseController::class);
     Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
+    Route::resource('karyawan', EmployeeController::class)->except(['show', 'create']);
     // ramdan
     Route::resource('pembelian-retur', PurchaseReturController::class);
     Route::post('konfirmReturnPembelian', [PurchaseReturController::class, 'konfirmReturnPembelian'])->name('konfirmReturnPembelian');
@@ -127,6 +129,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('penjualan/retur/api/data', [SellReturController::class, 'dataSell'])->name('api.penjualan-retur');
     Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
+    Route::get('karyawan/api/data', [EmployeeController::class, 'data'])->name('api.karyawan');
     Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
 

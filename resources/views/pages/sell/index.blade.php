@@ -7,6 +7,8 @@
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     <div class="mt-5 border-0 card card-p-0 card-flush">
         <div class="gap-2 py-5 card-header align-items-center gap-md-5">
@@ -162,6 +164,7 @@
                         url: '{{ route('api.penjualan') }}',
                         type: 'GET',
                     },
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
                             "data": "order_number"
                         },
@@ -517,6 +520,18 @@
                             }
                         ]
                     });
+
+                    // Calculate grand total
+                    var grandTotal = response.reduce((acc, item) => {
+                        return acc + (item.quantity * item.price - item.diskon);
+                    }, 0);
+                    var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR'
+                    }).format(grandTotal).replace(",00", "");
+
+                    // Display grand total
+                    $('#kt_datatable_detail').after(`<h2>Total Penjualan: ${formattedGrandTotal}</h2>`);
 
                     // Open the modal
                     $('#kt_modal_1').modal('show');

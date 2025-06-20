@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductReport;
 use App\Models\SendStock;
 use App\Models\SendStockCart;
 use App\Models\SendStockDetail;

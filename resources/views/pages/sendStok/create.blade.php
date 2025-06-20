@@ -299,32 +299,42 @@
                 });
 
                 $(table).on('click', '.btn-submit', function() {
-                    var rowData = datatable.row($(this).closest('tr')).data();
-                    var productId = $(this).data('product-id');
-                    var quantityDus = $(this).closest('tr').find('input[name="quantity_dus"]').val();
-                    var quantityPak = $(this).closest('tr').find('input[name="quantity_pak"]').val();
-                    var quantityEceran = $(this).closest('tr').find('input[name="quantity_eceran"]').val();
+                    var inputRequests = [];
 
-                    var inputRequest = {
-                        product_id: productId,
-                        quantity_dus: quantityDus,
-                        quantity_pak: quantityPak,
-                        quantity_eceran: quantityEceran,
-                    };
+                    $(table).find('tbody tr').each(function() {
+                        var productId = $(this).find('.btn-submit').data('product-id');
+                        var quantityDus = $(this).find('input[name="quantity_dus"]').val();
+                        var quantityPak = $(this).find('input[name="quantity_pak"]').val();
+                        var quantityEceran = $(this).find('input[name="quantity_eceran"]').val();
+
+                        if (quantityDus || quantityPak || quantityEceran) { // Only submit if any quantity is filled
+                            var inputRequest = {
+                                product_id: productId,
+                                quantity_dus: quantityDus,
+                                quantity_pak: quantityPak,
+                                quantity_eceran: quantityEceran,
+                            };
+
+                            inputRequests.push(inputRequest);
+                        }
+                    });
 
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('pindah-stok.addCart') }}',
                         type: 'POST',
-                        data: inputRequest,
+                        contentType: 'application/json',
+                        data: JSON.stringify({ items: inputRequests }),
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
-                            // reload page
                             location.reload();
                         },
-                        error: function(xhr, status, error) {}
+                        error: function(xhr, status, error) {
+                            var errorMessage = xhr.responseJSON.message || 'Terjadi kesalahan, silakan coba lagi.';
+                            alert(errorMessage);
+                        }
                     });
                 });
 

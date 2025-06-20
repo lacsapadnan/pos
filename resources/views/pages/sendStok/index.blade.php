@@ -7,6 +7,8 @@
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     {{-- session success --}}
     @include('components.alert')
@@ -113,6 +115,7 @@
                     "info": true,
                     'order': [],
                     'pageLength': 10,
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "ajax": {
                         "url": "{{ route('api.pindah-stok') }}",
                         "type": "GET",
@@ -257,7 +260,40 @@
                             },
                             {
                                 data: 'quantity'
-                            }
+                            },
+                            {
+                                data: 'product.price_sell_dus',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: 'product.price_sell_pak',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
+                            {
+                                data: 'product.price_sell_eceran',
+                                render: function(data, type, row) {
+                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                        style: 'currency',
+                                        currency: 'IDR'
+                                    }).format(data);
+                                    formattedPrice = formattedPrice.replace(",00", "");
+                                    return formattedPrice;
+                                }
+                            },
                         ]
                     });
 

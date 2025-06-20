@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Customer')
-@section('menu-title', 'Customer')
+@section('title', 'Karyawan')
+@section('menu-title', 'Karyawan')
 
 @push('addon-style')
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
@@ -18,7 +18,7 @@
                 <div class="my-1 d-flex align-items-center position-relative">
                     <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
                             class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data customer">
+                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data cabang">
                 </div>
                 <!--end::Search-->
             </div>
@@ -29,16 +29,10 @@
                     <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
                     Export Data
                 </button>
-                @can('import customer')
-                    <button type="button" class="btn btn-light-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_2">
-                    <i class="ki-duotone ki-exit-up fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Import Data
-                </button>
-                @endcan
-                @can('simpan customer')
+                @can('simpan karyawan')
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_1">
-                    Tambah Data
-                </button>
+                        Tambah Data
+                    </button>
                 @endcan
                 <!--begin::Menu-->
                 <div id="kt_datatable_example_export_menu"
@@ -83,21 +77,20 @@
                         id="kt_datatable_example">
                         <thead>
                             <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th>No.</th>
-                                <th>Nama Customer</th>
-                                <th>Deskripsi</th>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>Email</th>
+                                <th>No. Telp</th>
+                                <th>Cabang</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    @includeIf('pages.customer.modal')
-    @includeIf('pages.customer.import')
+    @includeIf('pages.employee.modal')
 @endsection
 
 @push('addon-script')
@@ -113,104 +106,108 @@
 
             // Private functions
             var initDatatable = function() {
-                // Set date data order
-                const tableRows = table.querySelectorAll('tbody tr');
+                // Ensure table is not null
+                table = document.querySelector('#kt_datatable_example');
+                if (!table) return;
 
-                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                // Check if DataTable is already initialized
+                if ($.fn.dataTable.isDataTable(table)) {
+                    datatable = $(table).DataTable();
+                    return; // If already initialized, skip the initialization
+                }
+
+                // Init DataTable with the proper configuration
                 datatable = $(table).DataTable({
                     "info": false,
                     'order': [],
                     'pageLength': 10,
-                    "ajax" : {
-                        url: '{{ route('api.customer') }}',
-                        type: 'GET',
-                        dataSrc: '',
-                    },
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
-                    "columns": [
-                        {
+                    ajax: {
+                        url: "{{ route('api.karyawan') }}",
+                        type: 'GET',
+                        dataSrc: ''
+                    },
+                    columns: [{
                             "data": null,
                             "sortable": false,
-                            "render": function (data, type, row, meta) {
+                            "render": function(data, type, row, meta) {
                                 return meta.row + meta.settings._iDisplayStart + 1;
                             }
                         },
                         {
-                            data: "name"
+                            data: 'name'
                         },
                         {
-                            data: "description"
+                            data: 'email',
                         },
                         {
-                            "data": null,
-                            "sortable": false,
-                            "render": function (data, type, row, meta) {
+                            data: 'phone',
+                        },
+                        {
+                            data: 'warehouse.name',
+                        },
+                        {
+                            data: "id",
+                            className: 'min-w-150px',
+                            render: function(data, type, row) {
+                                var routeUrl = "{{ route('karyawan.destroy', ':id') }}";
+                                routeUrl = routeUrl.replace(':id', data);
                                 return `
-                                    @can('update customer')
-                                        <a href="{{ url('customer') }}/${row.id}/edit" type="button" class="btn btn-warning btn-sm">
-                                            <i class="ki-solid ki-pencil"></i>
-                                            Edit
-                                        </a>
-                                    @endcan
-                                    @can('hapus customer')
-                                        <form action="{{ url('customer') }}/${row.id}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="btn btn-danger btn-sm">
-                                                <i class="ki-solid ki-trash"></i>
-                                                Hapus
-                                            </button>
-                                        </form>
-                                    @endcan
-                                `;
+                            @can('hapus karyawan')
+                            <button type="button" onclick="deleteEmployee('${routeUrl}')" class="btn btn-sm btn-danger"><i class="ki-solid ki-trash"></i>Hapus</button>
+                            @endcan
+                            @can('update karyawan')
+                            <a href="{{ route('karyawan.index') }}/${data}/edit" class="btn btn-warning btn-sm">
+                                <i class="ki-solid ki-pencil"></i>
+                                Edit
+                            </a>
+                            @endcan
+                        `;
                             }
-                        }
-                    ],
+                        },
+                    ]
                 });
-            }
+
+                // Ensure export buttons are initialized after the DataTable is created
+                exportButtons();
+            };
 
             // Hook export buttons
-            var exportButtons = () => {
-                const documentTitle = 'Customer Orders Report';
+            var exportButtons = function() {
                 var buttons = new $.fn.dataTable.Buttons(table, {
                     buttons: [{
                             extend: 'copyHtml5',
-                            title: documentTitle
+                            title: 'Customer Orders Report'
                         },
                         {
                             extend: 'excelHtml5',
-                            title: documentTitle
+                            title: 'Customer Orders Report'
                         },
                         {
                             extend: 'csvHtml5',
-                            title: documentTitle
+                            title: 'Customer Orders Report'
                         },
                         {
                             extend: 'pdfHtml5',
-                            title: documentTitle
+                            title: 'Customer Orders Report'
                         }
                     ]
                 }).container().appendTo($('#kt_datatable_example_buttons'));
 
-                // Hook dropdown menu click event to datatable export buttons
+                // Ensure export menu triggers work
                 const exportButtons = document.querySelectorAll(
                     '#kt_datatable_example_export_menu [data-kt-export]');
                 exportButtons.forEach(exportButton => {
                     exportButton.addEventListener('click', e => {
                         e.preventDefault();
-
-                        // Get clicked export value
                         const exportValue = e.target.getAttribute('data-kt-export');
                         const target = document.querySelector('.dt-buttons .buttons-' +
                             exportValue);
-
-                        // Trigger click event on hidden datatable export buttons
                         target.click();
                     });
                 });
-            }
+            };
 
-            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
             var handleSearchDatatable = () => {
                 const filterSearch = document.querySelector('[data-kt-filter="search"]');
                 filterSearch.addEventListener('keyup', function(e) {
@@ -221,21 +218,38 @@
             // Public methods
             return {
                 init: function() {
-                    table = document.querySelector('#kt_datatable_example');
-
-                    if (!table) {
-                        return;
-                    }
-
                     initDatatable();
                     handleSearchDatatable();
                 }
             };
         }();
 
+
         // On document ready
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
+    </script>
+    <script>
+        function deleteEmployee(url) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var form = document.createElement('form');
+                    form.action = url;
+                    form.method = 'POST';
+                    form.innerHTML = '@csrf @method('delete')';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
     </script>
 @endpush

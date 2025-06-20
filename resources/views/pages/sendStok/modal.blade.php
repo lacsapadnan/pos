@@ -21,6 +21,9 @@
                                     <th>Produk</th>
                                     <th>Unit</th>
                                     <th>Quantity</th>
+                                    <th>Harga Dus</th>
+                                    <th>Harga PAK</th>
+                                    <th>Harga Eceran</th>
                                 </tr>
                             </thead>
                             <tbody class="fw-semibold">

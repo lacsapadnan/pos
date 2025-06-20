@@ -7,6 +7,8 @@
     <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
+@include('includes.datatable-pagination')
+
 @section('content')
     @include('components.alert')
     <div class="mt-5 border-0 card card-p-0 card-flush">
@@ -135,7 +137,7 @@
                         url: '{{ route('api.inventori') }}',
                         type: 'GET',
                     },
-                                    columns: [
+                    columns: [
                         { data: 'warehouse.name', name: 'warehouse.name' },
                         { data: 'product.group', name: 'product.group' },
                         { data: 'product.name', name: 'product.name' },
