@@ -15,6 +15,32 @@
         -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
         background-color: #818B99;
     }
+
+    /* Highlight effect when Enter key is pressed */
+    .enter-key-pressed {
+        animation: enterKeyPulse 0.3s ease-in-out;
+    }
+
+    @keyframes enterKeyPulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+            background-color: #28a745;
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Focus style for table */
+    #kt_datatable_example:focus {
+        outline: 2px solid #007bff;
+        outline-offset: 2px;
+    }
 </style>
 @endpush
 
@@ -42,9 +68,13 @@
                         class="path2"></span></i> <input type="text" data-kt-filter="search"
                     class="form-control form-control-solid w-250px ps-14" placeholder="Cari data inventori"
                     id="searchInput">
-                <button type="button" id="addSelectedItems" class="btn btn-success ms-3">
+                <button type="button" id="addSelectedItems" class="btn btn-success ms-3"
+                    title="Tekan Enter (di luar input), Ctrl+Enter (di dalam input), atau Shift+Enter (dimana saja) untuk menambah semua item">
                     <i class="fas fa-cart-plus"></i> Tambah Semua Item Terpilih
+                    <span class="badge badge-light ms-2">Enter / Shift+Enter</span>
                 </button>
+                <small class="text-muted ms-2">💡 Tip: Isi quantity lalu tekan Enter (di luar input) atau Shift+Enter
+                    (dimana saja)</small>
             </div>
             <!--end::Search-->
         </div>
@@ -431,13 +461,93 @@
 
                     initDatatable();
                     handleSearchDatatable();
-                    $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"]', function(event) {
+                                        $(table).on('keydown', 'input[name^="quantity_"], input[name^="diskon_"]', function(event) {
                         if (event.which === 13) {
                             event.preventDefault();
-                            var btnSubmit = $(this).closest('tr').find('.btn-submit');
-                            btnSubmit.click();
+
+                            // Check if Ctrl+Enter is pressed for bulk add
+                            if (event.ctrlKey) {
+                                console.log('Ctrl+Enter pressed - triggering bulk add');
+                                $('#addSelectedItems').click();
+                            } else {
+                                // Regular Enter - add single item
+                                console.log('Enter pressed in input - adding single item');
+                                var btnSubmit = $(this).closest('tr').find('.btn-submit');
+                                btnSubmit.click();
+                            }
                         }
                     });
+
+                    // Simple global Enter key handler for bulk add
+                    $(document).on('keydown', function(event) {
+                        // Only trigger if Enter is pressed and we're NOT in an input field
+                        if (event.which === 13 && !$(event.target).is('input, textarea, select, button')) {
+                            event.preventDefault();
+                            console.log('Global Enter pressed - triggering bulk add');
+
+                            // Add visual feedback
+                            $('#addSelectedItems').addClass('enter-key-pressed');
+                            setTimeout(function() {
+                                $('#addSelectedItems').removeClass('enter-key-pressed');
+                            }, 300);
+
+                            // Trigger the bulk add
+                            $('#addSelectedItems').trigger('click');
+                        }
+                    });
+
+                    // Alternative: Press Shift+Enter anywhere to trigger bulk add
+                    $(document).on('keydown', function(event) {
+                        if (event.which === 13 && event.shiftKey) {
+                            event.preventDefault();
+                            console.log('Shift+Enter pressed - triggering bulk add');
+
+                            // Add visual feedback
+                            $('#addSelectedItems').addClass('enter-key-pressed');
+                            setTimeout(function() {
+                                $('#addSelectedItems').removeClass('enter-key-pressed');
+                            }, 300);
+
+                            $('#addSelectedItems').trigger('click');
+                        }
+                    });
+
+                    // Add a test function to check if there are items to add
+                    window.testBulkAdd = function() {
+                        var hasItems = false;
+                        var itemCount = 0;
+
+                        console.log('Testing bulk add...');
+
+                        // Check all visible rows
+                        datatable.rows({ search: 'applied' }).every(function() {
+                            var row = this.node();
+                            var quantityDus = $(row).find('input[name="quantity_dus"]').val();
+                            var quantityPak = $(row).find('input[name="quantity_pak"]').val();
+                            var quantityEceran = $(row).find('input[name="quantity_eceran"]').val();
+
+                            if (quantityDus || quantityPak || quantityEceran) {
+                                hasItems = true;
+                                itemCount++;
+                                console.log('Found item with quantities:', {
+                                    dus: quantityDus,
+                                    pak: quantityPak,
+                                    eceran: quantityEceran
+                                });
+                            }
+                        });
+
+                        console.log('Total items with quantities:', itemCount);
+                        console.log('Has items to add:', hasItems);
+
+                        if (hasItems) {
+                            console.log('Triggering bulk add...');
+                            $('#addSelectedItems').click();
+                        } else {
+                            console.log('No items with quantities found');
+                            alert('Tidak ada item dengan quantity yang diisi!');
+                        }
+                    };
                 }
             };
         }();
