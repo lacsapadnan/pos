@@ -62,7 +62,7 @@ class PurchaseController extends Controller
             $toDate = $defaultDate;
         }
 
-        if ($role[0] == 'master') {
+        if ($role->first() == 'master') {
             $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                 ->orderBy('id', 'desc');
         } else {
@@ -326,13 +326,37 @@ class PurchaseController extends Controller
      */
     public function edit(string $id)
     {
-        $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse')
-            ->orderBy('id', 'desc')
-            ->find($id);
-        $suppliers = Supplier::orderBy('id', 'asc')->get();
-        $products = Product::orderBy('id', 'asc')->get();
-        $units = Unit::orderBy('id', 'asc')->get();
-        return view('pages.purchase.edit', compact('purchases', 'suppliers', 'products', 'units'));
+        // Optimized query with only necessary relationships
+        $purchase = Purchase::with([
+            'details.product:id,name,price_sell_dus',
+            'details.unit:id,name',
+            'supplier:id,name',
+            'warehouse:id,name'
+        ])->findOrFail($id);
+
+        // Only get suppliers for the dropdown
+        $suppliers = Supplier::select('id', 'name')->orderBy('name', 'asc')->get();
+
+        // Get only products and units that are currently used in this purchase
+        $usedProductIds = $purchase->details->pluck('product_id')->unique();
+        $usedUnitIds = $purchase->details->pluck('unit_id')->unique();
+
+        // Get all products for the select dropdowns (optimize by selecting only needed fields)
+        $products = Product::select('id', 'name')->where('isShow', true)->orderBy('name', 'asc')->get();
+
+        // Get all units for the select dropdowns
+        $units = Unit::select('id', 'name')->orderBy('name', 'asc')->get();
+
+        // Pre-build options for better performance
+        $productOptions = $products->mapWithKeys(function ($product) {
+            return [$product->id => $product->name];
+        });
+
+        $unitOptions = $units->mapWithKeys(function ($unit) {
+            return [$unit->id => $unit->name];
+        });
+
+        return view('pages.purchase.edit', compact('purchase', 'suppliers', 'productOptions', 'unitOptions'));
     }
 
     /**
@@ -500,7 +524,7 @@ class PurchaseController extends Controller
         $toDate = $request->input('to_date');
         $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'master') {
+        if ($userRoles->first() == 'master') {
             $purchases = Purchase::with('supplier', 'treasury', 'warehouse')
                 ->where('status', 'hutang');
         } else {
