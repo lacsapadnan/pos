@@ -49,6 +49,8 @@ class SellController extends Controller
         $fromDate = $request->input('from_date') ?? date('Y-m-d');
         $toDate = $request->input('to_date') ?? date('Y-m-d');
         $warehouse = $request->input('warehouse');
+        $export = $request->input('export');
+        $search = $request->input('search');
 
         $query = Sell::with(['warehouse', 'customer', 'cashier'])
             ->where('status', '!=', 'draft')
@@ -72,22 +74,32 @@ class SellController extends Controller
             $query->whereBetween('created_at', [$fromDate, $endDate]);
         }
 
-        return DataTables::eloquent($query)
-            ->addColumn('aksi', function ($row) {
-                return '
-                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(' . $row->id . ')">Detail</a>
-                <button class="btn btn-sm btn-success" onclick="openPasswordModal(' . $row->id . ')">Print</button>
-                @can("hapus penjualan")
-                <form id="deleteForm_' . $row->id . '" class="d-inline">
-                    @csrf
-                    @method("DELETE")
-                    <input type="hidden" name="id" value="' . $row->id . '">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(' . $row->id . ')">Delete</button>
-                </form>
-                @endcan
-            ';
-            })
-            ->rawColumns(['aksi'])
+        // Apply search if provided
+        if (!empty($search) && !empty($search['value'])) {
+            $searchValue = $search['value'];
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('order_number', 'like', "%{$searchValue}%")
+                    ->orWhereHas('customer', function ($q) use ($searchValue) {
+                        $q->where('name', 'like', "%{$searchValue}%");
+                    })
+                    ->orWhereHas('warehouse', function ($q) use ($searchValue) {
+                        $q->where('name', 'like', "%{$searchValue}%");
+                    })
+                    ->orWhereHas('cashier', function ($q) use ($searchValue) {
+                        $q->where('name', 'like', "%{$searchValue}%");
+                    })
+                    ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                    ->orWhere('status', 'like', "%{$searchValue}%");
+            });
+        }
+
+        // If export parameter is set, return all data without pagination
+        if ($export) {
+            $sells = $query->get();
+            return response()->json($sells);
+        }
+
+        return DataTables::of($query)
             ->make(true);
     }
 

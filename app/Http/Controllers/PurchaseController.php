@@ -41,6 +41,16 @@ class PurchaseController extends Controller
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
         $warehouse = $request->input('warehouse');
+        $isExport = $request->input('export', false);
+
+        // Log filter parameters for debugging
+        Log::info('Purchase data request filters:', [
+            'user_id' => $user_id,
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+            'warehouse' => $warehouse,
+            'export' => $isExport,
+        ]);
 
         $defaultDate = now()->format('Y-m-d');
 
@@ -78,6 +88,10 @@ class PurchaseController extends Controller
         }
 
         $purchases = $purchases->get();
+
+        // Log the result count
+        Log::info('Purchase data result count: ' . $purchases->count());
+
         return response()->json($purchases);
     }
 
@@ -387,8 +401,6 @@ class PurchaseController extends Controller
             return redirect()->back()->withErrors(['error' => "Gagal mengupdate pembelian, silahkan cek ulang"]);
         }
     }
-
-
 
     /**
      * Remove the specified resource from storage.

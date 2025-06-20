@@ -4,143 +4,130 @@
 @section('menu-title', 'Penjualan')
 
 @push('addon-style')
-    <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data penjualan">
-                </div>
-                <!--end::Search-->
-                @role('master')
-                    <div class="ms-2">
-                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                            <option value="">All Cabang</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-2">
-                        <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
-                    </div>
-                @endrole
-                @role('master')
-                    <div class="ms-3">
-                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                            <option value="">All Users</option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-3">
-                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
-                    </div>
-                @endrole
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data penjualan">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                @can('simpan penjualan')
-                    <a href="{{ route('penjualan.create') }}" type="button" class="btn btn-primary">
-                        Tambah Penjualan
-                    </a>
-                @endcan
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
+            <!--end::Search-->
+            @role('master')
+            <div class="ms-2">
+                <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                    <option value="">All Cabang</option>
+                    @foreach ($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+            <div class="ms-2">
+                <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}"
+                    disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+            </div>
+            @endrole
+            @role('master')
+            <div class="ms-3">
+                <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+            <div class="ms-3">
+                <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+            </div>
+            @endrole
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                    data-kt-filter="date" placeholder="Dari Tanggal">
+                <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2" data-kt-filter="date"
+                    placeholder="Ke Tanggal">
             </div>
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-start fw-bold fs-7 text-uppercase">
-                                <th>No. Order</th>
-                                <th>Kasir</th>
-                                <th>Customer</th>
-                                <th>Cabang</th>
-                                <th>Metode Pembayaran</th>
-                                <th>Cash</th>
-                                <th>Transfer</th>
-                                <th>Total Penjualan</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                data-kt-menu-placement="bottom-end">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </button>
+            @can('simpan penjualan')
+            <a href="{{ route('penjualan.create') }}" type="button" class="btn btn-primary">
+                Tambah Penjualan
+            </a>
+            @endcan
+            <!--begin::Menu-->
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
                 </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-start fw-bold fs-7 text-uppercase">
+                            <th>No. Order</th>
+                            <th>Kasir</th>
+                            <th>Customer</th>
+                            <th>Cabang</th>
+                            <th>Metode Pembayaran</th>
+                            <th>Cash</th>
+                            <th>Transfer</th>
+                            <th>Total Penjualan</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    @includeIf('pages.sell.modal')
-    @includeIf('pages.sell.modal-password')
+</div>
+@includeIf('pages.sell.modal')
+@includeIf('pages.sell.modal-password')
 @endsection
 
 @push('addon-script')
-    <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
 
-    <script>
-        "use strict";
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -287,23 +274,170 @@
 
             // Hook export buttons
             var exportButtons = () => {
-                const documentTitle = 'Customer Orders Report';
+                const documentTitle = 'Sell Report';
                 var buttons = new $.fn.dataTable.Buttons(table, {
-                    buttons: [{
-                            extend: 'copyHtml5',
-                            title: documentTitle
-                        },
+                    buttons: [
                         {
                             extend: 'excelHtml5',
-                            title: documentTitle
-                        },
-                        {
-                            extend: 'csvHtml5',
-                            title: documentTitle
+                            title: documentTitle,
+                            action: function (e, dt, button, config) {
+                                // Show loading indicator
+                                KTApp.showPageLoading();
+
+                                // Get current search value from DataTables
+                                var searchValue = dt.search();
+
+                                // Get current filters from form fields
+                                var fromDate = $('#fromDateFilter').val();
+                                var toDate = $('#toDateFilter').val();
+                                var warehouse = $('#warehouseFilter').val();
+                                var user_id = $('#userFilter').val();
+
+                                // Prepare filter data
+                                var filters = {
+                                    export: 1,
+                                    search: { value: searchValue },
+                                    from_date: fromDate,
+                                    to_date: toDate,
+                                    warehouse: warehouse,
+                                    user_id: user_id
+                                };
+
+                                // Make a direct request to get all filtered data
+                                $.ajax({
+                                    url: '{{ route('api.penjualan') }}',
+                                    type: 'GET',
+                                    data: filters,
+                                    success: function(response) {
+                                        // Create a hidden div to hold our temporary table
+                                        var tempDiv = $('<div style="display:none;"></div>');
+                                        var tempTable = $('<table></table>').appendTo(tempDiv);
+                                        $('body').append(tempDiv);
+
+                                        // Initialize the temp table with DataTables
+                                        var tempDT = tempTable.DataTable({
+                                            data: response,
+                                            columns: [
+                                                { data: "order_number" },
+                                                { data: "cashier.name" },
+                                                { data: "customer.name" },
+                                                { data: "warehouse.name" },
+                                                { data: "payment_method" },
+                                                { data: "cash" },
+                                                { data: "transfer" },
+                                                { data: "grand_total" },
+                                                { data: "status" }
+                                            ],
+                                            destroy: true
+                                        });
+
+                                        // Use the DataTables API to trigger the excel action
+                                        $.fn.dataTable.ext.buttons.excelHtml5.action.call(
+                                            {processing: function(){}, exportOptions: config.exportOptions},
+                                            e, tempDT, button, config
+                                        );
+
+                                        // Clean up
+                                        tempDT.destroy();
+                                        tempDiv.remove();
+                                        KTApp.hidePageLoading();
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('Export error:', error);
+                                        KTApp.hidePageLoading();
+                                        Swal.fire({
+                                            text: "Failed to export data: " + error,
+                                            icon: "error",
+                                            buttonsStyling: false,
+                                            confirmButtonText: "Ok, got it!",
+                                            customClass: {
+                                                confirmButton: "btn btn-primary"
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         },
                         {
                             extend: 'pdfHtml5',
-                            title: documentTitle
+                            title: documentTitle,
+                            action: function (e, dt, button, config) {
+                                // Show loading indicator
+                                KTApp.showPageLoading();
+
+                                // Get current search value from DataTables
+                                var searchValue = dt.search();
+
+                                // Get current filters from form fields
+                                var fromDate = $('#fromDateFilter').val();
+                                var toDate = $('#toDateFilter').val();
+                                var warehouse = $('#warehouseFilter').val();
+                                var user_id = $('#userFilter').val();
+
+                                // Prepare filter data
+                                var filters = {
+                                    export: 1,
+                                    search: { value: searchValue },
+                                    from_date: fromDate,
+                                    to_date: toDate,
+                                    warehouse: warehouse,
+                                    user_id: user_id
+                                };
+
+                                // Make a direct request to get all filtered data
+                                $.ajax({
+                                    url: '{{ route('api.penjualan') }}',
+                                    type: 'GET',
+                                    data: filters,
+                                    success: function(response) {
+                                        // Create a hidden div to hold our temporary table
+                                        var tempDiv = $('<div style="display:none;"></div>');
+                                        var tempTable = $('<table></table>').appendTo(tempDiv);
+                                        $('body').append(tempDiv);
+
+                                        // Initialize the temp table with DataTables
+                                        var tempDT = tempTable.DataTable({
+                                            data: response,
+                                            columns: [
+                                                { data: "order_number" },
+                                                { data: "cashier.name" },
+                                                { data: "customer.name" },
+                                                { data: "warehouse.name" },
+                                                { data: "payment_method" },
+                                                { data: "cash" },
+                                                { data: "transfer" },
+                                                { data: "grand_total" },
+                                                { data: "status" }
+                                            ],
+                                            destroy: true
+                                        });
+
+                                        // Use the DataTables API to trigger the pdf action
+                                        $.fn.dataTable.ext.buttons.pdfHtml5.action.call(
+                                            {processing: function(){}, exportOptions: config.exportOptions},
+                                            e, tempDT, button, config
+                                        );
+
+                                        // Clean up
+                                        tempDT.destroy();
+                                        tempDiv.remove();
+                                        KTApp.hidePageLoading();
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('Export error:', error);
+                                        KTApp.hidePageLoading();
+                                        Swal.fire({
+                                            text: "Failed to export data: " + error,
+                                            icon: "error",
+                                            buttonsStyling: false,
+                                            confirmButtonText: "Ok, got it!",
+                                            customClass: {
+                                                confirmButton: "btn btn-primary"
+                                            }
+                                        });
+                                    }
+                                });
+                            }
                         }
                     ]
                 }).container().appendTo($('#kt_datatable_example_buttons'));
@@ -354,9 +488,9 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-    <script>
-        function confirmDelete(id) {
+</script>
+<script>
+    function confirmDelete(id) {
             Swal.fire({
                 title: 'Yakin menghapus data ini?',
                 text: 'Data yang terhapus tidak dapat dikembalikan',
@@ -435,9 +569,9 @@
                 }
             });
         }
-    </script>
-    <script>
-        var datatable;
+</script>
+<script>
+    var datatable;
 
         function openModal(id) {
             // Clear the table body
@@ -541,5 +675,5 @@
                 }
             });
         }
-    </script>
+</script>
 @endpush
