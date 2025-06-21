@@ -511,43 +511,6 @@
                             $('#addSelectedItems').trigger('click');
                         }
                     });
-
-                    // Add a test function to check if there are items to add
-                    window.testBulkAdd = function() {
-                        var hasItems = false;
-                        var itemCount = 0;
-
-                        console.log('Testing bulk add...');
-
-                        // Check all visible rows
-                        datatable.rows({ search: 'applied' }).every(function() {
-                            var row = this.node();
-                            var quantityDus = $(row).find('input[name="quantity_dus"]').val();
-                            var quantityPak = $(row).find('input[name="quantity_pak"]').val();
-                            var quantityEceran = $(row).find('input[name="quantity_eceran"]').val();
-
-                            if (quantityDus || quantityPak || quantityEceran) {
-                                hasItems = true;
-                                itemCount++;
-                                console.log('Found item with quantities:', {
-                                    dus: quantityDus,
-                                    pak: quantityPak,
-                                    eceran: quantityEceran
-                                });
-                            }
-                        });
-
-                        console.log('Total items with quantities:', itemCount);
-                        console.log('Has items to add:', hasItems);
-
-                        if (hasItems) {
-                            console.log('Triggering bulk add...');
-                            $('#addSelectedItems').click();
-                        } else {
-                            console.log('No items with quantities found');
-                            alert('Tidak ada item dengan quantity yang diisi!');
-                        }
-                    };
                 }
             };
         }();
