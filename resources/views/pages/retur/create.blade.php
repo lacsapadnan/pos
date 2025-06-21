@@ -344,6 +344,10 @@
                                     var tableRow = $(table).find(`[data-product-id="${productId}"]`).closest('tr');
                                     tableRow.find('input[name="unit_retur"]').val(selectedUnitId);
                                     tableRow.find('input[name="price_retur"]').val(getPriceForUnit(row, selectedUnitId));
+
+                                    // Set max attribute for quantity input
+                                    var availableQty = getAvailableQuantityForUnit(response.available_units, selectedUnitId);
+                                    tableRow.find('input[name="quantity_retur"]').attr('max', availableQty);
                                 }
                             });
                         });
@@ -377,11 +381,14 @@
                 // Handle quantity input validation
                 $(table).on('input', 'input[name="quantity_retur"]', function() {
                     var quantity = parseFloat($(this).val()) || 0;
-                    var maxQuantity = parseFloat($(this).attr('max')) || 0;
+                    var maxQuantity = parseFloat($(this).attr('max'));
 
-                    if (quantity > maxQuantity) {
-                        $(this).val(maxQuantity);
-                        alert(`Jumlah retur tidak boleh melebihi ${maxQuantity}`);
+                    // Only validate if max attribute is properly set and greater than 0
+                    if (maxQuantity !== undefined && maxQuantity !== null && !isNaN(maxQuantity) && maxQuantity > 0) {
+                        if (quantity > maxQuantity) {
+                            $(this).val(maxQuantity);
+                            alert(`Jumlah retur tidak boleh melebihi ${maxQuantity}`);
+                        }
                     }
                 });
 
