@@ -553,6 +553,17 @@
                             <span class="menu-title">Produk</span>
                         </a>
                         <!--end:Menu link-->
+                        <!--begin:Menu link-->
+                        <a class="menu-link" href="{{ route('laba-rugi') }}">
+                            <span class="menu-icon">
+                                <i class="ki-duotone ki-chart-line fs-2">
+                                    <i class="path1"></i>
+                                    <i class="path2"></i>
+                                </i>
+                            </span>
+                            <span class="menu-title">Laba Rugi</span>
+                        </a>
+                        <!--end:Menu link-->
                     </div>
                 </div>
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
