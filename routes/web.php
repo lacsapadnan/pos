@@ -123,6 +123,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
     Route::get('role-permission/api/data', [RolePermissionController::class, 'data'])->name('api.role-permission');
     Route::get('penjualan-retur/api/data-detail/{id}', [SellReturController::class, 'dataDetail'])->name('api.retur-penjualan-detail');
+    Route::get('penjualan-retur/api/available-quantities/{sellId}/{productId}', [SellReturController::class, 'getAvailableReturnQuantities'])->name('api.retur-available-quantities');
     Route::get('pembelian-retur/api/data-detail/{id}', [PurchaseReturController::class, 'dataDetail'])->name('api.retur-pembelian-detail');
     Route::get('data-all/api/data', [InventoryController::class, 'dataAll'])->name('api.data-all');
     Route::get('permission/api/data', [PermissionController::class, 'data'])->name('api.permission');

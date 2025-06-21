@@ -204,30 +204,58 @@ class SellReturController extends Controller
             $sell = Sell::where('id', $request->sell_id)
                 ->with('customer')
                 ->first();
-            $sellDetail = SellDetail::where('sell_id', $request->sell_id)
+
+            // Get product for unit conversion
+            $product = Product::find($rc->product_id);
+
+            // Convert return quantity to eceran for processing
+            $returnQuantityInEceran = $this->convertToEceran($rc->quantity, $rc->unit_id, $product);
+
+            // Get all sell details for this product to deduct proportionally
+            $sellDetails = SellDetail::where('sell_id', $request->sell_id)
                 ->where('product_id', $rc->product_id)
-                ->where('unit_id', $rc->unit_id)
                 ->with('product')
-                ->first();
+                ->get();
 
-            // update grand total
-            $sell->grand_total = $sell->grand_total - ($rc->quantity * $sellDetail->price);
+            $remainingToDeduct = $returnQuantityInEceran;
+
+            foreach ($sellDetails as $sellDetail) {
+                if ($remainingToDeduct <= 0) break;
+
+                // Convert sell detail quantity to eceran
+                $sellDetailEceran = $this->convertToEceran($sellDetail->quantity, $sellDetail->unit_id, $product);
+
+                if ($sellDetailEceran > 0) {
+                    // Calculate how much to deduct from this sell detail
+                    $deductEceran = min($remainingToDeduct, $sellDetailEceran);
+
+                    // Convert back to the sell detail's unit
+                    $deductInOriginalUnit = $this->convertFromEceran($deductEceran, $sellDetail->unit_id, $product);
+
+                    // Update grand total (proportional to deduction)
+                    $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
+                    $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $pricePerUnit);
+
+                    // Update the sell detail quantity
+                    $sellDetail->quantity -= $deductInOriginalUnit;
+                    $sellDetail->update();
+
+                    $remainingToDeduct -= $deductEceran;
+                }
+            }
+
             $sell->update();
-
-            // update the sell detail
-            $sellDetail->quantity -= $rc->quantity;
-            $sellDetail->update();
 
             // total price
             $totalPrice += $rc->quantity * $rc->price;
 
             $unit = Unit::find($rc->unit_id);
 
-            if ($rc->unit_id == $sellDetail->product->unit_dus) {
+            if ($rc->unit_id == $product->unit_dus) {
                 $unitType = 'DUS';
-            } elseif ($rc->unit_id == $sellDetail->product->unit_pak) {
+            } elseif ($rc->unit_id == $product->unit_pak) {
                 $unitType = 'PAK';
-            } elseif ($rc->unit_id == $sellDetail->product->unit_eceran) {
+            } elseif ($rc->unit_id == $product->unit_eceran) {
                 $unitType = 'ECERAN';
             }
 
@@ -239,7 +267,7 @@ class SellReturController extends Controller
                 'unit' => $unit->name,
                 'unit_type' => $unitType,
                 'qty' => $rc->quantity,
-                'price' => $sellDetail->price - $sellDetail->diskon,
+                'price' => $rc->price,
                 'for' => 'MASUK',
                 'type' => 'RETUR PENJUALAN',
                 'description' => 'Retur Penjualan ' . $sell->order_number,
@@ -253,14 +281,9 @@ class SellReturController extends Controller
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->first();
 
-            if ($product->unit_dus == $rc->unit_id) {
-                $inventory->quantity += $rc->quantity * $product->dus_to_eceran;
-            } elseif ($product->unit_pak == $rc->unit_id) {
-                $inventory->quantity += $rc->quantity * $product->pak_to_eceran;
-            } elseif ($product->unit_pcs == $rc->unit_id) {
-                $inventory->quantity += $rc->quantity;
-            }
-
+            // Convert returned quantity to eceran and add to inventory
+            $quantityInEceran = $this->convertToEceran($rc->quantity, $rc->unit_id, $product);
+            $inventory->quantity += $quantityInEceran;
             $inventory->update();
         }
 
@@ -316,29 +339,58 @@ class SellReturController extends Controller
                 $sell = Sell::where('id', $request->sell_id)
                     ->with('customer')
                     ->first();
-                $sellDetail = SellDetail::where('sell_id', $request->sell_id)
-                    ->where('product_id', $rc->product_id)
-                    ->where('unit_id', $rc->unit_id)
-                    ->with('product')
-                    ->first();
-                // update grand total
-                $sell->grand_total = $sell->grand_total - ($rc->qty * ($sellDetail->price - $sellDetail->diskon));
-                $sell->update();
 
-                // update the sell detail
-                $sellDetail->quantity -= $rc->qty;
-                $sellDetail->update();
+                // Get product for unit conversion
+                $product = Product::find($rc->product_id);
+
+                // Convert return quantity to eceran for processing
+                $returnQuantityInEceran = $this->convertToEceran($rc->qty, $rc->unit_id, $product);
+
+                // Get all sell details for this product to deduct proportionally
+                $sellDetails = SellDetail::where('sell_id', $request->sell_id)
+                    ->where('product_id', $rc->product_id)
+                    ->with('product')
+                    ->get();
+
+                $remainingToDeduct = $returnQuantityInEceran;
+
+                foreach ($sellDetails as $sellDetail) {
+                    if ($remainingToDeduct <= 0) break;
+
+                    // Convert sell detail quantity to eceran
+                    $sellDetailEceran = $this->convertToEceran($sellDetail->quantity, $sellDetail->unit_id, $product);
+
+                    if ($sellDetailEceran > 0) {
+                        // Calculate how much to deduct from this sell detail
+                        $deductEceran = min($remainingToDeduct, $sellDetailEceran);
+
+                        // Convert back to the sell detail's unit
+                        $deductInOriginalUnit = $this->convertFromEceran($deductEceran, $sellDetail->unit_id, $product);
+
+                        // Update grand total (proportional to deduction)
+                        $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
+                        $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $pricePerUnit);
+
+                        // Update the sell detail quantity
+                        $sellDetail->quantity -= $deductInOriginalUnit;
+                        $sellDetail->update();
+
+                        $remainingToDeduct -= $deductEceran;
+                    }
+                }
+
+                $sell->update();
 
                 // total price
                 $totalPrice += $rc->qty * $rc->price;
 
                 $unit = Unit::find($rc->unit_id);
 
-                if ($rc->unit_id == $sellDetail->product->unit_dus) {
+                if ($rc->unit_id == $product->unit_dus) {
                     $unitType = 'DUS';
-                } elseif ($rc->unit_id == $sellDetail->product->unit_pak) {
+                } elseif ($rc->unit_id == $product->unit_pak) {
                     $unitType = 'PAK';
-                } elseif ($rc->unit_id == $sellDetail->product->unit_eceran) {
+                } elseif ($rc->unit_id == $product->unit_eceran) {
                     $unitType = 'ECERAN';
                 }
                 ProductReport::create([
@@ -349,24 +401,19 @@ class SellReturController extends Controller
                     'unit' => $unit->name,
                     'unit_type' => $unitType,
                     'qty' => $rc->qty,
-                    'price' => $sellDetail->price - $sellDetail->diskon,
+                    'price' => $rc->price,
                     'for' => 'MASUK',
                     'type' => 'RETUR PENJUALAN',
                     'description' => 'Retur Penjualan ' . $sell->order_number,
                 ]);
 
-                $product = Product::where('id', $rc->product_id)->first();
                 $inventory = Inventory::where('product_id', $rc->product_id)
                     ->where('warehouse_id', auth()->user()->warehouse_id)
                     ->first();
 
-                if ($product->unit_dus == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty * $product->dus_to_eceran;
-                } elseif ($product->unit_pak == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty * $product->pak_to_eceran;
-                } elseif ($product->unit_pcs == $rc->unit_id) {
-                    $inventory->quantity += $rc->qty;
-                }
+                // Convert returned quantity to eceran and add to inventory
+                $quantityInEceran = $this->convertToEceran($rc->qty, $rc->unit_id, $product);
+                $inventory->quantity += $quantityInEceran;
                 $inventory->update();
             }
             // update remkar menjadi verify
@@ -431,6 +478,140 @@ class SellReturController extends Controller
         abort(404);
     }
 
+    /**
+     * Convert quantity to base unit (eceran)
+     */
+    private function convertToEceran($quantity, $unitId, $product)
+    {
+        if ($unitId == $product->unit_dus) {
+            return $quantity * $product->dus_to_eceran;
+        } elseif ($unitId == $product->unit_pak) {
+            return $quantity * $product->pak_to_eceran;
+        } elseif ($unitId == $product->unit_eceran) {
+            return $quantity;
+        }
+        return 0;
+    }
+
+    /**
+     * Convert from base unit (eceran) to specific unit
+     */
+    private function convertFromEceran($quantityEceran, $unitId, $product)
+    {
+        if ($unitId == $product->unit_dus && $product->dus_to_eceran > 0) {
+            return $quantityEceran / $product->dus_to_eceran;
+        } elseif ($unitId == $product->unit_pak && $product->pak_to_eceran > 0) {
+            return $quantityEceran / $product->pak_to_eceran;
+        } elseif ($unitId == $product->unit_eceran) {
+            return $quantityEceran;
+        }
+        return 0;
+    }
+
+    /**
+     * Get total remaining quantity in eceran for a product in a specific sell
+     */
+    private function getTotalRemainingQuantityInEceran($sellId, $productId)
+    {
+        $sellDetails = SellDetail::where('sell_id', $sellId)
+            ->where('product_id', $productId)
+            ->with('product')
+            ->get();
+
+        $totalRemainingEceran = 0;
+
+        foreach ($sellDetails as $sellDetail) {
+            $quantityInEceran = $this->convertToEceran(
+                $sellDetail->quantity,
+                $sellDetail->unit_id,
+                $sellDetail->product
+            );
+            $totalRemainingEceran += $quantityInEceran;
+        }
+
+        return $totalRemainingEceran;
+    }
+
+    /**
+     * Get total returned quantity in eceran for a product from cart
+     */
+    private function getTotalReturnedQuantityInEceran($userId, $sellId, $productId)
+    {
+        $cartItems = SellReturCart::where('user_id', $userId)
+            ->where('sell_id', $sellId)
+            ->where('product_id', $productId)
+            ->with('product')
+            ->get();
+
+        $totalReturnedEceran = 0;
+
+        foreach ($cartItems as $cartItem) {
+            $quantityInEceran = $this->convertToEceran(
+                $cartItem->quantity,
+                $cartItem->unit_id,
+                $cartItem->product
+            );
+            $totalReturnedEceran += $quantityInEceran;
+        }
+
+        return $totalReturnedEceran;
+    }
+
+    /**
+     * Get available quantities for return in all units
+     */
+    public function getAvailableReturnQuantities($sellId, $productId)
+    {
+        $userId = auth()->id();
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        // Get total remaining quantity in eceran
+        $totalRemainingEceran = $this->getTotalRemainingQuantityInEceran($sellId, $productId);
+
+        // Get total already returned quantity in eceran from cart
+        $totalReturnedEceran = $this->getTotalReturnedQuantityInEceran($userId, $sellId, $productId);
+
+        // Calculate available quantity for return in eceran
+        $availableForReturnEceran = $totalRemainingEceran - $totalReturnedEceran;
+
+        // Convert to different units
+        $availableUnits = [
+            'eceran' => [
+                'unit_id' => $product->unit_eceran,
+                'quantity' => $availableForReturnEceran,
+                'unit_name' => $product->unit_eceran ? Unit::find($product->unit_eceran)->name : null
+            ]
+        ];
+
+        if ($product->pak_to_eceran > 0) {
+            $availableUnits['pak'] = [
+                'unit_id' => $product->unit_pak,
+                'quantity' => $this->convertFromEceran($availableForReturnEceran, $product->unit_pak, $product),
+                'unit_name' => $product->unit_pak ? Unit::find($product->unit_pak)->name : null
+            ];
+        }
+
+        if ($product->dus_to_eceran > 0) {
+            $availableUnits['dus'] = [
+                'unit_id' => $product->unit_dus,
+                'quantity' => $this->convertFromEceran($availableForReturnEceran, $product->unit_dus, $product),
+                'unit_name' => $product->unit_dus ? Unit::find($product->unit_dus)->name : null
+            ];
+        }
+
+        return response()->json([
+            'product_id' => $productId,
+            'total_remaining_eceran' => $totalRemainingEceran,
+            'total_returned_eceran' => $totalReturnedEceran,
+            'available_for_return_eceran' => $availableForReturnEceran,
+            'available_units' => $availableUnits
+        ]);
+    }
+
     public function addCart(Request $request)
     {
         $userId = auth()->id();
@@ -444,51 +625,76 @@ class SellReturController extends Controller
             if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
                 $quantityRetur = $inputRequest['quantity'];
 
-                $sellDetail = SellDetail::where('sell_id', $sellId)
+                // Get product for unit conversion
+                $product = Product::find($productId);
+                if (!$product) {
+                    return response()->json([
+                        'errors' => ['Product not found'],
+                    ], 422);
+                }
+
+                // Convert the return quantity to eceran for validation
+                $returnQuantityInEceran = $this->convertToEceran($quantityRetur, $unitId, $product);
+
+                // Get total remaining quantity in eceran from all sell details
+                $totalRemainingEceran = $this->getTotalRemainingQuantityInEceran($sellId, $productId);
+
+                // Get total already returned quantity in eceran from cart
+                $totalReturnedEceran = $this->getTotalReturnedQuantityInEceran($userId, $sellId, $productId);
+
+                // Calculate available quantity for return
+                $availableForReturnEceran = $totalRemainingEceran - $totalReturnedEceran;
+
+                // Validate that return quantity doesn't exceed available quantity
+                if ($returnQuantityInEceran > $availableForReturnEceran) {
+                    $availableInRequestedUnit = $this->convertFromEceran($availableForReturnEceran, $unitId, $product);
+
+                    return response()->json([
+                        'errors' => [
+                            'Jumlah retur (' . $quantityRetur . ') melebihi jumlah yang tersedia untuk dikembalikan (' .
+                                number_format($availableInRequestedUnit, 2) . ' dalam unit yang diminta)'
+                        ],
+                    ], 422);
+                }
+
+                // Basic validation
+                $rules = [
+                    'quantity' => 'required|numeric|min:1',
+                ];
+
+                $message = [
+                    'quantity.required' => 'Jumlah retur harus diisi',
+                    'quantity.numeric' => 'Jumlah retur harus berupa angka',
+                    'quantity.min' => 'Jumlah retur minimal 1',
+                ];
+
+                $validator = Validator::make(['quantity' => $quantityRetur], $rules, $message);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'errors' => $validator->errors()->all(),
+                    ], 422);
+                }
+
+                // Check if cart item with same unit already exists
+                $existingCart = SellReturCart::where('user_id', $userId)
+                    ->where('sell_id', $sellId)
                     ->where('product_id', $productId)
                     ->where('unit_id', $unitId)
                     ->first();
 
-                if ($sellDetail) {
-                    $existingCart = SellReturCart::where('user_id', $userId)
-                        ->where('sell_id', $sellId)
-                        ->where('product_id', $productId)
-                        ->where('unit_id', $unitId)
-                        ->first();
-
-                    $totalQuantityInCart = $existingCart ? $existingCart->quantity + $quantityRetur : $quantityRetur;
-
-                    $rules = [
-                        'quantity' => 'required|numeric|min:1|max:' . ($sellDetail->quantity - ($existingCart ? $existingCart->quantity : 0)),
-                    ];
-
-                    $message = [
-                        'quantity.max' => 'Jumlah retur tidak boleh melebihi jumlah penjualan',
-                    ];
-
-                    $validator = Validator::make(['quantity' => $totalQuantityInCart], $rules, $message);
-
-                    if ($validator->fails()) {
-                        return response()->json([
-                            'errors' => $validator->errors()->all(),
-                        ], 422);
-                    }
-
-                    if ($existingCart) {
-                        $existingCart->quantity += $quantityRetur;
-                        $existingCart->save();
-                    } else {
-                        SellReturCart::create([
-                            'sell_id' => $sellId,
-                            'user_id' => $userId,
-                            'product_id' => $productId,
-                            'unit_id' => $unitId,
-                            'quantity' => $quantityRetur,
-                            'price' => $inputRequest['price'],
-                        ]);
-                    }
+                if ($existingCart) {
+                    $existingCart->quantity += $quantityRetur;
+                    $existingCart->save();
                 } else {
-                    return redirect()->back()->with('error', 'Sell detail not found for the specified product and unit');
+                    SellReturCart::create([
+                        'sell_id' => $sellId,
+                        'user_id' => $userId,
+                        'product_id' => $productId,
+                        'unit_id' => $unitId,
+                        'quantity' => $quantityRetur,
+                        'price' => $inputRequest['price'],
+                    ]);
                 }
             }
         }
