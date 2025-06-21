@@ -67,11 +67,6 @@
                             <option value="{{ $item->id }}">{{ $item->name }}</option>
                             @endforeach
                         </select>
-                        <div class="mt-2 text-end">
-                            <a href="{{ route('kas-income-item.index') }}" class="btn btn-sm btn-light-primary">
-                                Kelola Item Pendapatan
-                            </a>
-                        </div>
                     </div>
 
                     <div id="expenseItemContainer" class="mb-4" style="display: none;">
@@ -84,11 +79,6 @@
                             <option value="{{ $item->id }}">{{ $item->name }}</option>
                             @endforeach
                         </select>
-                        <div class="mt-2 text-end">
-                            <a href="{{ route('kas-expense-item.index') }}" class="btn btn-sm btn-light-primary">
-                                Kelola Item Pengeluaran
-                            </a>
-                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -105,28 +95,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const typeSelect = document.getElementById('typeSelect');
-        const incomeItemContainer = document.getElementById('incomeItemContainer');
-        const expenseItemContainer = document.getElementById('expenseItemContainer');
-
-        typeSelect.addEventListener('change', function() {
-            if (this.value === 'Kas Masuk') {
-                incomeItemContainer.style.display = 'block';
-                expenseItemContainer.style.display = 'none';
-                document.getElementById('kas_expense_item_id').value = '';
-            } else if (this.value === 'Kas Keluar') {
-                incomeItemContainer.style.display = 'none';
-                expenseItemContainer.style.display = 'block';
-                document.getElementById('kas_income_item_id').value = '';
-            } else {
-                incomeItemContainer.style.display = 'none';
-                expenseItemContainer.style.display = 'none';
-                document.getElementById('kas_income_item_id').value = '';
-                document.getElementById('kas_expense_item_id').value = '';
-            }
-        });
-    });
-</script>

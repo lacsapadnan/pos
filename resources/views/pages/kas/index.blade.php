@@ -304,6 +304,50 @@
                     }
                 });
             });
+
+            // Handle kas type selection to show/hide item containers
+            $(document).on('change', '#typeSelect', function() {
+                const selectedType = $(this).val();
+                const incomeContainer = $('#incomeItemContainer');
+                const expenseContainer = $('#expenseItemContainer');
+                const incomeSelect = $('#kas_income_item_id');
+                const expenseSelect = $('#kas_expense_item_id');
+
+                console.log('Type selected:', selectedType);
+
+                if (selectedType === 'Kas Masuk') {
+                    incomeContainer.show();
+                    expenseContainer.hide();
+                    expenseSelect.val('').trigger('change');
+                    console.log('Showing income container');
+                } else if (selectedType === 'Kas Keluar') {
+                    incomeContainer.hide();
+                    expenseContainer.show();
+                    incomeSelect.val('').trigger('change');
+                    console.log('Showing expense container');
+                } else {
+                    incomeContainer.hide();
+                    expenseContainer.hide();
+                    incomeSelect.val('').trigger('change');
+                    expenseSelect.val('').trigger('change');
+                    console.log('Hiding both containers');
+                }
+            });
+
+            // Reset form when modal is closed
+            $('#kt_modal_1').on('hidden.bs.modal', function() {
+                $('#typeSelect').val('').trigger('change');
+                $('#incomeItemContainer').hide();
+                $('#expenseItemContainer').hide();
+                console.log('Modal closed - reset form');
+            });
+
+            // Initialize containers as hidden when modal opens
+            $('#kt_modal_1').on('shown.bs.modal', function() {
+                $('#incomeItemContainer').hide();
+                $('#expenseItemContainer').hide();
+                console.log('Modal opened - hiding containers');
+            });
         });
 </script>
 @endpush
