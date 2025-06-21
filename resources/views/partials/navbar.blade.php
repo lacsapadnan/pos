@@ -553,6 +553,7 @@
                             <span class="menu-title">Produk</span>
                         </a>
                         <!--end:Menu link-->
+                        @can('baca laba rugi')
                         <!--begin:Menu link-->
                         <a class="menu-link" href="{{ route('laba-rugi') }}">
                             <span class="menu-icon">
@@ -564,6 +565,7 @@
                             <span class="menu-title">Laba Rugi</span>
                         </a>
                         <!--end:Menu link-->
+                        @endcan
                     </div>
                 </div>
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"

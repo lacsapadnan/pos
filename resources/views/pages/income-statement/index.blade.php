@@ -65,7 +65,7 @@
         </div>
         <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
             <div class="row g-3">
-                @can('lihat semua laporan')
+                @can('lihat semua laba rugi')
                 <div class="col-md-3">
                     <select class="form-select" data-control="select2" data-placeholder="Pilih Gudang"
                         id="warehouseFilter">
@@ -82,6 +82,15 @@
                         <option value="{{ $user->id }}">{{ $user->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                @else
+                <div class="col-md-3">
+                    <input type="hidden" id="warehouseFilter" value="{{ auth()->user()->warehouse_id }}">
+                    <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+                </div>
+                <div class="col-md-3">
+                    <input type="hidden" id="userFilter" value="{{ auth()->id() }}">
+                    <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
                 </div>
                 @endcan
                 <div class="col-md-3">

@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class IncomeStatementController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:baca laba rugi');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -27,15 +32,16 @@ class IncomeStatementController extends Controller
 
     public function data(Request $request)
     {
-        $role = auth()->user()->roles->first()->name ?? 'user';
         $user_id = $request->input('user_id');
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse_id = $request->input('warehouse');
 
-        // Set warehouse filter based on role
-        if ($role !== 'master') {
+        // Check if user can see all income statement data
+        if (!auth()->user()->can('lihat semua laba rugi')) {
+            // Restrict to user's own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
+            $user_id = auth()->id();
         }
 
         $endDate = Carbon::parse($toDate)->endOfDay();
