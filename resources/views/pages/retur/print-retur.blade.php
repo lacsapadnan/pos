@@ -88,17 +88,20 @@
     <hr class="dotted-hr">
     <table width="100%">
         <tr>
-            <td width="20%">
+            <td width="15%">
                 <p>Qty</p>
             </td>
-            <td width="35%">
+            <td width="30%">
                 <p>Barang</p>
             </td>
             <td width="15%">
                 <p>Harga</p>
             </td>
-            <td width="20%" style="text-align:right">
-                <p>Jumlah</p>
+            <td width="15%" style="text-align:right">
+                <p>Qty</p>
+            </td>
+            <td width="25%" style="text-align:right">
+                <p>Total</p>
             </td>
         </tr>
     </table>
@@ -106,20 +109,23 @@
     <div class="p-3">
         <table width="100%">
             @foreach ($sellReturDetail as $detail)
-                <tr>
-                    <td width="15%">
-                        <p>{{ $detail->qty }}{{ $detail->unit->name }} </p>
-                    </td>
-                    <td width="40%">
-                        <p>{{ $detail->product->name }}</p>
-                    </td>
-                    <td width="15%">
-                        <p>{{ number_format($detail->price) }}</p>
-                    </td>
-                    <td width="20%" style="text-align:right">
-                        <p>{{ $detail->qty }}</p>
-                    </td>
-                </tr>
+            <tr>
+                <td width="15%">
+                    <p>{{ $detail->qty }}{{ $detail->unit->name }} </p>
+                </td>
+                <td width="30%">
+                    <p>{{ $detail->product->name }}</p>
+                </td>
+                <td width="15%">
+                    <p>{{ number_format($detail->price) }}</p>
+                </td>
+                <td width="15%" style="text-align:right">
+                    <p>{{ $detail->qty }}</p>
+                </td>
+                <td width="25%" style="text-align:right">
+                    <p>{{ number_format($detail->qty * $detail->price) }}</p>
+                </td>
+            </tr>
             @endforeach
             <tr>
                 <td colspan="4">
