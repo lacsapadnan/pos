@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cashflow;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
