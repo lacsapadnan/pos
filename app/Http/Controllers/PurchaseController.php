@@ -16,6 +16,7 @@ use App\Models\Treasury;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,13 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -283,27 +291,15 @@ class PurchaseController extends Controller
             // clear the cart
             PurchaseCart::where('user_id', auth()->id())->delete();
 
-            if ($request->payment_method == 2) {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Pembelian',
-                    'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
-                    'in' => 0,
-                    'out' => $request->pay - $remaint,
-                    'payment_method' => 'kas besar',
-                ]);
-            } else {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Pembelian',
-                    'description' => 'Pembelian ' . $request->order_number . ' Supplier ' . $supplier->name,
-                    'in' => 0,
-                    'out' => $request->pay - $remaint,
-                    'payment_method' => 'kas kecil',
-                ]);
-            }
+            // Handle cashflow using service
+            $this->cashflowService->handlePurchasePayment(
+                warehouseId: auth()->user()->warehouse_id,
+                orderNumber: $request->order_number,
+                supplierName: $supplier->name,
+                payment: $request->pay,
+                paymentMethod: $request->payment_method,
+                remaint: $remaint
+            );
 
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil ditambahkan');
         } catch (\Exception $e) {
@@ -432,9 +428,23 @@ class PurchaseController extends Controller
     public function destroy(string $id)
     {
         $purchase = Purchase::find($id);
+
+        if (!$purchase) {
+            return redirect()->route('pembelian.index')->with('error', 'Data pembelian tidak ditemukan');
+        }
+
+        // Delete associated cashflows first
+        $deletedCashflows = $this->cashflowService->deleteAllPurchaseCashflows($purchase->order_number);
+
+        // Then delete the purchase record
         $purchase->delete();
 
-        return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil dihapus');
+        $message = "Pembelian berhasil dihapus";
+        if ($deletedCashflows > 0) {
+            $message .= " beserta {$deletedCashflows} record cashflow terkait";
+        }
+
+        return redirect()->route('pembelian.index')->with('success', $message);
     }
 
     public function addCart(Request $request)
@@ -628,33 +638,14 @@ class PurchaseController extends Controller
 
     private function createCashflow($debt, $bayarHutang, $potongan, $paymentMethod)
     {
-        $commonData = [
-            'warehouse_id' => $debt->warehouse_id,
-            'user_id' => auth()->id(),
-            'for' => 'Bayar hutang',
-            'description' => 'Bayar hutang ' . $debt->order_number . ' Supplier ' . $debt->supplier->name,
-        ];
-
-        // Create cash flow for payment
-        $this->storeCashflow(array_merge($commonData, [
-            'in' => $paymentMethod === 'transfer' ? $bayarHutang : 0,
-            'out' => $paymentMethod === 'transfer' ? 0 : $bayarHutang,
-            'payment_method' => $paymentMethod,
-        ]));
-
-        // Create cash flow for potongan if applicable
-        if ($potongan > 0) {
-            $this->storeCashflow(array_merge($commonData, [
-                'in' => $potongan,
-                'out' => 0,
-                'description' => 'Potongan diskon ' . $commonData['description'],
-                'payment_method' => $paymentMethod,
-            ]));
-        }
-    }
-
-    private function storeCashflow(array $data)
-    {
-        Cashflow::create($data);
+        // Handle debt payment using service
+        $this->cashflowService->handleDebtPayment(
+            warehouseId: $debt->warehouse_id,
+            orderNumber: $debt->order_number,
+            supplierName: $debt->supplier->name,
+            bayarHutang: $bayarHutang,
+            potongan: $potongan,
+            paymentMethod: $paymentMethod
+        );
     }
 }

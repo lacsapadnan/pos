@@ -13,6 +13,7 @@ use App\Models\SellCartDraft;
 use App\Models\SellDetail;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,13 @@ use Illuminate\Support\Facades\Response;
 
 class SellDraftController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -187,62 +195,17 @@ class SellDraftController extends Controller
 
             $sellCart->each->delete();
 
-            if ($request->payment_method == 'transfer' && $sell->transfer > 0) {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $request->order_number,
-                    'in' => $transfer,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
-                // save to cashflow
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $request->order_number,
-                    'in' => 0,
-                    'out' => $transfer,
-                    'payment_method' => 'transfer',
-                ]);
-            } elseif ($request->payment_method == 'cash' && $sell->cash > 0) {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $request->order_number,
-                    'in' => $cash - $sell->change,
-                    'out' => 0,
-                    'payment_method' => 'cash',
-                ]);
-            } else {
-                // format transfer and cash to currency
-                $cashFinal = $cash - $sell->change;
-                $transferFormat = number_format($transfer, 0, ',', '.');
-                $cashFormat = number_format($cashFinal, 0, ',', '.');
-
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
-                    'in' => $cashFinal + $transfer,
-                    'out' => 0,
-                    'payment_method' => 'split payment',
-                ]);
-
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $request->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat,
-                    'in' => 0,
-                    'out' => $transfer,
-                    'payment_method' => 'split payment',
-                ]);
-            }
+            // Handle cashflow using service
+            $cashflowService = app(CashflowService::class);
+            $cashflowService->handleSalePayment(
+                warehouseId: auth()->user()->warehouse_id,
+                orderNumber: $request->order_number,
+                customerName: '', // No customer name available in this context
+                paymentMethod: $request->payment_method,
+                cash: $cash,
+                transfer: $transfer,
+                change: $sell->change
+            );
         }
 
         if ($request->status != 'draft') {
@@ -258,10 +221,18 @@ class SellDraftController extends Controller
     public function destroy(string $id)
     {
         $sell = Sell::where('id', $id)->first();
+
+        if (!$sell) {
+            return redirect()
+                ->route('penjualan-draft.index')
+                ->with('error', 'Data penjualan draft tidak ditemukan');
+        }
+
         $sellCart = SellCartDraft::where('cashier_id', $sell->cashier_id)
             ->where('sell_id', $id)
             ->get();
 
+        // Restore inventory for each cart item
         foreach ($sellCart as $sc) {
             $inventory = Inventory::where('product_id', $sc->product_id)
                 ->where('warehouse_id', auth()->user()->warehouse_id)
@@ -278,12 +249,21 @@ class SellDraftController extends Controller
             $inventory->save();
         }
 
+        // Delete associated cashflows (in case draft was converted and then reverted)
+        $deletedCashflows = $this->cashflowService->deleteAllSaleCashflows($sell->order_number);
+
+        // Delete cart items and sell record
         $sellCart->each->delete();
         $sell->delete();
 
+        $message = "Penjualan draft berhasil dihapus";
+        if ($deletedCashflows > 0) {
+            $message .= " beserta {$deletedCashflows} record cashflow terkait";
+        }
+
         return redirect()
             ->route('penjualan-draft.index')
-            ->with('success', 'penjualan berhasil dihapus');
+            ->with('success', $message);
     }
 
     public function addCart(Request $request)

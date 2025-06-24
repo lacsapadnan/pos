@@ -8,11 +8,19 @@ use App\Models\Kas;
 use App\Models\KasExpenseItem;
 use App\Models\KasIncomeItem;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class KasController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -96,27 +104,13 @@ class KasController extends Controller
             'description' => $request->description,
         ]);
 
-        if ($type === 'Kas Masuk') {
-            Cashflow::create([
-                'warehouse_id' => $warehouseId,
-                'user_id' => auth()->id(),
-                'for' => 'Kas Masuk',
-                'description' => $request->description,
-                'in' => $request->amount,
-                'out' => 0,
-                'payment_method' => null,
-            ]);
-        } else {
-            Cashflow::create([
-                'warehouse_id' => $warehouseId,
-                'user_id' => auth()->id(),
-                'for' => 'Kas Keluar',
-                'description' => $request->description,
-                'in' => 0,
-                'out' => $request->amount,
-                'payment_method' => null,
-            ]);
-        }
+        // Handle cashflow using service
+        $this->cashflowService->handleKasTransaction(
+            warehouseId: $warehouseId,
+            type: $type,
+            description: $request->description,
+            amount: $request->amount
+        );
 
         return redirect()->back()->with('success', 'Kas ' . $kas->invoice . ' berhasil ditambahkan.');
     }

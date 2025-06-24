@@ -15,6 +15,7 @@ use App\Models\SellRetur;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -27,10 +28,15 @@ use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
 use DataTables;
 
-require_once app_path('Helpers/CashflowHelper.php');
-
 class SellController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -255,72 +261,16 @@ class SellController extends Controller
             // delete all purchase cart
             SellCart::where('cashier_id', auth()->id())->delete();
 
-            if ($request->payment_method == 'transfer' && $sell->transfer > 0) {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
-                    'in' => $transfer - $sell->change,
-                    'out' => 0,
-                    'payment_method' => 'transfer',
-                ]);
-                // save to cashflow
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
-                    'in' => 0,
-                    'out' => $transfer - $sell->change,
-                    'payment_method' => 'transfer',
-                ]);
-            } elseif ($request->payment_method == 'cash' && $sell->cash > 0) {
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . 'Customer ' . $customer->name,
-                    'in' => $cash - $sell->change,
-                    'out' => 0,
-                    'payment_method' => 'cash',
-                ]);
-            } elseif ($request->payment_method == 'split' && $sell->cash > 0 && $sell->transfer > 0) {
-                // format transfer and cash to currency
-                $cashFinal = $cash - $sell->change;
-                $transferFormat = number_format($transfer, 0, ',', '.');
-                $cashFormat = number_format($cashFinal, 0, ',', '.');
-
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
-                    'in' => 0,
-                    'out' => $transfer,
-                    'payment_method' => 'split payment',
-                ]);
-
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
-                    'in' => $transfer,
-                    'out' => 0,
-                    'payment_method' => 'split payment',
-                ]);
-
-                Cashflow::create([
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'for' => 'Penjualan',
-                    'description' => 'Penjualan ' . $sell->order_number . ' transfer sebesar ' . $transferFormat . ' dan tunai sebesar ' . $cashFormat . 'Customer ' . $customer->name,
-                    'in' => $sell->grand_total - $transfer,
-                    'out' => 0,
-                    'payment_method' => 'split payment',
-                ]);
-            }
+            // Handle cashflow using service
+            $this->cashflowService->handleSalePayment(
+                warehouseId: auth()->user()->warehouse_id,
+                orderNumber: $sell->order_number,
+                customerName: $customer->name,
+                paymentMethod: $request->payment_method,
+                cash: $cash,
+                transfer: $transfer,
+                change: $sell->change
+            );
         }
 
         if ($request->status != 'draft') {
@@ -452,9 +402,23 @@ class SellController extends Controller
     public function destroy(string $id)
     {
         $sell = Sell::with('details')->find($id);
+
+        if (!$sell) {
+            return redirect()->back()->with('error', 'Data penjualan tidak ditemukan');
+        }
+
+        // Delete associated cashflows first
+        $deletedCashflows = $this->cashflowService->deleteAllSaleCashflows($sell->order_number);
+
+        // Then delete the sell record
         $sell->delete();
 
-        return redirect()->back()->with('success', 'Data penjualan berhasil dihapus');
+        $message = "Data penjualan berhasil dihapus";
+        if ($deletedCashflows > 0) {
+            $message .= " beserta {$deletedCashflows} record cashflow terkait";
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function addCart(Request $request)
@@ -724,75 +688,18 @@ class SellController extends Controller
 
         $sell->save();
 
-        $description = 'Bayar piutang ' . $sell->order_number . ' Customer ' . $sell->customer->name . ' ' . $request->keterangan;
-
-        // Handle cash and transfer payments
-        if ($paymentMethod === 'split') {
-            if ($paymentCash > 0) {
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentIn: $paymentCash,
-                    paymentMethod: 'cash',
-                    for: 'Bayar piutang'
-                );
-            }
-
-            if ($paymentTransfer > 0) {
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentOut: $paymentTransfer,
-                    paymentMethod: 'transfer',
-                    for: 'Bayar piutang'
-                );
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentIn: $paymentTransfer,
-                    paymentMethod: 'transfer',
-                    for: 'Bayar piutang'
-                );
-            }
-        } elseif ($paymentMethod === 'transfer') {
-            if ($payment > 0) {
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentOut: $payment,
-                    paymentMethod: 'transfer',
-                    for: 'Bayar piutang'
-                );
-
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentIn: $payment,
-                    paymentMethod: 'transfer',
-                    for: 'Bayar piutang'
-                );
-            }
-        } else {
-            if ($payment > 0) {
-                create_cashflow(
-                    warehouse_id: $sell->warehouse_id,
-                    description: $description,
-                    paymentIn: $payment,
-                    paymentMethod: 'cash',
-                    for: 'Bayar piutang'
-                );
-            }
-        }
-
-        if ($potongan !== null && $potongan > 0) {
-            create_cashflow(
-                warehouse_id: $sell->warehouse_id,
-                description: 'Potongan bayar piutang ' . $sell->order_number,
-                paymentOut: $potongan,
-                paymentMethod: 'cash',
-                for: 'Bayar piutang'
-            );
-        }
+        // Handle cashflow using service
+        $this->cashflowService->handleCreditPayment(
+            warehouseId: $sell->warehouse_id,
+            orderNumber: $sell->order_number,
+            customerName: $sell->customer->name,
+            paymentMethod: $paymentMethod,
+            payment: $payment,
+            paymentCash: $paymentCash,
+            paymentTransfer: $paymentTransfer,
+            potongan: $potongan,
+            keterangan: $request->keterangan
+        );
 
         return response()->json([
             'status' => 'success',

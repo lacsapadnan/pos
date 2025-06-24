@@ -75,9 +75,12 @@ class ReportController extends Controller
 
     public function destroy($id)
     {
-        $cashflow = Cashflow::findOrFail($id);
-        $cashflow->delete();
+        $cashflowService = app(CashflowService::class);
 
-        return redirect()->route('report.index')->with('success', 'Data berhasil dihapus!');
+        if ($cashflowService->deleteCashflow($id)) {
+            return redirect()->route('report.index')->with('success', 'Data berhasil dihapus!');
+        }
+
+        return redirect()->route('report.index')->with('error', 'Data tidak ditemukan!');
     }
 }

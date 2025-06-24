@@ -7,11 +7,19 @@ use App\Models\Cashflow;
 use App\Models\TreasuryMutation;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class TreasuryMutationController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -46,14 +54,13 @@ class TreasuryMutationController extends Controller
         $data['input_date'] = date('Y-m-d H:i:s', strtotime($data['input_date']));
         TreasuryMutation::create($data);
 
-        Cashflow::create([
-            'user_id' => $data['output_cashier'],
-            'warehouse_id' => $data['from_warehouse'],
-            'for' => 'Mutasi Kas',
-            'description' => $data['description'],
-            'out' => $data['amount'],
-            'in' => 0,
-        ]);
+        // Handle cashflow using service
+        $this->cashflowService->handleTreasuryMutation(
+            fromWarehouseId: $data['from_warehouse'],
+            description: $data['description'],
+            amount: $data['amount'],
+            outputCashier: $data['output_cashier']
+        );
 
         return redirect()->back()->with('success', 'Mutasi kas berhasil ditambahkan');
     }

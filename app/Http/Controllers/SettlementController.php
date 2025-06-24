@@ -134,14 +134,14 @@ class SettlementController extends Controller
         $settlement->to_treasury = $request->from_warehouse;
         $settlement->save();
 
-        Cashflow::create([
-            'user_id' => $request->output_cashier,
-            'warehouse_id' => $request->from_warehouse,
-            'for' => 'Settlement',
-            'description' => $request->description,
-            'out' => 0,
-            'in' => $totalRecieved,
-        ]);
+        // Handle cashflow using service
+        $cashflowService = app(CashflowService::class);
+        $cashflowService->handleSettlement(
+            warehouseId: $request->from_warehouse,
+            description: $request->description,
+            totalReceived: $totalRecieved,
+            outputCashier: $request->output_cashier
+        );
 
         return redirect()->route('laporan')->with('success', 'Settlement created successfully');
     }
