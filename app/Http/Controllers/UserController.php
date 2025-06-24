@@ -99,9 +99,27 @@ class UserController extends Controller
         $user = User::with('roles', 'permissions')->where('id', $id)->first();
         $roles = Role::orderBy('id', 'asc')->get();
         $permissions = Permission::all();
+
+        // Group permissions by module/object name (second part after space)
+        $groupedPermissions = $permissions->groupBy(function ($permission) {
+            $parts = explode(' ', $permission->name);
+
+            // Special case: group "absen masuk keluar" with "rekap" permissions
+            if (strpos($permission->name, 'absen') !== false || strpos($permission->name, 'rekap') !== false) {
+                return 'Rekap';
+            }
+
+            // Special case: group "laporan" and "laba rugi" permissions together
+            if (strpos($permission->name, 'laporan') !== false || strpos($permission->name, 'laba') !== false || strpos($permission->name, 'rugi') !== false) {
+                return 'Laba';
+            }
+
+            return count($parts) > 1 ? ucfirst($parts[1]) : ucfirst($parts[0]);
+        });
+
         $userPermissions = $user->permissions->pluck('id')->toArray();
         $warehouses = Warehouse::orderBy('id', 'asc')->get();
-        return view('pages.user.edit', compact('user', 'roles', 'permissions', 'userPermissions', 'warehouses'));
+        return view('pages.user.edit', compact('user', 'roles', 'groupedPermissions', 'userPermissions', 'warehouses'));
     }
 
     /**
@@ -156,26 +174,26 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-{
-    $user = User::where('id', $id)->first();
+    {
+        $user = User::where('id', $id)->first();
 
-    if ($user) {
-        // Delete related cashflows
-        $user->cashflows()->delete();
-        $user->sellReturs()->delete();
+        if ($user) {
+            // Delete related cashflows
+            $user->cashflows()->delete();
+            $user->sellReturs()->delete();
 
-        // Detach roles and permissions
-        $user->roles()->detach();
-        $user->permissions()->detach();
-        
-        // Force delete the user (ignoring foreign key constraints)
-        $user->forceDelete();
+            // Detach roles and permissions
+            $user->roles()->detach();
+            $user->permissions()->detach();
 
-        return redirect()->back()->with('success', 'User berhasil dihapus!');
+            // Force delete the user (ignoring foreign key constraints)
+            $user->forceDelete();
+
+            return redirect()->back()->with('success', 'User berhasil dihapus!');
+        }
+
+        return redirect()->back()->with('error', 'User tidak ditemukan.');
     }
-
-    return redirect()->back()->with('error', 'User tidak ditemukan.');
-}
 
 
 

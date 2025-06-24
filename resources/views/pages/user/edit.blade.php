@@ -46,16 +46,25 @@
     </div>
     <div class="mb-10">
         <label class="form-label">Permissions</label>
-        <div class="gap-3 row row-cols-2 row-cols-md-3 row-cols-lg-4">
-            @foreach($permissions as $permission)
-            <div class="col">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                        id="permission_{{ $permission->id }}" {{ in_array($permission->id, $userPermissions) ? 'checked'
-                    : '' }}>
-                    <label class="form-check-label" for="permission_{{ $permission->id }}">
-                        {{ $permission->name }}
-                    </label>
+        <div class="row g-3">
+            @foreach($groupedPermissions as $group => $groupPermissions)
+            <div class="col-md-3">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 card-title">{{ $group }}</h6>
+                    </div>
+                    <div class="card-body">
+                        @foreach($groupPermissions as $permission)
+                        <div class="mb-2 form-check">
+                            <input class="form-check-input" type="checkbox" name="permissions[]"
+                                value="{{ $permission->id }}" id="permission_{{ $permission->id }}" {{
+                                in_array($permission->id, $userPermissions) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="permission_{{ $permission->id }}">
+                                {{ $permission->name }}
+                            </label>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
             @endforeach
