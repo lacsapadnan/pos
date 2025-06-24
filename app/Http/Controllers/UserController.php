@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -40,42 +41,16 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(UserStoreRequest $request)
     {
-        $validasi = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'warehouse_id' => 'nullable|exists:warehouses,id'
-        ], [
-            'name.required' => 'Nama harus diisi!',
-            'name.string' => 'Nama harus berupa string!',
-            'name.max' => 'Nama maksimal 255 karakter!',
-            'role.required' => 'Role harus diisi!',
-            'role.string' => 'Role harus berupa string!',
-            'role.max' => 'Role maksimal 255 karakter!',
-            'email.required' => 'Email harus diisi!',
-            'email.string' => 'Email harus berupa string!',
-            'email.email' => 'Email harus berupa email!',
-            'email.max' => 'Email maksimal 255 karakter!',
-            'email.unique' => 'Email sudah terdaftar!',
-            'password.required' => 'Password harus diisi!',
-            'password.string' => 'Password harus berupa string!',
-            'password.min' => 'Password minimal 8 karakter!',
-            'warehouse_id.exists' => 'Cabang tidak ditemukan!',
-        ]);
+        $validated = $request->validated();
 
-        if ($validasi->fails()) {
-            return redirect()->back()->withErrors($validasi)->withInput();
-        }
-
-        $role = Role::where('id', $request->role)->first();
+        $role = Role::where('id', $validated['role'])->first();
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'warehouse_id' => $request->warehouse_id ?? null,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'warehouse_id' => $validated['warehouse_id'] ?? null,
         ]);
 
         $user->roles()->attach($role);
@@ -125,47 +100,23 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UserUpdateRequest $request, string $id)
     {
-        // dd($request->all());
-        $validasi = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'warehouse_id' => 'nullable|exists:warehouses,id'
-        ], [
-            'name.required' => 'Nama harus diisi!',
-            'name.string' => 'Nama harus berupa string!',
-            'name.max' => 'Nama maksimal 255 karakter!',
-            'role.required' => 'Role harus diisi!',
-            'role.string' => 'Role harus berupa string!',
-            'role.max' => 'Role maksimal 255 karakter!',
-            'email.required' => 'Email harus diisi!',
-            'email.string' => 'Email harus berupa string!',
-            'email.email' => 'Email harus berupa email!',
-            'email.max' => 'Email maksimal 255 karakter!',
-            'email.unique' => 'Email sudah terdaftar!',
-            'warehouse_id.exists' => 'Cabang tidak ditemukan!',
-        ]);
+        $validated = $request->validated();
 
-        if ($validasi->fails()) {
-            return redirect()->back()->withErrors($validasi)->withInput();
-        }
-
-        $role = Role::where('id', $request->role)->first();
+        $role = Role::where('id', $validated['role'])->first();
         $user = User::where('id', $id)->first();
         $user->update([
-            'name' => $request->name ?? $user->name,
-            'email' => $request->email ?? $user->email,
+            'name' => $validated['name'] ?? $user->name,
+            'email' => $validated['email'] ?? $user->email,
             'password' => $request->password ? Hash::make($request->password) : $user->password,
-            'warehouse_id' => $request->warehouse_id ?? $user->warehouse_id,
+            'warehouse_id' => $validated['warehouse_id'] ?? $user->warehouse_id,
         ]);
 
         // Update the user roles or used current roles
         $user->roles()->sync($role);
 
-
-        $permissions = $request->input('permissions', []);
+        $permissions = $validated['permissions'] ?? [];
         $user->syncPermissions($permissions);
         return redirect()->route('user.index')->with('success', 'User berhasil diubah!');
     }
