@@ -98,9 +98,9 @@
                             <th>Keperluan</th>
                             <th>Jumlah</th>
                             <th>Deskripsi</th>
-                            @can('hapus kas')
+                            @canany(['update kas', 'hapus kas'])
                             <th>Aksi</th>
-                            @endcan
+                            @endcanany
                         </tr>
                     </thead>
                     <tbody class="text-gray-900 fw-semibold">
@@ -192,12 +192,24 @@
                                 }
                             }
                         },
-                        @can('hapus kas')
+                        @canany(['update kas', 'hapus kas'])
                         {
                             "data": null,
                             "sortable": false,
                             "render": function(data, type, row, meta) {
-                                return `
+                                let actions = `<div class="gap-2 d-flex">`;
+
+                                @can('update kas')
+                                actions += `
+                                    <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="${row.id}">
+                                        <i class="ki-solid ki-pencil"></i>
+                                        Edit
+                                    </button>
+                                `;
+                                @endcan
+
+                                @can('hapus kas')
+                                actions += `
                                     <form action="{{ url('kas') }}/${row.id}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('delete')
@@ -207,9 +219,13 @@
                                         </button>
                                     </form>
                                 `;
+                                @endcan
+
+                                actions += `</div>`;
+                                return actions;
                             }
                         }
-                        @endcan
+                        @endcanany
                     ],
                 });
             }
@@ -347,6 +363,62 @@
                 $('#incomeItemContainer').hide();
                 $('#expenseItemContainer').hide();
                 console.log('Modal opened - hiding containers');
+            });
+
+                        // Handle edit button click
+            $(document).on('click', '.edit-btn', function() {
+                const kasId = $(this).data('id');
+
+                // Get kas data via AJAX
+                $.get(`{{ url('kas') }}/${kasId}/edit`, function(response) {
+                    const kas = response.kas;
+
+                    // Update modal title and form action
+                    $('#modal-title').text('Edit data kas');
+                    $('#kas-form').attr('action', `{{ url('kas') }}/${kasId}`);
+                    $('#method-field').val('PUT');
+                    $('#kas-id').val(kasId);
+
+                    // Populate form fields
+                    $('input[name="date"]').val(kas.date);
+                    $('input[name="invoice"]').val(kas.invoice);
+                    $('input[name="amount"]').val(kas.amount);
+                    $('input[name="description"]').val(kas.description || '');
+
+                    // Set warehouse if user is master
+                    if (response.warehouses && response.warehouses.length > 0) {
+                        $('select[name="warehouse_id"]').val(kas.warehouse_id).trigger('change');
+                    }
+
+                    // Set type and manually show/hide containers to avoid clearing values
+                    $('select[name="type"]').val(kas.type);
+
+                    // Manually handle container visibility and set values
+                    if (kas.type === 'Kas Masuk') {
+                        $('#incomeItemContainer').show();
+                        $('#expenseItemContainer').hide();
+                        $('#kas_income_item_id').val(kas.kas_income_item_id).trigger('change');
+                        $('#kas_expense_item_id').val('').trigger('change');
+                    } else if (kas.type === 'Kas Keluar') {
+                        $('#incomeItemContainer').hide();
+                        $('#expenseItemContainer').show();
+                        $('#kas_expense_item_id').val(kas.kas_expense_item_id).trigger('change');
+                        $('#kas_income_item_id').val('').trigger('change');
+                    }
+
+                    // Show modal
+                    $('#kt_modal_1').modal('show');
+                });
+            });
+
+            // Reset form when adding new data
+            $('button[data-bs-target="#kt_modal_1"]').on('click', function() {
+                // Reset form for create mode
+                $('#modal-title').text('Tambah data kas');
+                $('#kas-form').attr('action', '{{ route('kas.store') }}');
+                $('#method-field').val('');
+                $('#kas-id').val('');
+                $('#kas-form')[0].reset();
             });
         });
 </script>

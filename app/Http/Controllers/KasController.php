@@ -134,7 +134,22 @@ class KasController extends Controller
      */
     public function edit(string $id)
     {
-        abort(404);
+        $kas = Kas::with(['kas_income_item', 'kas_expense_item', 'warehouse'])->findOrFail($id);
+        $incomeItems = KasIncomeItem::orderBy('name')->get();
+        $expenseItems = KasExpenseItem::orderBy('name')->get();
+
+        // Get warehouses for master
+        $warehouses = [];
+        if (auth()->user()->hasRole('master')) {
+            $warehouses = Warehouse::orderBy('name')->get();
+        }
+
+        return response()->json([
+            'kas' => $kas,
+            'incomeItems' => $incomeItems,
+            'expenseItems' => $expenseItems,
+            'warehouses' => $warehouses
+        ]);
     }
 
     /**
@@ -142,7 +157,59 @@ class KasController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        abort(404);
+        $kas = Kas::findOrFail($id);
+
+        $kasIncomeItemId = null;
+        $kasExpenseItemId = null;
+        $type = $request->input('type');
+        $warehouseId = auth()->user()->hasRole('master') && $request->filled('warehouse_id')
+            ? $request->warehouse_id
+            : auth()->user()->warehouse_id;
+
+        if ($type === 'Kas Masuk') {
+            $kasIncomeItemId = $request->kas_income_item_id;
+        } else if ($type === 'Kas Keluar') {
+            $kasExpenseItemId = $request->kas_expense_item_id;
+        }
+
+        // Update the kas record
+        $kas->update([
+            'kas_income_item_id' => $kasIncomeItemId,
+            'kas_expense_item_id' => $kasExpenseItemId,
+            'warehouse_id' => $warehouseId,
+            'date' => $request->date,
+            'type' => $type,
+            'amount' => $request->amount,
+            'description' => $request->description,
+        ]);
+
+        // Update corresponding cashflow record
+        $cashflow = Cashflow::where('for', $kas->type === 'Kas Masuk' ? 'Kas Masuk' : 'Kas Keluar')
+            ->where('description', $kas->description)
+            ->where('warehouse_id', $kas->warehouse_id)
+            ->first();
+
+        if ($cashflow) {
+            if ($type === 'Kas Masuk') {
+                $cashflow->update([
+                    'warehouse_id' => $warehouseId,
+                    'for' => 'Kas Masuk',
+                    'description' => $request->description,
+                    'in' => $request->amount,
+                    'out' => 0,
+                ]);
+            } else {
+                $cashflow->update([
+                    'warehouse_id' => $warehouseId,
+                    'for' => 'Kas Keluar',
+                    'description' => $request->description,
+                    'in' => 0,
+                    'out' => $request->amount,
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Kas ' . $kas->invoice . ' berhasil diperbarui.');
     }
 
     /**

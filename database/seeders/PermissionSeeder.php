@@ -46,7 +46,7 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'update unit']);
         // Permission::create(['name' => 'hapus unit']);
 
-        // // CRUD kas permissions
+        // CRUD kas permissions
         // Permission::create(['name' => 'simpan kas']);
         // Permission::create(['name' => 'baca kas']);
         // Permission::create(['name' => 'update kas']);

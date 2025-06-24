@@ -2,7 +2,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Tambah data kas</h3>
+                <h3 class="modal-title" id="modal-title">Tambah data kas</h3>
 
                 <!--begin::Close-->
                 <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
@@ -13,8 +13,10 @@
             </div>
 
             <div class="modal-body">
-                <form action="{{ route('kas.store') }}" method="post">
+                <form id="kas-form" action="{{ route('kas.store') }}" method="post">
                     @csrf
+                    <input type="hidden" id="method-field" name="_method" value="">
+                    <input type="hidden" id="kas-id" name="kas_id" value="">
                     <div class="mb-4">
                         <label class="form-label" for="date">Tanggal</label>
                         <div class="input-group" id="kt_td_picker_date_only" data-td-target-input="nearest"
