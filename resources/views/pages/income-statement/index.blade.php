@@ -54,6 +54,40 @@
     .currency {
         font-family: monospace;
     }
+
+    .detail-tables-container {
+        display: flex;
+        gap: 20px;
+    }
+
+    .detail-table-card {
+        flex: 1;
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-table-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .detail-table-card .table-responsive {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .detail-table-card .dataTables_wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-table-card .dataTables_scroll {
+        flex: 1;
+    }
 </style>
 @endpush
 
@@ -210,49 +244,45 @@
         </div>
 
         <!-- Detailed Tables -->
-        <div class="mt-5 row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Detail Penjualan per Produk</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-row-bordered gy-5 gs-7" id="salesDetailTable">
-                                <thead>
-                                    <tr class="text-gray-800 fw-bold fs-6">
-                                        <th>No</th>
-                                        <th>Produk</th>
-                                        <th>Qty Terjual</th>
-                                        <th>Total Pendapatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+        <div class="mt-5 detail-tables-container">
+            <div class="detail-table-card card">
+                <div class="card-header">
+                    <h5>Detail Penjualan per Produk</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-row-bordered gy-5 gs-7" id="salesDetailTable">
+                            <thead>
+                                <tr class="text-gray-800 fw-bold fs-6">
+                                    <th>No</th>
+                                    <th>Produk</th>
+                                    <th>Qty Terjual</th>
+                                    <th>Total Pendapatan</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Detail HPP per Produk</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-row-bordered gy-5 gs-7" id="cogsDetailTable">
-                                <thead>
-                                    <tr class="text-gray-800 fw-bold fs-6">
-                                        <th>No</th>
-                                        <th>Produk</th>
-                                        <th>Qty (Eceran)</th>
-                                        <th>Harga Modal</th>
-                                        <th>Total HPP</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+            <div class="detail-table-card card">
+                <div class="card-header">
+                    <h5>Detail HPP per Produk</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-row-bordered gy-5 gs-7" id="cogsDetailTable">
+                            <thead>
+                                <tr class="text-gray-800 fw-bold fs-6">
+                                    <th>No</th>
+                                    <th>Produk</th>
+                                    <th>Qty (Eceran)</th>
+                                    <th>Harga Modal</th>
+                                    <th>Total HPP</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
