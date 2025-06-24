@@ -112,6 +112,7 @@
                             <th>Customer</th>
                             <th>Supplier</th>
                             <th>Untuk</th>
+                            <th>Tipe</th>
                             <th class="w-250px">Keterangan</th>
                         </tr>
                     </thead>
@@ -221,6 +222,10 @@
                         },
                         {
                             data: "type"
+                        },
+                        {
+                            data: "for",
+                            defaultContent: '-'
                         },
                         {
                             data: "description"

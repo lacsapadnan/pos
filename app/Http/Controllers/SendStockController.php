@@ -10,12 +10,19 @@ use App\Models\SendStockCart;
 use App\Models\SendStockDetail;
 use App\Models\Unit;
 use App\Models\Warehouse;
+use App\Services\StockTransferService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SendStockController extends Controller
 {
+    protected $stockTransferService;
+
+    public function __construct(StockTransferService $stockTransferService)
+    {
+        $this->stockTransferService = $stockTransferService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -175,6 +182,9 @@ class SendStockController extends Controller
             // Insert all transfer details in one query (batch insert)
             SendStockDetail::insert($sendStockDetails);
 
+            // Create ProductReport entries for stock transfer tracking
+            $this->stockTransferService->createStockTransferReports($sendStock, $carts);
+
             // Clear cart in one query
             SendStockCart::where('user_id', $user->id)->delete();
 
@@ -260,6 +270,9 @@ class SendStockController extends Controller
         if (!empty($stockErrors)) {
             return redirect()->back()->withErrors($stockErrors);
         }
+
+        // Delete related ProductReport entries
+        $this->stockTransferService->deleteStockTransferReports($sendStock, $sendStockDetails->pluck('product_id')->toArray());
 
         // Delete the SendStockDetail and SendStock entries
         SendStockDetail::where('send_stock_id', $id)->delete();

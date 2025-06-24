@@ -4,17 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductReport;
 use App\Models\SendStock;
 use App\Models\SendStockCart;
 use App\Models\SendStockDetail;
 use App\Models\Unit;
 use App\Models\Warehouse;
+use App\Services\StockTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SendStockDraftController extends Controller
 {
+    protected $stockTransferService;
+
+    public function __construct(StockTransferService $stockTransferService)
+    {
+        $this->stockTransferService = $stockTransferService;
+    }
     /**
      * Display a listing of draft send stocks.
      */
@@ -246,6 +254,9 @@ class SendStockDraftController extends Controller
                     ['quantity' => DB::raw("quantity + $quantityEceran")]
                 );
             }
+
+            // Create ProductReport entries for stock transfer tracking
+            $this->stockTransferService->createStockTransferReports($sendStock, $sendStockDetails);
 
             // Update status to completed
             $sendStock->update([
