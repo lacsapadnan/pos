@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +17,13 @@ class EmployeeController extends Controller
     public function index()
     {
         $warehouses = Warehouse::orderBy('id', 'asc')->get();
-        return view('pages.employee.index', compact('warehouses'));
+        $users = User::orderBy('name', 'asc')->get();
+        return view('pages.employee.index', compact('warehouses', 'users'));
     }
 
     public function data()
     {
-        $employees = Employee::with('warehouse',)->orderBy('id', 'asc')->get();
+        $employees = Employee::with('warehouse', 'user')->orderBy('id', 'asc')->get();
         return response()->json($employees);
     }
 
@@ -44,6 +46,7 @@ class EmployeeController extends Controller
             'nickname' => 'nullable|string|max:255',
             'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'warehouse_id' => 'required|exists:warehouses,id',
+            'user_id' => 'required|exists:users,id|unique:employees,user_id',
         ]);
 
         try {
@@ -60,6 +63,7 @@ class EmployeeController extends Controller
                 'nickname' => $request->nickname,
                 'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
+                'user_id' => $request->user_id,
             ]);
 
             DB::commit();
@@ -85,8 +89,9 @@ class EmployeeController extends Controller
     {
         $employee = Employee::findOrFail($id);
         $warehouses = Warehouse::orderBy('id', 'asc')->get();
+        $users = User::orderBy('name', 'asc')->get();
 
-        return view('pages.employee.edit', compact('warehouses', 'employee'));
+        return view('pages.employee.edit', compact('warehouses', 'employee', 'users'));
     }
 
     /**
@@ -100,6 +105,7 @@ class EmployeeController extends Controller
             'nickname' => 'nullable|string|max:255',
             'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'warehouse_id' => 'required|exists:warehouses,id',
+            'user_id' => 'required|exists:users,id|unique:employees,user_id,' . $id,
         ]);
 
         try {
@@ -123,6 +129,7 @@ class EmployeeController extends Controller
                 'nickname' => $request->nickname,
                 'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
+                'user_id' => $request->user_id,
             ]);
 
             DB::commit();

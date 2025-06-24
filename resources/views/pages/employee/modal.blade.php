@@ -34,7 +34,7 @@
                         <label class="form-label" for="phone">phone</label>
                         <input name="phone" type="number" class="form-control" placeholder="Masukan phone karyawan" />
                     </div>
-                    <div class="mb-5">
+                    <div class="mb-3">
                         <label for="warehouse" class="col-form-label">Cabang</label>
                         <select name="warehouse_id" class="form-select" aria-label="Select example">
                             @forelse ($warehouses as $warehouse)
@@ -43,6 +43,18 @@
                             <option value="">Tidak ada cabang</option>
                             @endforelse
                         </select>
+                    </div>
+                    <div class="mb-5">
+                        <label for="user_id" class="col-form-label">User <span class="text-danger">*</span></label>
+                        <select name="user_id" class="form-select" aria-label="Select user" required>
+                            <option value="">Pilih User</option>
+                            @forelse ($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                            @empty
+                            <option value="">Tidak ada user</option>
+                            @endforelse
+                        </select>
+                        <div class="form-text">User ini akan digunakan untuk absensi dan penggajian</div>
                     </div>
                     <button type="submit" class="btn btn-success">Simpan</button>
                 </form>

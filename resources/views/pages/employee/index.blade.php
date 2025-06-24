@@ -73,7 +73,7 @@
     <div class="card-body">
         <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
             <div class="table-responsive">
-                <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
                     id="kt_datatable_example">
                     <thead>
                         <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
@@ -83,6 +83,7 @@
                             <th>KTP</th>
                             <th>No. Telp</th>
                             <th>Cabang</th>
+                            <th>User</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -104,7 +105,7 @@
                     <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
                 </div>
             </div>
-            <div class="modal-body text-center">
+            <div class="text-center modal-body">
                 <img id="ktp-image-preview" src="" alt="KTP" class="img-fluid">
             </div>
         </div>
@@ -175,6 +176,19 @@
                         },
                         {
                             data: 'warehouse.name',
+                        },
+                        {
+                            data: 'user',
+                            render: function(data, type, row) {
+                                if (data && data.name) {
+                                    return `<div>
+                                        <strong>${data.name}</strong><br>
+                                        <small class="text-muted">${data.email}</small>
+                                    </div>`;
+                                } else {
+                                    return '<span class="text-danger">Tidak ada user</span>';
+                                }
+                            }
                         },
                         {
                             data: "id",
