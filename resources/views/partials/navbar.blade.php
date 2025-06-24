@@ -508,6 +508,18 @@
                 </div>
                 <!--end:Menu item-->
                 @endif
+                @can('baca kasbon')
+                <!--begin:Menu item-->
+                <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('kasbon.*') ? ' here' : '' }}">
+                    <!--begin:Menu link-->
+                    <a href="{{ route('kasbon.index') }}" class="py-3 menu-link">
+                        <span class="menu-title">Kasbon</span>
+                        <span class="menu-arrow d-lg-none"></span>
+                    </a>
+                    <!--end:Menu link-->
+                </div>
+                <!--end:Menu item-->
+                @endcan
                 {{-- @can('baca laporan')
                 <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('laporan.*') ? ' here' : '' }}">
                     <!--begin:Menu link-->

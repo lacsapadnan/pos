@@ -28,6 +28,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\CashAdvanceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
@@ -107,6 +108,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::put('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
     Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 
+    // Cash Advance (Kasbon) routes
+    Route::resource('kasbon', CashAdvanceController::class);
+    Route::post('kasbon/{cashAdvance}/approve', [CashAdvanceController::class, 'approve'])->name('kasbon.approve');
+    Route::post('kasbon/{cashAdvance}/reject', [CashAdvanceController::class, 'reject'])->name('kasbon.reject');
+
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
     Route::get('kategori/api/data', [ProductController::class, 'category'])->name('api.kategori');
@@ -149,6 +155,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('karyawan/api/data', [EmployeeController::class, 'data'])->name('api.karyawan');
     Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
+    Route::get('kasbon/api/data', [CashAdvanceController::class, 'data'])->name('api.kasbon');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');

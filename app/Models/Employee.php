@@ -28,4 +28,9 @@ class Employee extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function cashAdvances()
+    {
+        return $this->hasMany(CashAdvance::class);
+    }
 }
