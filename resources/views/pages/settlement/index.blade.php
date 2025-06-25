@@ -4,108 +4,108 @@
 @section('menu-title', 'Buat Settlement')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
-    </style>
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
+</style>
 @endpush
 
 @section('content')
-    @include('components.alert')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data mutasi">
-                </div>
-                <!--end::Search-->
+@include('components.alert')
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data mutasi">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <button id="submitBtn" class="btn btn-primary">Simpan</button>
-                <a class="btn btn-success" href="{{ route('settlement.create') }}">Lihat Settlement</a>
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
-            </div>
+            <!--end::Search-->
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th>No</th>
-                                <th>
-                                    <div class="form-check form-check-sm form-check-custom form-check-solid me-3">
-                                        <input class="form-check-input" type="checkbox" data-kt-check="true"
-                                            data-kt-check-target="#kt_datatable_example_1 .form-check-input"
-                                            value="1" />
-                                    </div>
-                                </th>
-                                <th>Tgl Mutasi</th>
-                                <th>Dari Pos</th>
-                                <th>Kas Pengirim</th>
-                                <th>Total</th>
-                                <th>Kasir Penerima</th>
-                                <th>Total Telah Diterima</th>
-                                <th>Outstanding</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <button id="submitBtn" class="btn btn-success">Simpan</button>
+            <a class="btn btn-primary" href="{{ route('settlement.create') }}">Lihat Settlement</a>
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
                 </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                            <th>No</th>
+                            <th>
+                                <div class="form-check form-check-sm form-check-custom form-check-solid me-3">
+                                    <input class="form-check-input" type="checkbox" data-kt-check="true"
+                                        data-kt-check-target="#kt_datatable_example .form-check-input" value="1" />
+                                </div>
+                            </th>
+                            <th>Tgl Mutasi</th>
+                            <th>Dari Pos</th>
+                            <th>Kas Pengirim</th>
+                            <th>Total</th>
+                            <th>Kasir Penerima</th>
+                            <th>Total Telah Diterima</th>
+                            <th>Outstanding</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    @includeIf('pages.settlement.modal')
+</div>
+@includeIf('pages.settlement.modal')
 @endsection
 
 @push('addon-script')
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
-    <script>
-        "use strict";
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -116,51 +116,25 @@
 
             // Private functions
             var initDatatable = function() {
-                // Set date data order
-                const tableRows = table.querySelectorAll('tbody tr');
-
-                function fetchAdditionalData(mutationId, callback) {
-                    $.ajax({
-                        url: '/settlement/api/data',
-                        type: 'GET',
-                        dataType: 'json',
-                        data: {
-                            mutation_id: mutationId
-                        },
-                        success: function(response) {
-                            if (response.length > 0) {
-                                totalReceivedData[mutationId] = response[0].total_received || 0;
-                                console.log('Total Received for Mutation ID ' + mutationId + ': ' +
-                                    totalReceivedData[mutationId]);
-                                callback(response[0].total_received, response[0].outstanding);
-                            } else {
-                                totalReceivedData[mutationId] = 0;
-                                console.log('Total Received for Mutation ID ' + mutationId +
-                                    ' not found. Defaulting to 0.');
-                                callback(0, 0);
-                            }
-                        },
-                        error: function(error) {
-                            console.error('Error fetching data from API:', error);
-                            totalReceivedData[mutationId] =
-                                0; // Provide default value in case of an error
-                            callback(0, 0); // Provide default values
-                        }
-                    });
-                }
-
-
-                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                // Init datatable with server-side processing
                 datatable = $(table).DataTable({
-                    "info": false,
+                    "info": true,
                     'order': [],
                     'pageLength': 10,
                     scrollX: true,
+                    "processing": true,
+                    "serverSide": true,
                     "ajax": {
-                        url: '{{ route('api.combined-data') }}',
-                        type: 'GET',
-                        dataSrc: '',
+                        url: '{{ route('settlement.serverside') }}',
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        error: function(xhr, error, code) {
+                            console.log('Ajax error:', xhr, error, code);
+                        }
                     },
+                    "ordering": false,
                     "columns": [{
                             data: "id",
                             render: function(data, type, row, meta) {
@@ -169,10 +143,10 @@
                         },
                         {
                             orderable: false,
-                            render: function(data) {
+                            render: function(data, type, row) {
                                 return `
                             <div class="form-check form-check-sm form-check-custom form-check-solid">
-                                <input class="form-check-input" type="checkbox" value="${data}" />
+                                <input class="form-check-input" type="checkbox" value="${row.id}" />
                             </div>`;
                             }
                         },
@@ -232,10 +206,10 @@
                         },
                         {
                             data: null,
+                            orderable: false,
                             render: function(data, type, row) {
                                 return `
-                                    <button class="btn btn-primary btn-submit" hidden data-mutation-id="${row.id}">Simpan</button>
-                                    <button class="btn btn-primary btn-modal btn-open-modal"
+                                    <button class="btn btn-success btn-open-modal"
                                         data-bs-toggle="modal"
                                         data-bs-target="#kt_modal_1"
                                         data-amount="${row.amount}"
@@ -251,30 +225,43 @@
                     }],
                     select: {
                         style: 'multi',
-                        selector: 'td:first-child input[type="checkbox"]',
+                        selector: 'td:nth-child(2) input[type="checkbox"]',
                         className: 'row-selected'
                     },
                 });
-
-                $(document).on('click', '#submitBtn', function() {
-                    var rows = $(table).find('tbody tr');
+                                $(document).on('click', '#submitBtn', function() {
                     var inputRequests = [];
 
-                    rows.each(function() {
-                        var rowData = datatable.row($(this)).data();
-                        var mutationId = $(this).find('.btn-submit').data('mutation-id');
-                        var totalRecieved = $(this).find('input[name="total_recieved"]').val();
-                        var isChecked = $(this).find('.form-check-input').prop('checked');
+                    // Get checked rows from current DataTable data
+                    datatable.rows().every(function(rowIdx, tableLoop, rowLoop) {
+                        var $row = $(this.node());
+                        var isChecked = $row.find('.form-check-input').prop('checked');
 
                         if (isChecked) {
-                            var inputRequest = {
-                                mutation_id: mutationId,
-                                total_recieved: totalRecieved,
-                            };
+                            var rowData = this.data();
+                            var totalRecieved = $row.find('input[name="total_recieved"]').val();
 
-                            inputRequests.push(inputRequest);
+                            // Clean the value - remove currency formatting
+                            if (typeof totalRecieved === 'string') {
+                                totalRecieved = totalRecieved.replace(/[^0-9.]/g, '');
+                            }
+
+                            // Validate that we have required data
+                            if (rowData && rowData.id && totalRecieved && parseFloat(totalRecieved) > 0) {
+                                var inputRequest = {
+                                    mutation_id: rowData.id,
+                                    total_recieved: parseFloat(totalRecieved) || 0,
+                                };
+
+                                inputRequests.push(inputRequest);
+                            }
                         }
                     });
+
+                    if (inputRequests.length === 0) {
+                        alert('Please select at least one row and enter an amount greater than 0.');
+                        return;
+                    }
 
                     console.log('Input requests:', inputRequests);
 
@@ -284,21 +271,31 @@
                         type: 'POST',
                         data: {
                             requests: inputRequests
-                        }, // Ensure that 'requests' key is included
+                        },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
-                            // return to route settlement.index
-                            window.location.href = '{{ route('settlement.index') }}';
+                            alert('Settlements created successfully!');
+                            datatable.draw(false); // Reload table data without resetting pagination
                         },
                         error: function(xhr, status, error) {
-                            console.log(xhr.responseText);
-                            console.log('Request data:', inputRequests);
+                            console.error('Error:', xhr.responseText);
+                            var errorMessage = 'An error occurred while processing the request.';
+
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.error || errorMessage;
+                            } catch (e) {
+                                // Use default message
+                            }
+
+                            alert('Error: ' + errorMessage);
                         }
                     });
                 });
-            }
+
+              }
 
             // Hook export buttons
             var exportButtons = () => {
@@ -369,9 +366,9 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-    <script>
-        $(document).on('click', '.btn-open-modal', function() {
+</script>
+<script>
+    $(document).on('click', '.btn-open-modal', function() {
             var amount = $(this).data('amount');
             var outstanding = $(this).data('outstanding');
             var mutationId = $(this).data('mutation-id');
@@ -389,12 +386,10 @@
             formattedAmount = formattedAmount.replace(",00", "");
             formattedOutstanding = formattedOutstanding.replace(",00", "");
 
-            console.log('Amount:', formattedAmount);
-
             // Set the values in the modal fields
             $('#kt_modal_1').find('input[name="amountData"]').val(formattedAmount).prop('disabled', true);
             $('#kt_modal_1').find('input[name="outstandingData"]').val(formattedOutstanding).prop('disabled', true);
             $('#kt_modal_1').find('input[name="mutation_id"]').val(mutationId);
         });
-    </script>
+</script>
 @endpush

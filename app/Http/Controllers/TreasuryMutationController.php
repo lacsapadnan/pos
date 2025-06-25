@@ -95,6 +95,31 @@ class TreasuryMutationController extends Controller
     public function destroy(string $id)
     {
         $treasuryMutation = TreasuryMutation::findOrFail($id);
+
+        // Delete associated cashflow records using the primary method
+        $deletedCount = $this->cashflowService->deleteTreasuryMutationCashflows(
+            description: $treasuryMutation->description,
+            outputCashier: $treasuryMutation->output_cashier,
+            fromWarehouseId: $treasuryMutation->from_warehouse
+        );
+
+        // If no records were deleted, try the LIKE method as fallback
+        if ($deletedCount === 0 && $treasuryMutation->description) {
+            $deletedCount = $this->cashflowService->deleteTreasuryMutationCashflowsLike(
+                description: $treasuryMutation->description,
+                outputCashier: $treasuryMutation->output_cashier,
+                fromWarehouseId: $treasuryMutation->from_warehouse
+            );
+        }
+
+        // Alternative fallback: delete any Mutasi Kas cashflow for this user/warehouse combination
+        if ($deletedCount === 0) {
+            $deletedCount = Cashflow::where('for', 'Mutasi Kas')
+                ->where('user_id', $treasuryMutation->output_cashier)
+                ->where('warehouse_id', $treasuryMutation->from_warehouse)
+                ->delete();
+        }
+
         $treasuryMutation->delete();
 
         return redirect()->back()->with('success', 'Mutasi kas berhasil dihapus');

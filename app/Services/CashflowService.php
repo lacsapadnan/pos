@@ -413,4 +413,36 @@ class CashflowService
 
         return $deletedPurchase + $deletedDebt;
     }
+
+    /**
+     * Delete cashflows related to treasury mutation
+     */
+    public function deleteTreasuryMutationCashflows(string $description, int $outputCashier, int $fromWarehouseId): int
+    {
+        // More flexible deletion - match by key criteria
+        $query = Cashflow::where('for', 'Mutasi Kas')
+            ->where('user_id', $outputCashier)
+            ->where('warehouse_id', $fromWarehouseId);
+
+        // Handle description matching (including null descriptions)
+        if ($description) {
+            $query->where('description', $description);
+        } else {
+            $query->whereNull('description');
+        }
+
+        return $query->delete();
+    }
+
+    /**
+     * Delete cashflows by treasury mutation (alternative method using LIKE)
+     */
+    public function deleteTreasuryMutationCashflowsLike(string $description, int $outputCashier, int $fromWarehouseId): int
+    {
+        return Cashflow::where('for', 'Mutasi Kas')
+            ->where('user_id', $outputCashier)
+            ->where('warehouse_id', $fromWarehouseId)
+            ->where('description', 'like', "%{$description}%")
+            ->delete();
+    }
 }

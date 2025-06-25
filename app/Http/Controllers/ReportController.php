@@ -45,10 +45,10 @@ class ReportController extends Controller
     public function destroy(int $id)
     {
         if ($this->reportService->deleteCashflow($id)) {
-            return redirect()->route('report.index')->with('success', 'Data berhasil dihapus!');
+            return redirect()->route('laporan')->with('success', 'Data berhasil dihapus!');
         }
 
-        return redirect()->route('report.index')->with('error', 'Data tidak ditemukan!');
+        return redirect()->route('laporan')->with('error', 'Data tidak ditemukan!');
     }
 
     /**

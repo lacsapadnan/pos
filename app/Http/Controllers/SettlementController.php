@@ -7,12 +7,20 @@ use App\Models\Settlement;
 use App\Models\TreasuryMutation;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SettlementController extends Controller
 {
+    private CashflowService $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -38,8 +46,19 @@ class SettlementController extends Controller
             ->map(function ($mutation) {
                 $settlement = Settlement::where('mutation_id', $mutation->id)->first();
 
-                $totalReceived = $settlement ? $settlement->total_received : 0;
-                $outstanding = $settlement ? $settlement->outstanding : 0;
+                // Handle both old and new column names
+                $totalReceived = 0;
+                $outstanding = 0;
+
+                if ($settlement) {
+                    $totalReceived = $settlement->total_received ?? 0;
+                    $outstanding = $settlement->outstanding ?? 0;
+
+                    // If outstanding is 0 or not calculated properly, recalculate
+                    if ($outstanding == 0 && $totalReceived > 0) {
+                        $outstanding = (float)$mutation->amount - (float)$totalReceived;
+                    }
+                }
 
                 return [
                     'id' => $mutation->id,
@@ -47,9 +66,9 @@ class SettlementController extends Controller
                     'from_warehouse' => $mutation->fromWarehouse->name,
                     'output_cashier' => $mutation->outputCashier->name,
                     'from_treasury' => $mutation->from_treasury,
-                    'amount' => $mutation->amount,
-                    'total_received' => $totalReceived,
-                    'outstanding' => $outstanding,
+                    'amount' => (float)$mutation->amount,
+                    'total_received' => (float)$totalReceived,
+                    'outstanding' => (float)$outstanding,
                 ];
             });
 
@@ -92,15 +111,25 @@ class SettlementController extends Controller
                     return response()->json(['error' => 'Mutation not found for mutation_id ' . $mutationId], 404);
                 }
 
-                // Calculate outstanding value based on your logic
+                // Clean and convert total_received to proper numeric format
                 $totalReceived = $inputRequest['total_recieved'];
-                $outstanding = $mutation->amount - $totalReceived;
+
+                // Remove currency formatting if present (Rp, commas, etc.)
+                if (is_string($totalReceived)) {
+                    $totalReceived = preg_replace('/[^0-9.]/', '', $totalReceived);
+                }
+
+                $totalReceived = (float) $totalReceived;
+                $mutationAmount = (float) $mutation->amount;
+
+                // Calculate outstanding value
+                $outstanding = $mutationAmount - $totalReceived;
 
                 // Create a new Settlement record and add it to the $settlements array
                 $settlements[] = [
                     'mutation_id' => $mutationId,
-                    'cashier_id' => auth()->id(), // Assuming you have authentication set up
-                    'total_recieved' => $totalReceived,
+                    'cashier_id' => auth()->id(),
+                    'total_received' => $totalReceived,
                     'outstanding' => $outstanding,
                     'to_treasury' => "Kas Bank 2", // Adjust as needed
                     'created_at' => now(),
@@ -123,29 +152,31 @@ class SettlementController extends Controller
     public function actionStore(Request $request)
     {
         $mutation = TreasuryMutation::find($request->mutation_id);
-        $totalRecieved = $request->amount;
-        $outstanding = $mutation->amount - $totalRecieved;
+
+        // Use the amount from request as the total received
+        $totalReceived = (float) $request->amount;
+        $outstanding = (float) $mutation->amount - $totalReceived;
 
         $settlement = new Settlement();
         $settlement->mutation_id = $request->mutation_id;
         $settlement->cashier_id = $request->output_cashier;
-        $settlement->total_recieved = $totalRecieved;
+
+        $settlement->total_received = $totalReceived;
+
         $settlement->outstanding = $outstanding;
-        $settlement->to_treasury = $request->from_warehouse;
+        $settlement->to_treasury = $request->from_treasury; // Fixed: use from_treasury not from_warehouse
         $settlement->save();
 
-        // Handle cashflow using service
-        $cashflowService = app(CashflowService::class);
-        $cashflowService->handleSettlement(
+        // Use injected service
+        $this->cashflowService->handleSettlement(
             warehouseId: $request->from_warehouse,
             description: $request->description,
-            totalReceived: $totalRecieved,
+            totalReceived: $totalReceived,
             outputCashier: $request->output_cashier
         );
 
-        return redirect()->route('laporan')->with('success', 'Settlement created successfully');
+        return redirect()->route('settlement.index')->with('success', 'Settlement created successfully');
     }
-
 
     /**
      * Display the specified resource.
@@ -185,5 +216,76 @@ class SettlementController extends Controller
         }
 
         return redirect()->back()->with('success', 'Settlement deleted successfully');
+    }
+
+    public function serverSide(Request $request)
+    {
+        $draw = $request->input('draw');
+        $start = $request->input('start');
+        $length = $request->input('length');
+        $searchValue = $request->input('search.value');
+
+        // Base query
+        $query = TreasuryMutation::with(['fromWarehouse', 'toWarehouse', 'inputCashier', 'outputCashier'])
+            ->orderBy('input_date', 'desc');
+
+        // Apply search if provided
+        if (!empty($searchValue)) {
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('input_date', 'like', "%{$searchValue}%")
+                    ->orWhere('from_treasury', 'like', "%{$searchValue}%")
+                    ->orWhere('amount', 'like', "%{$searchValue}%")
+                    ->orWhereHas('fromWarehouse', function ($warehouse) use ($searchValue) {
+                        $warehouse->where('name', 'like', "%{$searchValue}%");
+                    })
+                    ->orWhereHas('outputCashier', function ($cashier) use ($searchValue) {
+                        $cashier->where('name', 'like', "%{$searchValue}%");
+                    });
+            });
+        }
+
+        // Get total records
+        $totalRecords = TreasuryMutation::count();
+        $filteredRecords = $query->count();
+
+        // Apply pagination
+        $mutations = $query->skip($start)->take($length)->get();
+
+        // Transform data
+        $data = $mutations->map(function ($mutation) {
+            $settlement = Settlement::where('mutation_id', $mutation->id)->first();
+
+            // Handle both old and new column names
+            $totalReceived = 0;
+            $outstanding = 0;
+
+            if ($settlement) {
+                $totalReceived = $settlement->total_received ?? 0;
+                $outstanding = $settlement->outstanding ?? 0;
+
+                // If outstanding is 0 or not calculated properly, recalculate
+                if ($outstanding == 0 && $totalReceived > 0) {
+                    $outstanding = (float)$mutation->amount - (float)$totalReceived;
+                }
+            }
+
+            return [
+                'id' => $mutation->id,
+                'input_date' => $mutation->input_date,
+                'from_warehouse' => $mutation->fromWarehouse->name,
+                'output_cashier' => $mutation->outputCashier->name,
+                'from_treasury' => $mutation->from_treasury,
+                'amount' => (float)$mutation->amount,
+                'total_received' => (float)$totalReceived,
+                'outstanding' => (float)$outstanding,
+            ];
+        });
+
+        return response()->json([
+            'draw' => intval($draw),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data
+        ]);
     }
 }
