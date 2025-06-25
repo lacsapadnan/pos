@@ -195,17 +195,24 @@ class SellDraftController extends Controller
 
             $sellCart->each->delete();
 
-            // Handle cashflow using service
-            $cashflowService = app(CashflowService::class);
-            $cashflowService->handleSalePayment(
-                warehouseId: auth()->user()->warehouse_id,
-                orderNumber: $request->order_number,
-                customerName: '', // No customer name available in this context
-                paymentMethod: $request->payment_method,
-                cash: $cash,
-                transfer: $transfer,
-                change: $sell->change
-            );
+            // Only handle cashflow if it's not a credit sale (piutang)
+            if ($status !== 'piutang' && $request->payment_method) {
+                // Get customer name for the cashflow record
+                $customer = Customer::find($request->customer);
+                $customerName = $customer ? $customer->name : '';
+
+                // Handle cashflow using service
+                $cashflowService = app(CashflowService::class);
+                $cashflowService->handleSalePayment(
+                    warehouseId: auth()->user()->warehouse_id,
+                    orderNumber: $request->order_number,
+                    customerName: $customerName,
+                    paymentMethod: $request->payment_method,
+                    cash: $cash,
+                    transfer: $transfer,
+                    change: $sell->change
+                );
+            }
         }
 
         if ($request->status != 'draft') {
