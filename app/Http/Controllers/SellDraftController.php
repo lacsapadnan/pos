@@ -209,9 +209,22 @@ class SellDraftController extends Controller
         }
 
         if ($request->status != 'draft') {
-            return redirect()->route('penjualan.print', $sell->id);
+            try {
+                // Add a small delay to ensure database operations are fully committed
+                sleep(1);
+
+                $printUrl = route('penjualan.print', $sell->id);
+                $script = "<script>
+                    setTimeout(function() {
+                        window.open('$printUrl', '_blank');
+                    }, 500);
+                </script>";
+                return Response::make($script . '<script>setTimeout(function() { window.location.href = "' . route('penjualan.index') . '"; }, 1000);</script>');
+            } catch (\Throwable $th) {
+                return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
+            }
         } else {
-            return redirect()->route('penjualan.index');
+            return redirect()->route('penjualan-draft.index')->with('success', 'Penjualan draft berhasil diubah');
         }
     }
 
