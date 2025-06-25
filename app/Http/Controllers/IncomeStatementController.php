@@ -32,15 +32,42 @@ class IncomeStatementController extends Controller
         return view('pages.income-statement.index', compact('warehouses', 'users'));
     }
 
-    public function data(Request $request)
+    /**
+     * Clear cache for income statement data
+     */
+    public function clearCache(Request $request)
     {
         $user_id = $request->input('user_id');
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse_id = $request->input('warehouse');
 
+        $cacheKey = "income_statement_" . md5(serialize([
+            'user_id' => $user_id,
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+            'warehouse_id' => $warehouse_id,
+            'auth_user' => auth()->id()
+        ]));
+
+        cache()->forget($cacheKey);
+
+        return response()->json(['message' => 'Cache cleared successfully']);
+    }
+
+    public function data(Request $request)
+    {
+        // Increase memory limit and execution time for large datasets
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
+        $user_id = $request->input('user_id');
+        $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
+        $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
+        $warehouse_id = $request->input('warehouse');
+
         // Check if user can see all income statement data
-        if (!auth()->user()->can('lihat semua laba rugi')) {
+        if (!auth()->user()->hasPermissionTo('lihat semua laba rugi')) {
             // Restrict to user's own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
@@ -48,108 +75,154 @@ class IncomeStatementController extends Controller
 
         $endDate = Carbon::parse($toDate)->endOfDay();
 
-        // Get warehouse info to determine if it's out of town
-        $warehouse = null;
-        if ($warehouse_id) {
-            $warehouse = Warehouse::find($warehouse_id);
+        // Create cache key for this specific request
+        $cacheKey = "income_statement_" . md5(serialize([
+            'user_id' => $user_id,
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+            'warehouse_id' => $warehouse_id,
+            'auth_user' => auth()->id()
+        ]));
+
+        // Try to get cached result first (cache for 5 minutes)
+        $cachedResult = cache()->get($cacheKey);
+        if ($cachedResult) {
+            return response()->json($cachedResult);
         }
 
-        // Calculate Sales Revenue
-        $salesData = $this->calculateSalesRevenue($fromDate, $endDate, $warehouse_id, $user_id);
+        try {
+            // Get warehouse info to determine if it's out of town
+            $warehouse = null;
+            if ($warehouse_id) {
+                $warehouse = Warehouse::select('id', 'name', 'isOutOfTown')->find($warehouse_id);
+            }
 
-        // Calculate Cost of Goods Sold
-        $cogsData = $this->calculateCostOfGoodsSold($fromDate, $endDate, $warehouse_id, $user_id, $warehouse);
+            // Calculate all data with optimized methods
+            $salesData = $this->calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id);
+            $cogsData = $this->calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse);
+            $operatingExpenses = $this->calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id);
+            $otherIncome = $this->calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id);
 
-        // Synchronize product lists and ensure consistent ordering
-        $this->synchronizeProductData($salesData, $cogsData);
+            // Synchronize product lists and ensure consistent ordering
+            $this->synchronizeProductData($salesData, $cogsData);
 
-        // Calculate Operating Expenses (Kas Keluar)
-        $operatingExpenses = $this->calculateOperatingExpenses($fromDate, $endDate, $warehouse_id, $user_id);
+            // Calculate totals with safe numeric operations
+            $totalRevenue = floatval($salesData['total_revenue'] ?? 0);
+            $totalCogs = floatval($cogsData['total_cogs'] ?? 0);
+            $totalOtherIncome = floatval($otherIncome['total_other_income'] ?? 0);
+            $totalOperatingExpenses = floatval($operatingExpenses['total_operating_expenses'] ?? 0);
 
-        // Calculate Other Income (Kas Masuk - excluding sales)
-        $otherIncome = $this->calculateOtherIncome($fromDate, $endDate, $warehouse_id, $user_id);
+            $grossProfit = $totalRevenue - $totalCogs;
+            $netIncome = $grossProfit + $totalOtherIncome - $totalOperatingExpenses;
 
-        // Calculate totals with safe numeric operations
-        $totalRevenue = floatval($salesData['total_revenue'] ?? 0);
-        $totalCogs = floatval($cogsData['total_cogs'] ?? 0);
-        $totalOtherIncome = floatval($otherIncome['total_other_income'] ?? 0);
-        $totalOperatingExpenses = floatval($operatingExpenses['total_operating_expenses'] ?? 0);
+            $response = [
+                'sales_data' => $salesData,
+                'cogs_data' => $cogsData,
+                'operating_expenses' => $operatingExpenses,
+                'other_income' => $otherIncome,
+                'gross_profit' => $grossProfit,
+                'net_income' => $netIncome,
+                'period' => [
+                    'from_date' => $fromDate,
+                    'to_date' => $toDate,
+                    'warehouse' => $warehouse ? $warehouse->name : 'Semua Gudang'
+                ],
+                'cache_generated_at' => now()->toISOString()
+            ];
 
-        $grossProfit = $totalRevenue - $totalCogs;
-        $netIncome = $grossProfit + $totalOtherIncome - $totalOperatingExpenses;
+            // Cache the result for 5 minutes
+            cache()->put($cacheKey, $response, 300);
 
-        $response = [
-            'sales_data' => $salesData,
-            'cogs_data' => $cogsData,
-            'operating_expenses' => $operatingExpenses,
-            'other_income' => $otherIncome,
-            'gross_profit' => $grossProfit,
-            'net_income' => $netIncome,
-            'period' => [
-                'from_date' => $fromDate,
-                'to_date' => $toDate,
-                'warehouse' => $warehouse ? $warehouse->name : 'Semua Gudang'
-            ]
-        ];
-
-        return response()->json($response);
+            return response()->json($response);
+        } catch (\Exception $e) {
+            \Log::error('Income Statement calculation error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to generate income statement. Please try with a smaller date range.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    private function calculateSalesRevenue($fromDate, $endDate, $warehouse_id, $user_id)
+    private function calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        $query = Sell::with(['details.product', 'customer', 'sellReturs.detail'])
+        // Step 1: Get total revenue and count using raw SQL for better performance
+        $totalQuery = DB::table('sells')
+            ->select(DB::raw('SUM(CAST(grand_total as DECIMAL(15,2))) as total_revenue, COUNT(*) as total_transactions'))
             ->where('status', '!=', 'draft')
             ->where('status', '!=', 'batal')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
-            $query->where('warehouse_id', $warehouse_id);
+            $totalQuery->where('warehouse_id', $warehouse_id);
         }
 
         if ($user_id) {
-            $query->where('cashier_id', $user_id);
+            $totalQuery->where('cashier_id', $user_id);
         }
 
-        $sales = $query->get();
+        $totals = $totalQuery->first();
+        $totalRevenue = floatval($totals->total_revenue ?? 0);
+        $totalTransactions = intval($totals->total_transactions ?? 0);
 
-        // Calculate total revenue with null safety
-        $totalRevenue = 0;
-        foreach ($sales as $sale) {
-            $grandTotal = $sale->grand_total ?? 0;
-            if (is_numeric($grandTotal)) {
-                $totalRevenue += floatval($grandTotal);
-            }
-        }
-
-        $totalTransactions = $sales->count();
-
-        // Get detailed sales by product, accounting for returns
+        // Step 2: Get sales by product using optimized query
         $salesByProduct = [];
-        foreach ($sales as $sale) {
-            if (!$sale->details) continue;
 
-            foreach ($sale->details as $detail) {
-                if (!$detail->product) continue;
+        // Use chunking to avoid memory issues with large datasets
+        $sellQuery = Sell::select('id', 'grand_total')
+            ->where('status', '!=', 'draft')
+            ->where('status', '!=', 'batal')
+            ->whereBetween('created_at', [$fromDate, $endDate]);
 
-                // Calculate net quantities and revenue after returns
-                $netSalesData = $this->calculateNetSalesForProduct($sale, $detail);
+        if ($warehouse_id) {
+            $sellQuery->where('warehouse_id', $warehouse_id);
+        }
 
-                // Skip products that have been fully returned
-                if ($netSalesData['net_quantity'] <= 0) {
-                    continue;
+        if ($user_id) {
+            $sellQuery->where('cashier_id', $user_id);
+        }
+
+        $sellIds = $sellQuery->pluck('id')->toArray();
+
+        if (!empty($sellIds)) {
+            // Process sell details in chunks to avoid memory issues
+            $chunkSize = 1000;
+            $sellIdChunks = array_chunk($sellIds, $chunkSize);
+
+            foreach ($sellIdChunks as $chunk) {
+                $salesDetails = DB::table('sell_details as sd')
+                    ->join('products as p', 'sd.product_id', '=', 'p.id')
+                    ->select(
+                        'sd.product_id',
+                        'p.name as product_name',
+                        'sd.quantity',
+                        'sd.price',
+                        'sd.diskon',
+                        'sd.sell_id'
+                    )
+                    ->whereIn('sd.sell_id', $chunk)
+                    ->get();
+
+                foreach ($salesDetails as $detail) {
+                    $productId = $detail->product_id;
+                    $quantity = floatval($detail->quantity ?? 0);
+                    $price = floatval($detail->price ?? 0);
+                    $diskon = floatval($detail->diskon ?? 0);
+                    $revenue = ($price * $quantity) - $diskon;
+
+                    if (!isset($salesByProduct[$productId])) {
+                        $salesByProduct[$productId] = [
+                            'product_name' => $detail->product_name ?? 'Unknown Product',
+                            'quantity_sold' => 0,
+                            'total_revenue' => 0
+                        ];
+                    }
+
+                    $salesByProduct[$productId]['quantity_sold'] += $quantity;
+                    $salesByProduct[$productId]['total_revenue'] += $revenue;
                 }
 
-                $productId = $detail->product_id;
-                if (!isset($salesByProduct[$productId])) {
-                    $salesByProduct[$productId] = [
-                        'product_name' => $detail->product->name ?? 'Unknown Product',
-                        'quantity_sold' => 0,
-                        'total_revenue' => 0
-                    ];
-                }
-
-                $salesByProduct[$productId]['quantity_sold'] += $netSalesData['net_quantity'];
-                $salesByProduct[$productId]['total_revenue'] += $netSalesData['net_revenue'];
+                // Free memory after processing each chunk
+                unset($salesDetails);
             }
         }
 
@@ -157,74 +230,80 @@ class IncomeStatementController extends Controller
             'total_revenue' => $totalRevenue,
             'total_transactions' => $totalTransactions,
             'sales_by_product' => $salesByProduct,
-            'sales_details' => $sales
+            'sales_details' => [] // Don't return full details to save memory
         ];
     }
 
-    private function calculateCostOfGoodsSold($fromDate, $endDate, $warehouse_id, $user_id, $warehouse)
+    private function calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse)
     {
-        // Get all sold products from ProductReport that are not from fully returned sales
-        $query = ProductReport::with(['product'])
-            ->where('for', 'KELUAR')
-            ->where('type', 'PENJUALAN')
-            ->whereBetween('created_at', [$fromDate, $endDate]);
-
-        if ($warehouse_id) {
-            $query->where('warehouse_id', $warehouse_id);
-        }
-
-        if ($user_id) {
-            $query->where('user_id', $user_id);
-        }
-
-        $soldProducts = $query->get();
-
         $totalCogs = 0;
         $cogsByProduct = [];
         $isOutOfTown = $warehouse ? ($warehouse->isOutOfTown ?? false) : false;
 
-        foreach ($soldProducts as $soldProduct) {
-            if (!$soldProduct->product) continue;
+        // Use raw SQL with chunking for better performance
+        $query = DB::table('product_reports as pr')
+            ->join('products as p', 'pr.product_id', '=', 'p.id')
+            ->select(
+                'pr.product_id',
+                'p.name as product_name',
+                'pr.qty',
+                'pr.unit_type',
+                'p.dus_to_eceran',
+                'p.pak_to_eceran',
+                'p.lastest_price_eceran',
+                'p.lastest_price_eceran_out_of_town'
+            )
+            ->where('pr.for', 'KELUAR')
+            ->where('pr.type', 'PENJUALAN')
+            ->whereBetween('pr.created_at', [$fromDate, $endDate]);
 
-            $product = $soldProduct->product;
-            $quantitySold = floatval($soldProduct->qty ?? 0);
-
-            // Skip if no quantity sold
-            if ($quantitySold <= 0) continue;
-
-            // Calculate net quantity after returns for this product
-            $netQuantityData = $this->calculateNetCogsForProduct($soldProduct, $product);
-
-            // Skip products that have been fully returned
-            if ($netQuantityData['net_quantity_eceran'] <= 0) {
-                continue;
-            }
-
-            // Determine cost price based on warehouse location with safe numeric conversion
-            $costPrice = 0;
-            if ($isOutOfTown) {
-                $costPrice = floatval($product->lastest_price_eceran_out_of_town ?? $product->lastest_price_eceran ?? 0);
-            } else {
-                $costPrice = floatval($product->lastest_price_eceran ?? 0);
-            }
-
-            // Safe multiplication using net quantity
-            $productCogs = floatval($netQuantityData['net_quantity_eceran']) * floatval($costPrice);
-            $totalCogs += $productCogs;
-
-            $productId = $product->id;
-            if (!isset($cogsByProduct[$productId])) {
-                $cogsByProduct[$productId] = [
-                    'product_name' => $product->name ?? 'Unknown Product',
-                    'quantity_sold_eceran' => 0,
-                    'cost_price' => $costPrice,
-                    'total_cogs' => 0
-                ];
-            }
-
-            $cogsByProduct[$productId]['quantity_sold_eceran'] += floatval($netQuantityData['net_quantity_eceran']);
-            $cogsByProduct[$productId]['total_cogs'] += $productCogs;
+        if ($warehouse_id) {
+            $query->where('pr.warehouse_id', $warehouse_id);
         }
+
+        if ($user_id) {
+            $query->where('pr.user_id', $user_id);
+        }
+
+        // Process in chunks to avoid memory issues
+        $query->orderBy('pr.id')->chunk(1000, function ($soldProducts) use (&$totalCogs, &$cogsByProduct, $isOutOfTown) {
+            foreach ($soldProducts as $soldProduct) {
+                $quantitySold = floatval($soldProduct->qty ?? 0);
+
+                // Skip if no quantity sold
+                if ($quantitySold <= 0) continue;
+
+                // Convert quantity to eceran
+                $quantityEceran = $this->convertQuantityToEceranFromData($quantitySold, $soldProduct->unit_type, $soldProduct);
+
+                // Skip if converted quantity is 0
+                if ($quantityEceran <= 0) continue;
+
+                // Determine cost price based on warehouse location
+                $costPrice = 0;
+                if ($isOutOfTown) {
+                    $costPrice = floatval($soldProduct->lastest_price_eceran_out_of_town ?? $soldProduct->lastest_price_eceran ?? 0);
+                } else {
+                    $costPrice = floatval($soldProduct->lastest_price_eceran ?? 0);
+                }
+
+                $productCogs = $quantityEceran * $costPrice;
+                $totalCogs += $productCogs;
+
+                $productId = $soldProduct->product_id;
+                if (!isset($cogsByProduct[$productId])) {
+                    $cogsByProduct[$productId] = [
+                        'product_name' => $soldProduct->product_name ?? 'Unknown Product',
+                        'quantity_sold_eceran' => 0,
+                        'cost_price' => $costPrice,
+                        'total_cogs' => 0
+                    ];
+                }
+
+                $cogsByProduct[$productId]['quantity_sold_eceran'] += $quantityEceran;
+                $cogsByProduct[$productId]['total_cogs'] += $productCogs;
+            }
+        });
 
         return [
             'total_cogs' => $totalCogs,
@@ -233,101 +312,99 @@ class IncomeStatementController extends Controller
         ];
     }
 
-    private function calculateOperatingExpenses($fromDate, $endDate, $warehouse_id, $user_id)
+    private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        $query = Kas::with(['kas_expense_item'])
+        // Get total expenses using raw SQL
+        $totalQuery = DB::table('kas')
+            ->select(DB::raw('SUM(CAST(amount as DECIMAL(15,2))) as total_expenses'))
             ->where('type', 'Kas Keluar')
             ->whereBetween('date', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
-            $query->where('warehouse_id', $warehouse_id);
+            $totalQuery->where('warehouse_id', $warehouse_id);
         }
 
-        $expenses = $query->get();
+        $totalExpenses = floatval($totalQuery->first()->total_expenses ?? 0);
 
-        // Calculate total expenses with null safety
-        $totalExpenses = 0;
-        foreach ($expenses as $expense) {
-            $amount = $expense->amount ?? 0;
-            if (is_numeric($amount)) {
-                $totalExpenses += floatval($amount);
-            }
+        // Get expenses by category using optimized query
+        $categoryQuery = DB::table('kas as k')
+            ->leftJoin('kas_expense_items as kei', 'k.kas_expense_item_id', '=', 'kei.id')
+            ->select(
+                DB::raw('COALESCE(kei.name, "Lainnya") as category'),
+                DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_amount'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->where('k.type', 'Kas Keluar')
+            ->whereBetween('k.date', [$fromDate, $endDate]);
+
+        if ($warehouse_id) {
+            $categoryQuery->where('k.warehouse_id', $warehouse_id);
         }
 
-        // Group expenses by category
-        $expensesByCategory = [];
-        foreach ($expenses as $expense) {
-            $category = 'Lainnya';
-            if ($expense->kas_expense_item && $expense->kas_expense_item->name) {
-                $category = $expense->kas_expense_item->name;
-            }
-
-            if (!isset($expensesByCategory[$category])) {
-                $expensesByCategory[$category] = [
-                    'category' => $category,
-                    'total_amount' => 0,
-                    'count' => 0
+        $expensesByCategory = $categoryQuery
+            ->groupBy('category')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category,
+                    'total_amount' => floatval($item->total_amount),
+                    'count' => intval($item->count)
                 ];
-            }
-
-            $amount = floatval($expense->amount ?? 0);
-            $expensesByCategory[$category]['total_amount'] += $amount;
-            $expensesByCategory[$category]['count']++;
-        }
+            })
+            ->toArray();
 
         return [
             'total_operating_expenses' => $totalExpenses,
-            'expenses_by_category' => array_values($expensesByCategory),
-            'expense_details' => $expenses
+            'expenses_by_category' => $expensesByCategory,
+            'expense_details' => [] // Don't return full details to save memory
         ];
     }
 
-    private function calculateOtherIncome($fromDate, $endDate, $warehouse_id, $user_id)
+    private function calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        $query = Kas::with(['kas_income_item'])
+        // Get total income using raw SQL
+        $totalQuery = DB::table('kas')
+            ->select(DB::raw('SUM(CAST(amount as DECIMAL(15,2))) as total_income'))
             ->where('type', 'Kas Masuk')
             ->whereBetween('date', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
-            $query->where('warehouse_id', $warehouse_id);
+            $totalQuery->where('warehouse_id', $warehouse_id);
         }
 
-        $income = $query->get();
+        $totalIncome = floatval($totalQuery->first()->total_income ?? 0);
 
-        // Calculate total income with null safety
-        $totalIncome = 0;
-        foreach ($income as $incomeItem) {
-            $amount = $incomeItem->amount ?? 0;
-            if (is_numeric($amount)) {
-                $totalIncome += floatval($amount);
-            }
+        // Get income by category using optimized query
+        $categoryQuery = DB::table('kas as k')
+            ->leftJoin('kas_income_items as kii', 'k.kas_income_item_id', '=', 'kii.id')
+            ->select(
+                DB::raw('COALESCE(kii.name, "Lainnya") as category'),
+                DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_amount'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->where('k.type', 'Kas Masuk')
+            ->whereBetween('k.date', [$fromDate, $endDate]);
+
+        if ($warehouse_id) {
+            $categoryQuery->where('k.warehouse_id', $warehouse_id);
         }
 
-        // Group income by category
-        $incomeByCategory = [];
-        foreach ($income as $incomeItem) {
-            $category = 'Lainnya';
-            if ($incomeItem->kas_income_item && $incomeItem->kas_income_item->name) {
-                $category = $incomeItem->kas_income_item->name;
-            }
-
-            if (!isset($incomeByCategory[$category])) {
-                $incomeByCategory[$category] = [
-                    'category' => $category,
-                    'total_amount' => 0,
-                    'count' => 0
+        $incomeByCategory = $categoryQuery
+            ->groupBy('category')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'category' => $item->category,
+                    'total_amount' => floatval($item->total_amount),
+                    'count' => intval($item->count)
                 ];
-            }
-
-            $amount = floatval($incomeItem->amount ?? 0);
-            $incomeByCategory[$category]['total_amount'] += $amount;
-            $incomeByCategory[$category]['count']++;
-        }
+            })
+            ->toArray();
 
         return [
             'total_other_income' => $totalIncome,
-            'income_by_category' => array_values($incomeByCategory),
-            'income_details' => $income
+            'income_by_category' => $incomeByCategory,
+            'income_details' => [] // Don't return full details to save memory
         ];
     }
 
@@ -585,6 +662,28 @@ class IncomeStatementController extends Controller
                 return $safeQuantity * ($conversion > 0 ? $conversion : 1);
             case 'PAK':
                 $conversion = floatval($product->pak_to_eceran ?? 1);
+                return $safeQuantity * ($conversion > 0 ? $conversion : 1);
+            case 'ECERAN':
+            default:
+                return $safeQuantity;
+        }
+    }
+
+    private function convertQuantityToEceranFromData($quantity, $unitType, $productData)
+    {
+        // Ensure quantity is numeric
+        $safeQuantity = floatval($quantity ?? 0);
+
+        if ($safeQuantity <= 0) {
+            return 0;
+        }
+
+        switch ($unitType) {
+            case 'DUS':
+                $conversion = floatval($productData->dus_to_eceran ?? 1);
+                return $safeQuantity * ($conversion > 0 ? $conversion : 1);
+            case 'PAK':
+                $conversion = floatval($productData->pak_to_eceran ?? 1);
                 return $safeQuantity * ($conversion > 0 ? $conversion : 1);
             case 'ECERAN':
             default:

@@ -155,6 +155,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');
     Route::get('laba-rugi/api/data', [IncomeStatementController::class, 'data'])->name('api.income-statement');
+    Route::post('laba-rugi/api/clear-cache', [IncomeStatementController::class, 'clearCache'])->name('api.income-statement.clear-cache');
     Route::get('karyawan/api/data', [EmployeeController::class, 'data'])->name('api.karyawan');
     Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');

@@ -147,6 +147,22 @@
                             <span class="align-middle spinner-border spinner-border-sm ms-2"></span>
                         </span>
                     </button>
+                    <button type="button" class="btn btn-warning" id="clearCache">
+                        <span class="indicator-label">
+                            <i class="ki-duotone ki-trash fs-2">
+                                <span class="path1"></span>
+                                <span class="path2"></span>
+                                <span class="path3"></span>
+                                <span class="path4"></span>
+                                <span class="path5"></span>
+                            </i>
+                            Clear Cache
+                        </span>
+                        <span class="indicator-progress" style="display: none;">
+                            Clearing...
+                            <span class="align-middle spinner-border spinner-border-sm ms-2"></span>
+                        </span>
+                    </button>
                     <button type="button" class="btn btn-success" id="exportReport" style="display: none;">
                         <span class="indicator-label">
                             <i class="ki-duotone ki-file-down fs-2">
@@ -312,6 +328,11 @@
                 generateReport();
             });
 
+            // Clear cache button click
+            $('#clearCache').click(function() {
+                clearCache();
+            });
+
             // Export report button click
             $('#exportReport').click(function() {
                 exportToExcel();
@@ -366,6 +387,32 @@
                 return;
             }
 
+            // Validate date range - warn if too long
+            const startDate = new Date(fromDate);
+            const endDate = new Date(toDate);
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 365) {
+                Swal.fire({
+                    title: 'Peringatan!',
+                    text: 'Range tanggal lebih dari 1 tahun. Ini mungkin memakan waktu lama untuk diproses. Apakah Anda yakin ingin melanjutkan?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Lanjutkan',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeGenerate(fromDate, toDate, warehouse, user);
+                    }
+                });
+                return;
+            }
+
+            executeGenerate(fromDate, toDate, warehouse, user);
+        }
+
+        function executeGenerate(fromDate, toDate, warehouse, user) {
             // Show button loading state
             const generateBtn = $('#generateReport');
             generateBtn.attr('disabled', true);
@@ -385,26 +432,54 @@
                     warehouse: warehouse,
                     user_id: user
                 },
+                timeout: 300000, // 5 minutes timeout
                 success: function(response) {
                     reportData = response;
                     populateReport(response);
                     $('#reportContent').show();
                     $('#exportReport').show();
+
+                    // Show cache info if available
+                    if (response.cache_generated_at) {
+                        toastr.info(`Data loaded from cache (generated at: ${new Date(response.cache_generated_at).toLocaleString()})`);
+                    }
                 },
                 error: function(xhr, status, error) {
                     console.error('Error generating report:', error);
 
                     let errorMessage = 'Terjadi kesalahan saat menggenerate laporan';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                    let showClearCache = false;
+
+                    if (xhr.status === 500) {
+                        errorMessage = xhr.responseJSON?.error || 'Server error. Data terlalu besar atau server overload.';
+                        showClearCache = true;
+                    } else if (xhr.status === 502) {
+                        errorMessage = 'Server timeout. Coba kurangi range tanggal atau clear cache terlebih dahulu.';
+                        showClearCache = true;
+                    } else if (xhr.status === 504) {
+                        errorMessage = 'Gateway timeout. Data terlalu besar untuk diproses. Coba kurangi range tanggal.';
+                        showClearCache = true;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
 
-                    // Show error alert
+                    // Show error alert with suggestions
+                    let alertHtml = errorMessage;
+                    if (showClearCache) {
+                        alertHtml += '<br><br><strong>Saran:</strong><br>• Kurangi range tanggal<br>• Clear cache dan coba lagi<br>• Pilih warehouse specific jika memungkinkan';
+                    }
+
                     Swal.fire({
                         title: 'Error!',
-                        text: errorMessage,
+                        html: alertHtml,
                         icon: 'error',
-                        confirmButtonText: 'OK'
+                        confirmButtonText: 'OK',
+                        showCancelButton: showClearCache,
+                        cancelButtonText: showClearCache ? 'Clear Cache' : null
+                    }).then((result) => {
+                        if (result.dismiss === Swal.DismissReason.cancel && showClearCache) {
+                            clearCache();
+                        }
                     });
                 },
                 complete: function() {
@@ -412,6 +487,44 @@
                     generateBtn.attr('disabled', false);
                     generateBtn.find('.indicator-progress').hide();
                     generateBtn.find('.indicator-label').show();
+                }
+            });
+        }
+
+        function clearCache() {
+            const fromDate = $('#fromDateFilter').val();
+            const toDate = $('#toDateFilter').val();
+            const warehouse = $('#warehouseFilter').val();
+            const user = $('#userFilter').val();
+
+            // Show loading state
+            const clearBtn = $('#clearCache');
+            clearBtn.attr('disabled', true);
+            clearBtn.find('.indicator-label').hide();
+            clearBtn.find('.indicator-progress').show();
+
+            $.ajax({
+                url: '{{ route('api.income-statement.clear-cache') }}',
+                type: 'POST',
+                data: {
+                    from_date: fromDate,
+                    to_date: toDate,
+                    warehouse: warehouse,
+                    user_id: user,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    toastr.success('Cache berhasil dihapus. Silakan generate laporan lagi.');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error clearing cache:', error);
+                    toastr.error('Gagal menghapus cache');
+                },
+                complete: function() {
+                    // Reset button state
+                    clearBtn.attr('disabled', false);
+                    clearBtn.find('.indicator-progress').hide();
+                    clearBtn.find('.indicator-label').show();
                 }
             });
         }
