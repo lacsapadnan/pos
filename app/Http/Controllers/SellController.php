@@ -664,14 +664,15 @@ class SellController extends Controller
         $currentPay = (int) preg_replace('/[,.]/', '', $sell->pay);
         $paymentMethod = $validated['payment'];
 
-        // Initialize payment variable
+        // Initialize payment variables
         $payment = 0;
-        $potongan = (int) preg_replace('/[,.]/', '', $request->potongan);
-
+        $paymentCash = 0;
+        $paymentTransfer = 0;
+        $potongan = (int) preg_replace('/[,.]/', '', $request->potongan ?? 0);
 
         if ($paymentMethod === 'split') {
-            $paymentCash = (int) preg_replace('/[,.]/', '', $request->pay_credit_cash);
-            $paymentTransfer = (int) preg_replace('/[,.]/', '', $request->pay_credit_transfer);
+            $paymentCash = (int) preg_replace('/[,.]/', '', $request->pay_credit_cash ?? 0);
+            $paymentTransfer = (int) preg_replace('/[,.]/', '', $request->pay_credit_transfer ?? 0);
             $payment = $paymentCash + $paymentTransfer;
 
             // Validate split payment
@@ -682,7 +683,7 @@ class SellController extends Controller
                 ]);
             }
         } else {
-            $payment = (int) preg_replace('/[,.]/', '', $request->pay);
+            $payment = (int) preg_replace('/[,.]/', '', $request->pay ?? 0);
             if ($payment <= 0) {
                 return response()->json([
                     'status' => 'error',
@@ -718,7 +719,7 @@ class SellController extends Controller
             paymentCash: $paymentCash,
             paymentTransfer: $paymentTransfer,
             potongan: $potongan,
-            keterangan: $request->keterangan
+            keterangan: $request->keterangan ?? ''
         );
 
         return response()->json([
