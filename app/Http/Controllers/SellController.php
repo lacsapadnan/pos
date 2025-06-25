@@ -207,77 +207,95 @@ class SellController extends Controller
 
         $customer = Customer::find($request->customer);
 
-        if ($request->status == 'draft') {
-            foreach ($sellCart as $sc) {
-                SellCartDraft::create([
-                    'sell_id' => $sell->id,
-                    'cashier_id' => auth()->id(),
-                    'product_id' => $sc->product_id,
-                    'unit_id' => $sc->unit_id,
-                    'quantity' => $sc->quantity,
-                    'price' => $sc->price,
-                    'diskon' => $sc->diskon,
-                ]);
-            }
+        try {
+            DB::beginTransaction();
 
-            SellCart::where('cashier_id', auth()->id())->delete();
-        } else {
-            foreach ($sellCart as $sc) {
-                SellDetail::create([
-                    'sell_id' => $sell->id,
-                    'product_id' => $sc->product_id,
-                    'unit_id' => $sc->unit_id,
-                    'quantity' => $sc->quantity,
-                    'price' => $sc->price,
-                    'diskon' => $sc->diskon,
-                ]);
-
-                $unit = Unit::find($sc->unit_id);
-                $product = Product::find($sc->product_id);
-
-                if ($sc->unit_id == $product->unit_dus) {
-                    $unitType = 'DUS';
-                } elseif ($sc->unit_id == $product->unit_pak) {
-                    $unitType = 'PAK';
-                } elseif ($sc->unit_id == $product->unit_eceran) {
-                    $unitType = 'ECERAN';
+            if ($request->status == 'draft') {
+                foreach ($sellCart as $sc) {
+                    SellCartDraft::create([
+                        'sell_id' => $sell->id,
+                        'cashier_id' => auth()->id(),
+                        'product_id' => $sc->product_id,
+                        'unit_id' => $sc->unit_id,
+                        'quantity' => $sc->quantity,
+                        'price' => $sc->price,
+                        'diskon' => $sc->diskon,
+                    ]);
                 }
 
-                ProductReport::create([
-                    'product_id' => $sc->product_id,
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'user_id' => auth()->id(),
-                    'customer_id' => $request->customer,
-                    'unit' => $unit->name,
-                    'unit_type' => $unitType,
-                    'qty' => $sc->quantity,
-                    'price' => $sc->price - $sc->diskon,
-                    'for' => 'KELUAR',
-                    'type' => 'PENJUALAN',
-                    'description' => 'Penjualan ' . $sell->order_number,
-                ]);
+                SellCart::where('cashier_id', auth()->id())->delete();
+            } else {
+                foreach ($sellCart as $sc) {
+                    SellDetail::create([
+                        'sell_id' => $sell->id,
+                        'product_id' => $sc->product_id,
+                        'unit_id' => $sc->unit_id,
+                        'quantity' => $sc->quantity,
+                        'price' => $sc->price,
+                        'diskon' => $sc->diskon,
+                    ]);
+
+                    $unit = Unit::find($sc->unit_id);
+                    $product = Product::find($sc->product_id);
+
+                    if ($sc->unit_id == $product->unit_dus) {
+                        $unitType = 'DUS';
+                    } elseif ($sc->unit_id == $product->unit_pak) {
+                        $unitType = 'PAK';
+                    } elseif ($sc->unit_id == $product->unit_eceran) {
+                        $unitType = 'ECERAN';
+                    }
+
+                    ProductReport::create([
+                        'product_id' => $sc->product_id,
+                        'warehouse_id' => auth()->user()->warehouse_id,
+                        'user_id' => auth()->id(),
+                        'customer_id' => $request->customer,
+                        'unit' => $unit->name,
+                        'unit_type' => $unitType,
+                        'qty' => $sc->quantity,
+                        'price' => $sc->price - $sc->diskon,
+                        'for' => 'KELUAR',
+                        'type' => 'PENJUALAN',
+                        'description' => 'Penjualan ' . $sell->order_number,
+                    ]);
+                }
+
+                // delete all purchase cart
+                SellCart::where('cashier_id', auth()->id())->delete();
+
+                // Handle cashflow using service
+                $this->cashflowService->handleSalePayment(
+                    warehouseId: auth()->user()->warehouse_id,
+                    orderNumber: $sell->order_number,
+                    customerName: $customer->name,
+                    paymentMethod: $request->payment_method,
+                    cash: $cash,
+                    transfer: $transfer,
+                    change: $sell->change
+                );
             }
 
-            // delete all purchase cart
-            SellCart::where('cashier_id', auth()->id())->delete();
-
-            // Handle cashflow using service
-            $this->cashflowService->handleSalePayment(
-                warehouseId: auth()->user()->warehouse_id,
-                orderNumber: $sell->order_number,
-                customerName: $customer->name,
-                paymentMethod: $request->payment_method,
-                cash: $cash,
-                transfer: $transfer,
-                change: $sell->change
-            );
+            // Commit all database operations before attempting to print
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error storing sale: ' . $e->getMessage());
+            return redirect()->back()->withInput()->withErrors('Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
         }
 
         if ($request->status != 'draft') {
             try {
+                // Add a small delay to ensure database operations are fully committed
+                sleep(1);
+
                 $printUrl = route('penjualan.print', $sell->id);
-                $script = "<script>window.open('$printUrl', '_blank');</script>";
-                return Response::make($script . '<script>window.location.href = "' . route('penjualan.index') . '";</script>');
+                $script = "<script>
+                    setTimeout(function() {
+                        window.open('$printUrl', '_blank');
+                    }, 500);
+                </script>";
+                return Response::make($script . '<script>setTimeout(function() { window.location.href = "' . route('penjualan.index') . '"; }, 1000);</script>');
             } catch (\Throwable $th) {
                 return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
             }
