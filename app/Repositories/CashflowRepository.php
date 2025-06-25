@@ -28,25 +28,32 @@ class CashflowRepository
         $fromDate = $filters['from_date'];
         $toDate = Carbon::parse($filters['to_date'])->endOfDay();
 
-        // Single optimized query for summary calculations
-        $summaryData = DB::table('cashflows')
+        // Single optimized query for summary calculations with proper parameter binding
+        $query = DB::table('cashflows')
             ->selectRaw('
                 SUM(CASE WHEN created_at >= ? AND created_at <= ? THEN `in` ELSE 0 END) as current_in,
                 SUM(CASE WHEN created_at >= ? AND created_at <= ? THEN `out` ELSE 0 END) as current_out,
                 SUM(CASE WHEN DATE(created_at) < ? THEN `in` ELSE 0 END) as before_in,
                 SUM(CASE WHEN DATE(created_at) < ? THEN `out` ELSE 0 END) as before_out
-            ')
-            ->when($filters['warehouse_id'] ?? null, fn($q, $id) => $q->where('warehouse_id', $id))
-            ->when($filters['user_id'] ?? null, fn($q, $id) => $q->where('user_id', $id))
-            ->setBindings([
+            ', [
                 $fromDate,
                 $toDate,
                 $fromDate,
                 $toDate,
                 $fromDate,
                 $fromDate
-            ])
-            ->first();
+            ]);
+
+        // Apply filters
+        if ($filters['warehouse_id'] ?? null) {
+            $query->where('warehouse_id', $filters['warehouse_id']);
+        }
+
+        if ($filters['user_id'] ?? null) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
+        $summaryData = $query->first();
 
         // Get detailed cashflows for the period
         $cashflows = $this->buildBaseQuery($filters, false)->get();
