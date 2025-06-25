@@ -148,6 +148,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('combined-data/api/data', [SettlementController::class, 'combinedData'])->name('api.combined-data');
     Route::get('penjualan-draft/api/data', [SellDraftController::class, 'data'])->name('api.penjualan-draft');
     Route::get('report/api/data', [ReportController::class, 'data'])->name('api.report');
+    Route::get('report/api/live-data', [ReportController::class, 'liveData'])->name('api.report.live');
+    Route::get('report/api/summary', [ReportController::class, 'summary'])->name('api.report.summary');
+    Route::get('report/export', [ReportController::class, 'export'])->name('report.export');
     Route::get('penjualan/retur/api/data', [SellReturController::class, 'dataSell'])->name('api.penjualan-retur');
     Route::get('pembelian/retur/api/data', [PurchaseReturController::class, 'dataPurchase'])->name('api.pembelian-retur');
     Route::get('laporan-produk/api/data', [ProductReportController::class, 'data'])->name('api.laporan-produk');

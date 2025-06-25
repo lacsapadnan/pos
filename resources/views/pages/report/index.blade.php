@@ -4,118 +4,119 @@
 @section('menu-title', 'Laporan')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    @include('components.alert')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <!-- Add user_id filter select -->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk"
-                        id="searchInput">
-                </div>
-                <!--end::Search-->
-                @role('master')
-                    <div class="ms-2">
-                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                            <option value="">All Cabang</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-2">
-                        <input type="text" id="warehouseFilter" class="form-control"
-                            value="{{ auth()->user()->warehouse_id }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
-                    </div>
-                @endrole
-                @role('master')
-                    <div class="ms-3">
-                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                            <option value="">All Users</option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @else
-                    <div class="ms-3">
-                        <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
-                        <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
-                    </div>
-                @endrole
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                    <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Dari Tanggal">
-                    <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                        data-kt-filter="date" placeholder="Ke Tanggal">
-                </div>
+@include('components.alert')
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <!-- Add user_id filter select -->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data produk"
+                    id="searchInput">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
+            <!--end::Search-->
+            @role('master')
+            <div class="ms-2">
+                <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                    <option value="">All Cabang</option>
+                    @foreach ($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
             </div>
-
+            @else
+            <div class="ms-2">
+                <input type="text" id="warehouseFilter" class="form-control" value="{{ auth()->user()->warehouse_id }}"
+                    disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->warehouse->name }}" disabled>
+            </div>
+            @endrole
+            @role('master')
+            <div class="ms-3">
+                <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @else
+            <div class="ms-3">
+                <input type="text" id="userFilter" class="form-control" value="{{ auth()->id() }}" disabled hidden>
+                <input type="text" class="form-control" value="{{ auth()->user()->name }}" disabled>
+            </div>
+            @endrole
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                    data-kt-filter="date" placeholder="Dari Tanggal">
+                <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2" data-kt-filter="date"
+                    placeholder="Ke Tanggal">
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <h2>Awal: <span id="awalValue">Calculating...</span></h2>
-                </div>
-                <div class="col-md-4">
-                    <h2>Akhir: <span id="akhirValue">Calculating...</span></h2>
-                </div>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h2>Awal: <span id="awalValue">Calculating...</span></h2>
             </div>
-            <div id="loadingSpinner"
-                style="display: none; position: absolute; top: 90%; left: 50%; transform: translate(-50%, -50%);">
-                <div class="spinner-border" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
+            <div class="col-md-4">
+                <h2>Akhir: <span id="akhirValue">Calculating...</span></h2>
             </div>
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th>No</th>
-                                <th class="w-150px">Tanggal</th>
-                                <th>Untuk</th>
-                                <th>Kasir</th>
-                                <th class="w-350px">Keterangan</th>
-                                <th>Metode Bayar</th>
-                                <th>Masuk</th>
-                                <th>Keluar</th>
-                                @can('hapus laporan')
-                                    <th>Aksi</th>
-                                @endcan
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
-                </div>
+        </div>
+        <div id="loadingSpinner"
+            style="display: none; position: absolute; top: 90%; left: 50%; transform: translate(-50%, -50%);">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                            <th>No</th>
+                            <th class="w-150px">Tanggal</th>
+                            <th>Untuk</th>
+                            <th>Kasir</th>
+                            <th class="w-350px">Keterangan</th>
+                            <th>Metode Bayar</th>
+                            <th>Masuk</th>
+                            <th>Keluar</th>
+                            @can('hapus laporan')
+                            <th>Aksi</th>
+                            @endcan
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('addon-script')
-    <script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
-    <script>
-        "use strict";
+<script src="{{ URL::asset('assets/plugins/global/plugins.bundle.js') }}"></script>
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -137,13 +138,8 @@
                     ajax: {
                         url: '{{ route('api.report') }}',
                         type: 'GET',
-                        dataSrc: '',
-                        beforeSend: function() {
-                            // Show loading spinner and hide the table
-                            $('#loadingSpinner').show();
-                            $(table).hide();
-                        },
-                        success: function(response) {
+                        dataSrc: function(json) {
+                            // Handle the response structure from our refactored API
                             const numberFormatter = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
@@ -151,21 +147,38 @@
                                 maximumFractionDigits: 0,
                             });
 
-                            // Update the elements with formatted values
-                            $('#awalValue').text(numberFormatter.format(response.awalValue));
-                            $('#akhirValue').text(numberFormatter.format(response.akhirValue));
+                            // Update the summary values
+                            $('#awalValue').text(numberFormatter.format(json.awalValue || 0));
+                            $('#akhirValue').text(numberFormatter.format(json.akhirValue || 0));
 
-                            // Update your DataTable with cashflow data
-                            datatable.clear().rows.add(response.cashflow).draw();
-
+                            // Return the cashflows array for DataTable
+                            return json.cashflows || [];
+                        },
+                        beforeSend: function() {
+                            // Show loading spinner and hide the table
+                            $('#loadingSpinner').show();
+                            $(table).hide();
+                        },
+                        complete: function() {
                             // Hide loading spinner and show the table
                             $('#loadingSpinner').hide();
                             $(table).show();
                         },
-                        error: function() {
+                        error: function(xhr, status, error) {
                             // Hide loading spinner and show the table even if there's an error
                             $('#loadingSpinner').hide();
                             $(table).show();
+
+                            console.error('DataTable AJAX Error:', error);
+                            console.error('Response:', xhr.responseText);
+
+                            // Show user-friendly error message
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Gagal memuat data laporan. Silakan coba lagi.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
                         },
                     },
                     columns: [{
@@ -177,18 +190,21 @@
                         {
                             data: "created_at",
                             render: function(data, type, row) {
+                                if (!data) return '-';
                                 return moment(data).format('DD MMMM YYYY');
                             }
                         },
                         {
-                            data: "for"
+                            data: "for",
+                            defaultContent: '-'
                         },
                         {
                             data: "user.name",
                             defaultContent: '-'
                         },
                         {
-                            data: "description"
+                            data: "description",
+                            defaultContent: '-'
                         },
                         {
                             data: "payment_method",
@@ -197,22 +213,26 @@
                         {
                             data: "in",
                             render: function(data, type, row) {
+                                if (!data || data === 0) return 'Rp 0';
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
-                                    currency: 'IDR'
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
                                 }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             }
                         },
                         {
                             data: "out",
                             render: function(data, type, row) {
+                                if (!data || data === 0) return 'Rp 0';
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
-                                    currency: 'IDR'
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
                                 }).format(data);
-                                formattedPrice = formattedPrice.replace(",00", "");
                                 return formattedPrice;
                             }
                         },
@@ -220,6 +240,7 @@
                             {
                                 data: "id",
                                 render: function(data, type, row) {
+                                    if (!data) return '';
                                     return `
                                     <form id="deleteForm_${data}" class="d-inline">
                                         @csrf
@@ -234,7 +255,7 @@
                     ],
                 });
 
-
+                // Handle filter changes
                 $('#fromDateFilter, #toDateFilter, #warehouseFilter, #userFilter').on('change', function() {
                     var fromDate = $('#fromDateFilter').val();
                     var toDate = $('#toDateFilter').val();
@@ -339,9 +360,9 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-    <script>
-        function confirmDelete(id) {
+</script>
+<script>
+    function confirmDelete(id) {
             Swal.fire({
                 title: 'Yakin menghapus data ini?',
                 text: 'Data yang terhapus tidak dapat dikembalikan',
@@ -353,15 +374,6 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     deleteRecord(id);
-                    Swal.fire(
-                        'Terhapus!',
-                        'Data cashflow terhapus.',
-                        'success'
-                    ).then((result) => {
-                        if (result.isConfirmed) {
-                            location.reload();
-                        }
-                    });
                 }
             });
         }
@@ -376,13 +388,25 @@
                     id: id
                 },
                 success: function(response) {
-                    location.reload();
+                    Swal.fire(
+                        'Terhapus!',
+                        'Data cashflow berhasil dihapus.',
+                        'success'
+                    ).then((result) => {
+                        // Reload the DataTable instead of the entire page
+                        datatable.ajax.reload(null, false);
+                    });
                 },
                 error: function(xhr, status, error) {
                     // Handle error
-                    console.error(error);
+                    console.error('Delete Error:', error);
+                    Swal.fire(
+                        'Error!',
+                        'Gagal menghapus data. Silakan coba lagi.',
+                        'error'
+                    );
                 }
             });
         }
-    </script>
+</script>
 @endpush

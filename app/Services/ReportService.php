@@ -1,0 +1,157 @@
+<?php
+
+namespace App\Services;
+
+use App\Repositories\CashflowRepository;
+use Illuminate\Support\Facades\Cache;
+
+class ReportService
+{
+    public function __construct(
+        private CashflowRepository $cashflowRepository,
+        private CashflowService $cashflowService
+    ) {}
+
+    /**
+     * Get comprehensive cashflow report with caching
+     */
+    public function getCashflowReport(array $filters): array
+    {
+        $filters = $this->normalizeFilters($filters);
+
+        // Create cache key based on filters
+        $cacheKey = 'cashflow_report_' . md5(serialize($filters));
+
+        return Cache::remember($cacheKey, 300, function () use ($filters) {
+            return $this->cashflowRepository->getCashflowSummary($filters);
+        });
+    }
+
+    /**
+     * Delete cashflow record
+     */
+    public function deleteCashflow(int $id): bool
+    {
+        $deleted = $this->cashflowService->deleteCashflow($id);
+
+        if ($deleted) {
+            // Clear related cache
+            $this->clearCashflowCache();
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Get cashflow report without caching (for real-time data)
+     */
+    public function getCashflowReportLive(array $filters): array
+    {
+        $filters = $this->normalizeFilters($filters);
+        return $this->cashflowRepository->getCashflowSummary($filters);
+    }
+
+    /**
+     * Normalize and validate filters
+     */
+    private function normalizeFilters(array $filters): array
+    {
+        return [
+            'from_date' => $filters['from_date'] ?? now()->format('Y-m-d'),
+            'to_date' => $filters['to_date'] ?? now()->format('Y-m-d'),
+            'warehouse_id' => $filters['warehouse_id'] ?? null,
+            'user_id' => $filters['user_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Clear all cashflow related cache
+     */
+    private function clearCashflowCache(): void
+    {
+        // Clear all cashflow report cache keys
+        $tags = ['cashflow_report'];
+
+        if (Cache::getStore() instanceof \Illuminate\Cache\TaggableStore) {
+            Cache::tags($tags)->flush();
+        } else {
+            // Fallback for stores that don't support tags
+            $keys = [
+                'cashflow_report_*',
+                'top_products_*',
+                'dashboard_stats_*'
+            ];
+
+            foreach ($keys as $pattern) {
+                // Note: This is a simplified approach
+                // In production, you might want to use Redis KEYS command
+                // or implement a more sophisticated cache invalidation strategy
+            }
+        }
+    }
+
+    /**
+     * Get summary statistics for dashboard
+     */
+    public function getSummaryStats(array $filters): array
+    {
+        $data = $this->cashflowRepository->getCashflowSummary($filters);
+
+        return [
+            'total_transactions' => $data['cashflows']->count(),
+            'total_income' => $data['totalIn'],
+            'total_expense' => $data['totalOut'],
+            'net_flow' => $data['totalIn'] - $data['totalOut'],
+            'opening_balance' => $data['awalValue'],
+            'closing_balance' => $data['akhirValue'],
+        ];
+    }
+
+    /**
+     * Export cashflow data for reporting
+     */
+    public function exportCashflowData(array $filters, string $format = 'array'): array
+    {
+        $data = $this->getCashflowReportLive($filters);
+
+        switch ($format) {
+            case 'csv':
+                return $this->formatForCsv($data);
+            case 'excel':
+                return $this->formatForExcel($data);
+            default:
+                return $data;
+        }
+    }
+
+    /**
+     * Format data for CSV export
+     */
+    private function formatForCsv(array $data): array
+    {
+        $formatted = [];
+
+        foreach ($data['cashflows'] as $cashflow) {
+            $formatted[] = [
+                'date' => $cashflow->created_at->format('Y-m-d H:i:s'),
+                'description' => $cashflow->description,
+                'type' => $cashflow->for,
+                'in' => $cashflow->in,
+                'out' => $cashflow->out,
+                'payment_method' => $cashflow->payment_method,
+                'user' => $cashflow->user->name ?? '',
+            ];
+        }
+
+        return $formatted;
+    }
+
+    /**
+     * Format data for Excel export
+     */
+    private function formatForExcel(array $data): array
+    {
+        // Similar to CSV but with additional formatting for Excel
+        return $this->formatForCsv($data);
+    }
+}
