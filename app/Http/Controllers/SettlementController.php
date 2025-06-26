@@ -182,12 +182,12 @@ class SettlementController extends Controller
                 ->sum('total_received');
 
             // Check if new settlement would exceed mutation amount
-            if (($existingTotalReceived + $totalReceived) > $mutationAmount) {
-                $remainingAmount = $mutationAmount - $existingTotalReceived;
-                return redirect()->back()->withErrors([
-                    'error' => 'Total jumlah settlement akan melebihi jumlah mutasi. Sisa jumlah yang harus diselesaikan: Rp ' . number_format($remainingAmount, 0, ',', '.')
-                ]);
-            }
+            // if (($existingTotalReceived + $totalReceived) > $mutationAmount) {
+            //     $remainingAmount = $mutationAmount - $existingTotalReceived;
+            //     return redirect()->back()->withErrors([
+            //         'error' => 'Total jumlah settlement akan melebihi jumlah mutasi. Sisa jumlah yang harus diselesaikan: Rp ' . number_format($remainingAmount, 0, ',', '.')
+            //     ]);
+            // }
 
             // Calculate outstanding after this settlement
             $newTotalReceived = $existingTotalReceived + $totalReceived;
