@@ -160,12 +160,12 @@ class SettlementController extends Controller
             $mutation = TreasuryMutation::find($request->mutation_id);
 
             if (!$mutation) {
-                return redirect()->back()->withErrors(['error' => 'Treasury mutation not found.']);
+                return redirect()->back()->withErrors(['error' => 'Mutasi treasury tidak ditemukan.']);
             }
 
             // Validate that the mutation amount is available
             if (!$mutation->amount || !is_numeric($mutation->amount)) {
-                return redirect()->back()->withErrors(['error' => 'Invalid mutation amount.']);
+                return redirect()->back()->withErrors(['error' => 'Jumlah mutasi tidak valid.']);
             }
 
             // Use the amount from request as the total received
@@ -174,7 +174,7 @@ class SettlementController extends Controller
 
             // Validate that total received doesn't exceed mutation amount
             if ($totalReceived > $mutationAmount) {
-                return redirect()->back()->withErrors(['error' => 'Total received cannot exceed the mutation amount.']);
+                return redirect()->back()->withErrors(['error' => 'Total yang diterima tidak boleh melebihi jumlah mutasi.']);
             }
 
             // Check total existing settlements for this mutation
@@ -185,7 +185,7 @@ class SettlementController extends Controller
             if (($existingTotalReceived + $totalReceived) > $mutationAmount) {
                 $remainingAmount = $mutationAmount - $existingTotalReceived;
                 return redirect()->back()->withErrors([
-                    'error' => 'Total settlement amount would exceed mutation amount. Remaining amount to settle: ' . number_format($remainingAmount, 0, ',', '.')
+                    'error' => 'Total jumlah settlement akan melebihi jumlah mutasi. Sisa jumlah yang harus diselesaikan: Rp ' . number_format($remainingAmount, 0, ',', '.')
                 ]);
             }
 
@@ -213,7 +213,7 @@ class SettlementController extends Controller
 
             DB::commit();
 
-            return redirect()->route('settlement.index')->with('success', 'Settlement created successfully');
+            return redirect()->route('settlement.index')->with('success', 'Settlement berhasil dibuat');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error in actionStore method: ' . $e->getMessage(), [
@@ -221,7 +221,7 @@ class SettlementController extends Controller
                 'stack_trace' => $e->getTraceAsString()
             ]);
 
-            return redirect()->back()->withErrors(['error' => 'An error occurred while processing the settlement. Please try again.']);
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat memproses settlement. Silakan coba lagi.']);
         }
     }
 
@@ -262,7 +262,7 @@ class SettlementController extends Controller
             $cashflow->delete();
         }
 
-        return redirect()->back()->with('success', 'Settlement deleted successfully');
+        return redirect()->back()->with('success', 'Settlement berhasil dihapus');
     }
 
     public function serverSide(Request $request)
