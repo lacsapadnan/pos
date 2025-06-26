@@ -35,7 +35,7 @@ class SettlementController extends Controller
 
     public function data()
     {
-        $settlements = Settlement::with('mutation', 'cashier')->get();
+        $settlements = Settlement::with('mutation', 'cashier')->orderBy('id', 'desc')->get();
         return response()->json($settlements);
     }
 
