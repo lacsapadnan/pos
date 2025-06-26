@@ -86,7 +86,7 @@
         </div>
         <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
             <div class="table-responsive">
-                <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
                     id="kt_datatable_example">
                     <thead>
                         <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
@@ -381,11 +381,10 @@
         function deleteRecord(id) {
             // Use AJAX for asynchronous delete request
             $.ajax({
-                url: "{{ url('laporan') }}/" + id,
+                url: "{{ route('laporan.destroy', '') }}/" + id,
                 type: 'DELETE',
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    id: id
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
                 },
                 success: function(response) {
                     Swal.fire(
@@ -394,12 +393,15 @@
                         'success'
                     ).then((result) => {
                         // Reload the DataTable instead of the entire page
-                        datatable.ajax.reload(null, false);
+                        if (typeof datatable !== 'undefined') {
+                            datatable.ajax.reload(null, false);
+                        }
                     });
                 },
                 error: function(xhr, status, error) {
                     // Handle error
                     console.error('Delete Error:', error);
+                    console.error('Response:', xhr.responseText);
                     Swal.fire(
                         'Error!',
                         'Gagal menghapus data. Silakan coba lagi.',

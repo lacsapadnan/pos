@@ -111,10 +111,17 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'lihat semua laba rugi']);
 
         // CRUD kasbon permissions
-        Permission::create(['name' => 'baca kasbon']);
-        Permission::create(['name' => 'simpan kasbon']);
-        Permission::create(['name' => 'update kasbon']);
-        Permission::create(['name' => 'hapus kasbon']);
-        Permission::create(['name' => 'approve kasbon']);
+        // Permission::create(['name' => 'baca kasbon']);
+        // Permission::create(['name' => 'simpan kasbon']);
+        // Permission::create(['name' => 'update kasbon']);
+        // Permission::create(['name' => 'hapus kasbon']);
+        // Permission::create(['name' => 'approve kasbon']);
+
+        // CRUD gaji permissions
+        Permission::create(['name' => 'baca gaji']);
+        Permission::create(['name' => 'simpan gaji']);
+        Permission::create(['name' => 'update gaji']);
+        Permission::create(['name' => 'hapus gaji']);
+        Permission::create(['name' => 'approve gaji']);
     }
 }

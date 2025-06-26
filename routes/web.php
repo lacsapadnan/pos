@@ -16,6 +16,8 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseReturController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SalarySettingController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellDraftController;
 use App\Http\Controllers\SellReturController;
@@ -92,6 +94,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('bayar-hutang', [PurchaseController::class, 'payDebt'])->name('bayar-hutang');
     Route::post('bayar-piutang', [SellController::class, 'payCredit'])->name('bayar-piutang');
     Route::post('settlement/simpan', [SettlementController::class, 'actionStore'])->name('settlement.actionStore');
+    Route::post('settlement/serverside', [SettlementController::class, 'serverSide'])->name('settlement.serverside');
     Route::get('produk/laporan', [ProductReportController::class, 'index'])->name('produk.laporan');
     Route::get('laba-rugi', [IncomeStatementController::class, 'index'])->name('laba-rugi');
 
@@ -112,6 +115,17 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('kasbon', CashAdvanceController::class);
     Route::post('kasbon/{cashAdvance}/approve', [CashAdvanceController::class, 'approve'])->name('kasbon.approve');
     Route::post('kasbon/{cashAdvance}/reject', [CashAdvanceController::class, 'reject'])->name('kasbon.reject');
+
+    // Salary (Gaji) routes
+    Route::resource('gaji', SalaryController::class);
+    Route::post('gaji/{salary}/calculate', [SalaryController::class, 'calculate'])->name('gaji.calculate');
+    Route::post('gaji/{salary}/approve', [SalaryController::class, 'approve'])->name('gaji.approve');
+    Route::post('gaji/{salary}/mark-paid', [SalaryController::class, 'markPaid'])->name('gaji.mark-paid');
+    Route::get('gaji-master', [SalaryController::class, 'master'])->name('gaji.master');
+
+    // Salary Settings routes
+    Route::resource('salary-settings', SalarySettingController::class)->except(['show']);
+    Route::get('salary-settings/data', [SalarySettingController::class, 'data'])->name('salary-settings.data');
 
     // API
     Route::get('produk/api/data', [ProductController::class, 'data'])->name('api.produk');
@@ -160,6 +174,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pindah-stok-draft/api/data', [SendStockDraftController::class, 'data'])->name('api.pindah-stok-draft');
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
     Route::get('kasbon/api/data', [CashAdvanceController::class, 'data'])->name('api.kasbon');
+    Route::get('gaji/api/data', [SalaryController::class, 'data'])->name('api.gaji');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');

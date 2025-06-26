@@ -133,6 +133,7 @@ class EmployeeController extends Controller
             ]);
 
             DB::commit();
+
             return redirect()->route('karyawan.index')->withSuccess('Karyawan berhasil diperbarui');
         } catch (\Throwable $th) {
             DB::rollBack();
