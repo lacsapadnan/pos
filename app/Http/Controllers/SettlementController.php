@@ -171,18 +171,27 @@ class SettlementController extends Controller
             // Use the amount from request as the total received
             $totalReceived = (float) $request->amount;
             $mutationAmount = (float) $mutation->amount;
-            $outstanding = $mutationAmount - $totalReceived;
 
             // Validate that total received doesn't exceed mutation amount
             if ($totalReceived > $mutationAmount) {
                 return redirect()->back()->withErrors(['error' => 'Total received cannot exceed the mutation amount.']);
             }
 
-            // Check if settlement already exists for this mutation
-            $existingSettlement = Settlement::where('mutation_id', $request->mutation_id)->first();
-            if ($existingSettlement) {
-                return redirect()->back()->withErrors(['error' => 'Settlement already exists for this mutation.']);
+            // Check total existing settlements for this mutation
+            $existingTotalReceived = Settlement::where('mutation_id', $request->mutation_id)
+                ->sum('total_received');
+
+            // Check if new settlement would exceed mutation amount
+            if (($existingTotalReceived + $totalReceived) > $mutationAmount) {
+                $remainingAmount = $mutationAmount - $existingTotalReceived;
+                return redirect()->back()->withErrors([
+                    'error' => 'Total settlement amount would exceed mutation amount. Remaining amount to settle: ' . number_format($remainingAmount, 0, ',', '.')
+                ]);
             }
+
+            // Calculate outstanding after this settlement
+            $newTotalReceived = $existingTotalReceived + $totalReceived;
+            $outstanding = $mutationAmount - $newTotalReceived;
 
             $settlement = new Settlement();
             $settlement->mutation_id = $request->mutation_id;
