@@ -99,17 +99,18 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('laba-rugi', [IncomeStatementController::class, 'index'])->name('laba-rugi');
 
     // Attendance routes
-    Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
-    Route::post('attendance/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
-    Route::post('attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.check-out');
-    Route::post('attendance/start-break', [AttendanceController::class, 'startBreak'])->name('attendance.start-break');
-    Route::post('attendance/end-break', [AttendanceController::class, 'endBreak'])->name('attendance.end-break');
-    Route::get('attendance/today-status', [AttendanceController::class, 'getTodayStatus'])->name('attendance.today-status');
-    Route::get('attendance/recap', [AttendanceController::class, 'recap'])->name('attendance.recap');
-    Route::get('attendance/data', [AttendanceController::class, 'data'])->name('attendance.data');
-    Route::get('attendance/{id}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
-    Route::put('attendance/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
-    Route::delete('attendance/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+    Route::get('absensi', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('absensi/create', [AttendanceController::class, 'create'])->name('attendance.create');
+    Route::post('absensi/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
+    Route::post('absensi/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.check-out');
+    Route::post('absensi/start-break', [AttendanceController::class, 'startBreak'])->name('attendance.start-break');
+    Route::post('absensi/end-break', [AttendanceController::class, 'endBreak'])->name('attendance.end-break');
+    Route::get('absensi/today-status', [AttendanceController::class, 'getTodayStatus'])->name('attendance.today-status');
+    Route::get('absensi/recap', [AttendanceController::class, 'recap'])->name('attendance.recap');
+    Route::get('absensi/data', [AttendanceController::class, 'data'])->name('attendance.data');
+    Route::get('absensi/{id}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
+    Route::put('absensi/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
+    Route::delete('absensi/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 
     // Cash Advance (Kasbon) routes
     Route::resource('kasbon', CashAdvanceController::class);

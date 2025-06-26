@@ -141,7 +141,7 @@
     $('#check-in-btn').click(function() {
         if ($(this).prop('disabled')) return;
 
-        $.post('/attendance/check-in', {
+        $.post('/absensi/check-in', {
             _token: '{{ csrf_token() }}'
         })
         .done(function(response) {
@@ -159,7 +159,7 @@
     });
 
     $('#check-out-btn').click(function() {
-        $.post('/attendance/check-out', {
+        $.post('/absensi/check-out', {
             _token: '{{ csrf_token() }}'
         })
         .done(function(response) {
@@ -177,7 +177,7 @@
     });
 
     $('#start-break-btn').click(function() {
-        $.post('/attendance/start-break', {
+        $.post('/absensi/start-break', {
             _token: '{{ csrf_token() }}'
         })
         .done(function(response) {
@@ -195,7 +195,7 @@
     });
 
     $('#end-break-btn').click(function() {
-        $.post('/attendance/end-break', {
+        $.post('/absensi/end-break', {
             _token: '{{ csrf_token() }}'
         })
         .done(function(response) {
@@ -254,7 +254,7 @@
     }
 
     function refreshAttendanceStatus() {
-        $.get('/attendance/today-status')
+        $.get('/absensi/today-status')
         .done(function(response) {
             todayAttendance = response.attendance;
             updateAttendanceUI();

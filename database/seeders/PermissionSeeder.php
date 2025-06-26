@@ -99,7 +99,7 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'update karyawan']);
         // Permission::create(['name' => 'hapus karyawan']);
 
-        // CRUD attendance permissions
+        // Old attendance permissions - removed in favor of new permission system
         // Permission::create(['name' => 'absen masuk keluar']);
         // Permission::create(['name' => 'baca rekap absensi']);
         // Permission::create(['name' => 'update rekap absensi']);
@@ -118,10 +118,17 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'approve kasbon']);
 
         // CRUD gaji permissions
-        Permission::create(['name' => 'baca gaji']);
-        Permission::create(['name' => 'simpan gaji']);
-        Permission::create(['name' => 'update gaji']);
-        Permission::create(['name' => 'hapus gaji']);
-        Permission::create(['name' => 'approve gaji']);
+        // Permission::create(['name' => 'baca gaji']);
+        // Permission::create(['name' => 'simpan gaji']);
+        // Permission::create(['name' => 'update gaji']);
+        // Permission::create(['name' => 'hapus gaji']);
+        // Permission::create(['name' => 'approve gaji']);
+
+        // Attendance management permissions (for admin/supervisor)
+        Permission::create(['name' => 'kelola absensi']);
+        Permission::create(['name' => 'baca absensi']);
+        Permission::create(['name' => 'simpan absensi']);
+        Permission::create(['name' => 'update absensi']);
+        Permission::create(['name' => 'hapus absensi']);
     }
 }

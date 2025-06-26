@@ -395,7 +395,7 @@
             user_id: $('#user_id').val()
         };
 
-        $.get('/attendance/data', params)
+        $.get('/absensi/data', params)
         .done(function(response) {
             table.clear();
             table.rows.add(response);
@@ -407,7 +407,7 @@
     }
 
     function editAttendance(id) {
-        $.get('/attendance/' + id + '/edit')
+        $.get('/absensi/' + id + '/edit')
         .done(function(response) {
             currentEditId = id;
 
@@ -462,7 +462,7 @@
         const formData = new FormData($('#editAttendanceForm')[0]);
 
         $.ajax({
-            url: '/attendance/' + currentEditId,
+            url: '/absensi/' + currentEditId,
             type: 'POST',
             data: formData,
             processData: false,
@@ -510,7 +510,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/attendance/' + id,
+                    url: '/absensi/' + id,
                     type: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'

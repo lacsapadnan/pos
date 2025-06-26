@@ -30,6 +30,17 @@ class UsersAndRolesSeeder extends Seeder
         // assign all permissions to the admin role
         $adminRole->givePermissionTo(Permission::all());
 
+        // Ensure admin has attendance management permissions
+        if (Permission::where('name', 'kelola absensi')->exists()) {
+            $adminRole->givePermissionTo([
+                'kelola absensi',
+                'baca absensi',
+                'simpan absensi',
+                'update absensi',
+                'hapus absensi'
+            ]);
+        }
+
         // Create kasir user
         $kasirUser = User::create([
             'name' => 'Kasir User',

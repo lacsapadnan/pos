@@ -469,7 +469,7 @@
                 </div>
                 <!--end:Menu item-->
                 @endcan
-                @if (auth()->user()->hasAnyDirectPermission(['absen masuk keluar', 'baca rekap absensi']))
+                @if (auth()->user()->hasAnyDirectPermission(['kelola absensi', 'baca absensi']))
                 <!--begin:Menu item-->
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                     class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
@@ -481,18 +481,20 @@
                     <!--end:Menu link-->
                     <!--begin:Menu sub-->
                     <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown px-lg-2 py-lg-4 w-lg-200px">
-                        @can('absen masuk keluar')
                         <!--begin:Menu item-->
                         <div class="menu-item {{ request()->routeIs('attendance.index') ? ' here' : '' }}">
                             <!--begin:Menu link-->
                             <a class="menu-link" href="{{ route('attendance.index') }}">
-                                <span class="menu-title">Absen Masuk/Keluar</span>
+                                @can('kelola absensi')
+                                <span class="menu-title">Kelola Absensi</span>
+                                @else
+                                <span class="menu-title">Status Absensi</span>
+                                @endcan
                             </a>
                             <!--end:Menu link-->
                         </div>
                         <!--end:Menu item-->
-                        @endcan
-                        @can('baca rekap absensi')
+                        @can('baca absensi')
                         <!--begin:Menu item-->
                         <div class="menu-item {{ request()->routeIs('attendance.recap') ? ' here' : '' }}">
                             <!--begin:Menu link-->
