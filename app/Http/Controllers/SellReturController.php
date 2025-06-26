@@ -475,7 +475,115 @@ class SellReturController extends Controller
      */
     public function destroy(string $id)
     {
-        abort(404);
+        try {
+            $sellRetur = SellRetur::with('sellReturDetails', 'sell')->findOrFail($id);
+
+            // Check permissions - only master or return creator can delete
+            $userRoles = auth()->user()->getRoleNames();
+            if ($userRoles[0] !== 'master' && $sellRetur->user_id !== auth()->id()) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus retur ini');
+            }
+
+            // Check if return is already verified
+            if ($sellRetur->remark === 'verify') {
+                return redirect()->back()->with('error', 'Retur yang sudah diverifikasi tidak dapat dihapus');
+            }
+
+            DB::beginTransaction();
+
+            // Get all return details
+            $sellReturDetails = SellReturDetail::where('sell_retur_id', $id)->get();
+
+            // Restore the sell details quantities and grand total
+            foreach ($sellReturDetails as $returnDetail) {
+                $product = Product::find($returnDetail->product_id);
+
+                // Convert returned quantity to eceran
+                $returnQuantityInEceran = $this->convertToEceran($returnDetail->qty, $returnDetail->unit_id, $product);
+
+                // Get all sell details for this product to restore proportionally
+                $sellDetails = SellDetail::where('sell_id', $sellRetur->sell_id)
+                    ->where('product_id', $returnDetail->product_id)
+                    ->get();
+
+                $remainingToRestore = $returnQuantityInEceran;
+
+                foreach ($sellDetails as $sellDetail) {
+                    if ($remainingToRestore <= 0) break;
+
+                    // Calculate how much to restore to this sell detail
+                    $restoreEceran = min($remainingToRestore, $returnQuantityInEceran);
+
+                    // Convert back to the sell detail's unit
+                    $restoreInOriginalUnit = $this->convertFromEceran($restoreEceran, $sellDetail->unit_id, $product);
+
+                    // Update the sell detail quantity
+                    $sellDetail->quantity += $restoreInOriginalUnit;
+                    $sellDetail->save();
+
+                    // Update grand total (proportional to restoration)
+                    $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
+                    $sellRetur->sell->grand_total += ($restoreInOriginalUnit * $pricePerUnit);
+
+                    $remainingToRestore -= $restoreEceran;
+                }
+
+                // Remove stock that was added back during return
+                $inventory = Inventory::where('product_id', $returnDetail->product_id)
+                    ->where('warehouse_id', $sellRetur->warehouse_id)
+                    ->first();
+
+                if ($inventory) {
+                    $inventory->quantity -= $returnQuantityInEceran;
+                    $inventory->save();
+                }
+
+                // Delete the product report entry for this return
+                ProductReport::where('type', 'RETUR PENJUALAN')
+                    ->where('product_id', $returnDetail->product_id)
+                    ->where('warehouse_id', $sellRetur->warehouse_id)
+                    ->where('user_id', $sellRetur->user_id)
+                    ->where('qty', $returnDetail->qty)
+                    ->where('price', $returnDetail->price)
+                    ->first()?->delete();
+            }
+
+            // Update the sell record
+            $sellRetur->sell->save();
+
+            // If sell was marked as 'batal', check if we should restore its status
+            if ($sellRetur->sell->status === 'batal') {
+                // Check if there are still items with quantity > 0
+                $hasRemainingItems = SellDetail::where('sell_id', $sellRetur->sell_id)
+                    ->where('quantity', '>', 0)
+                    ->exists();
+
+                if ($hasRemainingItems) {
+                    // Restore status based on payment
+                    $sellRetur->sell->status = $sellRetur->sell->grand_total > $sellRetur->sell->paid ? 'piutang' : 'lunas';
+                    $sellRetur->sell->save();
+                }
+            }
+
+            // Delete cashflow if it was a paid return
+            if ($sellRetur->sell->status === 'lunas') {
+                Cashflow::where('description', 'like', '%Retur Penjualan ' . $sellRetur->sell->order_number . '%')
+                    ->where('user_id', $sellRetur->user_id)
+                    ->where('warehouse_id', $sellRetur->warehouse_id)
+                    ->delete();
+            }
+
+            // Delete return details and the return record
+            SellReturDetail::where('sell_retur_id', $id)->delete();
+            $sellRetur->delete();
+
+            DB::commit();
+
+            return redirect()->route('penjualan-retur.index')->with('success', 'Retur berhasil dihapus dan stok telah dikembalikan ke kondisi semula');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus retur: ' . $e->getMessage());
+        }
     }
 
     /**

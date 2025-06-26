@@ -183,10 +183,16 @@
                         {
                             "data": "id",
                             "render": function(data, type, row) {
-                                return `
+                                let actions = `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                 <a href="/penjualan-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
+
+                                @can('hapus retur')
+                                actions += `<button class="btn btn-sm btn-danger" onclick="deleteSellRetur(${data})">Hapus</button>`;
+                                @endcan
+
+                                return actions;
                             }
                         },
                     ],

@@ -20,7 +20,7 @@ class SellRetur extends Model
         return $this->belongsTo(Sell::class);
     }
 
-    public function detail()
+    public function sellReturDetails()
     {
         return $this->hasMany(SellReturDetail::class);
     }
