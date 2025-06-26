@@ -89,17 +89,25 @@ class SellReturController extends Controller
     {
         $userRoles = auth()->user()->getRoleNames();
 
-        $query = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user');
+        $query = SellReturDetail::with(['product', 'unit', 'sellRetur'])
+            ->whereHas('sellRetur', function ($q) use ($saleId) {
+                $q->where('sell_id', $saleId);
+            });
 
         if ($userRoles[0] != 'master') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
+            $query->whereHas('sellRetur', function ($q) {
+                $q->where('warehouse_id', auth()->user()->warehouse_id);
+            });
         }
 
-        $retur = $query
-            ->select('sell_returs.*', 'sell_returs.remark') // Include the 'remark' column directly
-            ->where('sell_id', $saleId)
-            ->orderBy('sell_returs.id', 'asc')
-            ->get();
+        $retur = $query->get();
+
+        // Add remark from sellRetur to each detail
+        $retur->each(function ($detail) {
+            $detail->remark = $detail->sellRetur->remark;
+            $detail->created_at = $detail->sellRetur->created_at;
+            $detail->id = $detail->sellRetur->id;
+        });
 
         return response()->json($retur);
     }

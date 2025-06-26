@@ -5,6 +5,7 @@
 
 @push('addon-style')
 <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 @endpush
 
 @include('includes.datatable-pagination')
@@ -572,108 +573,174 @@
 </script>
 <script>
     var datatable;
+    var returDatatable;
 
-        function openModal(id) {
-            // Clear the table body
-            $('#kt_datatable_detail tbody').empty();
+    function openModal(id) {
+        // Clear both table bodies
+        $('#kt_datatable_detail tbody').empty();
+        $('#kt_datatable_retur tbody').empty();
 
-            // Check if DataTable instance exists and destroy it
-            if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
-                datatable.destroy();
-            }
-
-            // Send a request to fetch the sell details for the given ID
-            $.ajax({
-                url: '/penjualan/' + id,
-                method: 'GET',
-                success: function(response) {
-                    // Initialize the DataTable on the table
-                    datatable = $('#kt_datatable_detail').DataTable({
-                        data: response,
-                        columns: [{
-                                data: 'product.name'
-                            },
-                            {
-                                data: 'unit.name'
-                            },
-                            {
-                                data: 'quantity'
-                            },
-                            {
-                                data: 'convert_unit',
-                                defaultContent: '-'
-                            },
-                            {
-                                data: 'price',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: null,
-                                render: function(data, type, row) {
-                                    var subtotal = data.quantity * data.price;
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(subtotal);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'diskon',
-                                render: function(data, type, row) {
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(data);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            },
-                            {
-                                data: 'product.hadiah'
-                            },
-                            {
-                                data: null,
-                                render: function(data, type, row) {
-                                    var total = data.quantity * data.price - data.diskon;
-                                    var formattedPrice = new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(total);
-                                    formattedPrice = formattedPrice.replace(",00", "");
-                                    return formattedPrice;
-                                }
-                            }
-                        ]
-                    });
-
-                    // Calculate grand total
-                    var grandTotal = response.reduce((acc, item) => {
-                        return acc + (item.quantity * item.price - item.diskon);
-                    }, 0);
-                    var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(grandTotal).replace(",00", "");
-
-                    // Display grand total
-                    $('#kt_datatable_detail').after(`<h2>Total Penjualan: ${formattedGrandTotal}</h2>`);
-
-                    // Open the modal
-                    $('#kt_modal_1').modal('show');
-                },
-                error: function(xhr, status, error) {
-                    console.error(error); // Handle the error appropriately
-                }
-            });
+        // Check if DataTable instances exist and destroy them
+        if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
+            datatable.destroy();
         }
+        if ($.fn.DataTable.isDataTable('#kt_datatable_retur')) {
+            returDatatable.destroy();
+        }
+
+        // Send a request to fetch the sell details for the given ID
+        $.ajax({
+            url: '/penjualan/' + id,
+            method: 'GET',
+            success: function(response) {
+                // Initialize the DataTable for sell details
+                datatable = $('#kt_datatable_detail').DataTable({
+                    data: response,
+                    columns: [{
+                                                                data: 'product.name',
+                                    defaultContent: '-'
+                        },
+                        {
+                            data: 'unit.name'
+                        },
+                        {
+                            data: 'quantity'
+                        },
+                        {
+                            data: 'convert_unit',
+                            defaultContent: '-'
+                        },
+                        {
+                            data: 'price',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                var subtotal = data.quantity * data.price;
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(subtotal);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'diskon',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'product.hadiah'
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                var total = data.quantity * data.price - data.diskon;
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        }
+                    ]
+                });
+
+                // Calculate grand total
+                var grandTotal = response.reduce((acc, item) => {
+                    return acc + (item.quantity * item.price - item.diskon);
+                }, 0);
+                var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR'
+                }).format(grandTotal).replace(",00", "");
+
+                // Display grand total
+                $('#kt_datatable_detail').after(`<h2>Total Penjualan: ${formattedGrandTotal}</h2>`);
+
+                // Fetch and display returned products
+                $.ajax({
+                    url: '/penjualan-retur/api/dataBySaleId/' + id,
+                    method: 'GET',
+                    success: function(returResponse) {
+                        // Initialize the DataTable for returned products
+                        returDatatable = $('#kt_datatable_retur').DataTable({
+                            data: returResponse,
+                            columns: [{
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        return "PJR-" + moment(data.created_at).format('YYYYMMDD') + "-" + String(data.id).padStart(4, '0');
+                                    }
+                                },
+                                {
+                                    data: 'product.name'
+                                },
+                                {
+                                    data: 'unit.name'
+                                },
+                                {
+                                    data: 'qty'
+                                },
+                                {
+                                    data: 'price',
+                                    render: function(data, type, row) {
+                                        var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(data);
+                                        formattedPrice = formattedPrice.replace(",00", "");
+                                        return formattedPrice;
+                                    }
+                                },
+                                {
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        var total = data.qty * data.price;
+                                        var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(total);
+                                        formattedPrice = formattedPrice.replace(",00", "");
+                                        return formattedPrice;
+                                    }
+                                },
+                                {
+                                    data: 'created_at',
+                                    render: function(data, type, row) {
+                                        return moment(data).format('DD MMMM YYYY');
+                                    }
+                                }
+                            ]
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching return data:', error);
+                    }
+                });
+
+                // Open the modal
+                $('#kt_modal_1').modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching sell details:', error);
+            }
+        });
+    }
 </script>
 @endpush
