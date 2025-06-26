@@ -8,6 +8,7 @@ use App\Models\TreasuryMutation;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CashflowService;
+use App\Http\Requests\SettlementRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -100,7 +101,7 @@ class SettlementController extends Controller
             $settlements = [];
 
             foreach ($inputRequests as $inputRequest) {
-                if (!isset($inputRequest['mutation_id']) || !isset($inputRequest['total_recieved'])) {
+                if (!isset($inputRequest['mutation_id']) || !isset($inputRequest['total_received'])) {
                     return response()->json(['error' => 'Invalid input format'], 400);
                 }
 
@@ -112,7 +113,7 @@ class SettlementController extends Controller
                 }
 
                 // Clean and convert total_received to proper numeric format
-                $totalReceived = $inputRequest['total_recieved'];
+                $totalReceived = $inputRequest['total_received'];
 
                 // Remove currency formatting if present (Rp, commas, etc.)
                 if (is_string($totalReceived)) {
@@ -149,33 +150,70 @@ class SettlementController extends Controller
         }
     }
 
-    public function actionStore(Request $request)
+    public function actionStore(SettlementRequest $request)
     {
-        $mutation = TreasuryMutation::find($request->mutation_id);
 
-        // Use the amount from request as the total received
-        $totalReceived = (float) $request->amount;
-        $outstanding = (float) $mutation->amount - $totalReceived;
+        DB::beginTransaction();
 
-        $settlement = new Settlement();
-        $settlement->mutation_id = $request->mutation_id;
-        $settlement->cashier_id = $request->output_cashier;
+        try {
+            // Find the mutation record with proper error handling
+            $mutation = TreasuryMutation::find($request->mutation_id);
 
-        $settlement->total_received = $totalReceived;
+            if (!$mutation) {
+                return redirect()->back()->withErrors(['error' => 'Treasury mutation not found.']);
+            }
 
-        $settlement->outstanding = $outstanding;
-        $settlement->to_treasury = $request->from_treasury; // Fixed: use from_treasury not from_warehouse
-        $settlement->save();
+            // Validate that the mutation amount is available
+            if (!$mutation->amount || !is_numeric($mutation->amount)) {
+                return redirect()->back()->withErrors(['error' => 'Invalid mutation amount.']);
+            }
 
-        // Use injected service
-        $this->cashflowService->handleSettlement(
-            warehouseId: $request->from_warehouse,
-            description: $request->description,
-            totalReceived: $totalReceived,
-            outputCashier: $request->output_cashier
-        );
+            // Use the amount from request as the total received
+            $totalReceived = (float) $request->amount;
+            $mutationAmount = (float) $mutation->amount;
+            $outstanding = $mutationAmount - $totalReceived;
 
-        return redirect()->route('settlement.index')->with('success', 'Settlement created successfully');
+            // Validate that total received doesn't exceed mutation amount
+            if ($totalReceived > $mutationAmount) {
+                return redirect()->back()->withErrors(['error' => 'Total received cannot exceed the mutation amount.']);
+            }
+
+            // Check if settlement already exists for this mutation
+            $existingSettlement = Settlement::where('mutation_id', $request->mutation_id)->first();
+            if ($existingSettlement) {
+                return redirect()->back()->withErrors(['error' => 'Settlement already exists for this mutation.']);
+            }
+
+            $settlement = new Settlement();
+            $settlement->mutation_id = $request->mutation_id;
+            $settlement->cashier_id = $request->output_cashier;
+            $settlement->total_received = $totalReceived;
+            $settlement->outstanding = $outstanding;
+            $settlement->to_treasury = $request->from_treasury;
+            $settlement->save();
+
+            // Use injected service with error handling
+            if ($totalReceived > 0) {
+                $this->cashflowService->handleSettlement(
+                    warehouseId: (int) $request->from_warehouse,
+                    description: $request->description ?? 'Settlement - ' . $mutation->from_treasury,
+                    totalReceived: $totalReceived,
+                    outputCashier: (int) $request->output_cashier
+                );
+            }
+
+            DB::commit();
+
+            return redirect()->route('settlement.index')->with('success', 'Settlement created successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error in actionStore method: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->withErrors(['error' => 'An error occurred while processing the settlement. Please try again.']);
+        }
     }
 
     /**

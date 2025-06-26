@@ -188,7 +188,7 @@
                                     totalReceivedValue;
 
                                 return `
-                                    <input type="number" name="total_recieved" class="form-control" value="${formattedTotalReceived}">
+                                    <input type="number" name="total_received" class="form-control" value="${formattedTotalReceived}">
                                     <input type="hidden" name="mutation_id" value="${row.id}">
                                 `;
                             }
@@ -239,18 +239,18 @@
 
                         if (isChecked) {
                             var rowData = this.data();
-                            var totalRecieved = $row.find('input[name="total_recieved"]').val();
+                            var totalReceived = $row.find('input[name="total_received"]').val();
 
                             // Clean the value - remove currency formatting
-                            if (typeof totalRecieved === 'string') {
-                                totalRecieved = totalRecieved.replace(/[^0-9.]/g, '');
+                            if (typeof totalReceived === 'string') {
+                                totalReceived = totalReceived.replace(/[^0-9.]/g, '');
                             }
 
                             // Validate that we have required data
-                            if (rowData && rowData.id && totalRecieved && parseFloat(totalRecieved) > 0) {
+                            if (rowData && rowData.id && totalReceived && parseFloat(totalReceived) > 0) {
                                 var inputRequest = {
                                     mutation_id: rowData.id,
-                                    total_recieved: parseFloat(totalRecieved) || 0,
+                                    total_received: parseFloat(totalReceived) || 0,
                                 };
 
                                 inputRequests.push(inputRequest);

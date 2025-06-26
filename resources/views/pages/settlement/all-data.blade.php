@@ -4,108 +4,109 @@
 @section('menu-title', 'Settlement')
 
 @push('addon-style')
-    <link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
-    </style>
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
+</style>
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    @include('components.alert')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data settlement">
-                </div>
-                <!--end::Search-->
+@include('components.alert')
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data settlement">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                <a href="{{ route('settlement.index') }}" type="button" class="btn btn-primary">
-                    Tambah Settlement
-                </a>
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
-            </div>
+            <!--end::Search-->
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th>No</th>
-                                <th>Tgl Settlement</th>
-                                <th>Kasir Penerima</th>
-                                <th>Total Diterima</th>
-                                <th>Deskripsi</th>
-                                <th>Kas</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                data-kt-menu-placement="bottom-end">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </button>
+            <a href="{{ route('settlement.index') }}" type="button" class="btn btn-primary">
+                Tambah Settlement
+            </a>
+            <!--begin::Menu-->
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
                 </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                            <th>No</th>
+                            <th>Tgl Settlement</th>
+                            <th>Kasir Penerima</th>
+                            <th>Total Diterima</th>
+                            <th>Deskripsi</th>
+                            <th>Kas</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('addon-script')
-    <script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
-    <script>
-        "use strict";
+<script src="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script>
+    "use strict";
 
         // Class definition
         var KTDatatablesExample = function() {
@@ -151,7 +152,7 @@
                             }
                         },
                         {
-                            data: "total_recieved",
+                            data: "total_received",
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
@@ -258,9 +259,9 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
-    <script>
-        var datatable;
+</script>
+<script>
+    var datatable;
 
         function openModal(id) {
             // Clear the table body
@@ -338,5 +339,5 @@
                 }
             });
         }
-    </script>
+</script>
 @endpush
