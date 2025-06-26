@@ -43,6 +43,7 @@ class ProductRequest extends FormRequest
             'price_sell_pak_out_of_town' => 'nullable|integer',
             'price_sell_eceran_out_of_town' => 'nullable|integer',
             'isShow' => 'nullable|boolean',
+            'lastest_price_eceran_out_of_town' => 'nullable|integer',
         ];
     }
 
