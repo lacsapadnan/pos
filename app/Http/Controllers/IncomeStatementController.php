@@ -150,6 +150,7 @@ class IncomeStatementController extends Controller
             ->select(DB::raw('SUM(CAST(grand_total as DECIMAL(15,2))) as total_revenue, COUNT(*) as total_transactions'))
             ->where('status', '!=', 'draft')
             ->where('status', '!=', 'batal')
+            ->where('status', '!=', 'piutang')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
@@ -171,6 +172,7 @@ class IncomeStatementController extends Controller
         $sellQuery = Sell::select('id', 'grand_total')
             ->where('status', '!=', 'draft')
             ->where('status', '!=', 'batal')
+            ->where('status', '!=', 'piutang')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
@@ -241,6 +243,33 @@ class IncomeStatementController extends Controller
         $isOutOfTown = $warehouse ? ($warehouse->isOutOfTown ?? false) : false;
 
         // Use raw SQL with chunking for better performance
+        // First, get the sell IDs that are not draft, batal, or piutang
+        $validSellIds = DB::table('sells')
+            ->select('id')
+            ->where('status', '!=', 'draft')
+            ->where('status', '!=', 'batal')
+            ->where('status', '!=', 'piutang')
+            ->whereBetween('created_at', [$fromDate, $endDate]);
+
+        if ($warehouse_id) {
+            $validSellIds->where('warehouse_id', $warehouse_id);
+        }
+
+        if ($user_id) {
+            $validSellIds->where('cashier_id', $user_id);
+        }
+
+        $validSellIdsArray = $validSellIds->pluck('id')->toArray();
+
+        if (empty($validSellIdsArray)) {
+            return [
+                'total_cogs' => 0,
+                'cogs_by_product' => [],
+                'is_out_of_town' => $isOutOfTown
+            ];
+        }
+
+        // Now get product reports only for valid sell transactions
         $query = DB::table('product_reports as pr')
             ->join('products as p', 'pr.product_id', '=', 'p.id')
             ->select(
@@ -255,6 +284,7 @@ class IncomeStatementController extends Controller
             )
             ->where('pr.for', 'KELUAR')
             ->where('pr.type', 'PENJUALAN')
+            ->whereIn('pr.reference_id', $validSellIdsArray)
             ->whereBetween('pr.created_at', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
