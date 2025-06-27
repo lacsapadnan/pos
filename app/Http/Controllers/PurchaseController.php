@@ -162,13 +162,24 @@ class PurchaseController extends Controller
         try {
             $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
 
-            $subtotal = (int)str_replace(',', '', $request->subtotal ?? 0);
-            $remaint = (int)str_replace(',', '', $request->remaint ?? 0);
-            $potongan = (int)str_replace(',', '', $request->potongan ?? 0);
-            $grandTotal = (int) str_replace('.', '', $request->grand_total);
-            $pay = (int) str_replace('.', '', $request->pay);
+            $subtotal = (int)str_replace([',', '.'], '', $request->subtotal ?? 0);
+            $remaint = (int)str_replace([',', '.'], '', $request->remaint ?? 0);
+            $potongan = (int)str_replace([',', '.'], '', $request->potongan ?? 0);
+            $grandTotal = (int) str_replace([',', '.'], '', $request->grand_total);
+            $pay = (int) str_replace([',', '.'], '', $request->pay);
 
-            if ($request->pay < $request->grand_total) {
+            // Debug log the processed values
+            Log::info('Purchase payment debug:', [
+                'raw_pay' => $request->pay,
+                'processed_pay' => $pay,
+                'raw_grand_total' => $request->grand_total,
+                'processed_grand_total' => $grandTotal,
+                'raw_remaint' => $request->remaint,
+                'processed_remaint' => $remaint,
+                'cashflow_amount' => $pay - $remaint
+            ]);
+
+            if ($pay < $grandTotal) {
                 $status = 'hutang';
             } else {
                 $status = 'lunas';
@@ -296,8 +307,8 @@ class PurchaseController extends Controller
                 warehouseId: auth()->user()->warehouse_id,
                 orderNumber: $request->order_number,
                 supplierName: $supplier->name,
-                payment: $request->pay,
-                paymentMethod: $request->payment_method,
+                payment: $pay,
+                paymentMethod: $request->treasury_id ?? 1, // Default to 1 (kas kecil) if not provided
                 remaint: $remaint
             );
 
