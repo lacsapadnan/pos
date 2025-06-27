@@ -159,20 +159,29 @@
                     },
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
-                            "data": "sell.order_number"
+                            "data": "sell.order_number",
+                            "render": function(data, type, row) {
+                                return data ? data : '-';
+                            }
                         },
                         {
                             "data": "returNumber"
                         },
                         {
-                            "data": "warehouse.name"
+                            "data": "warehouse.name",
+                            "render": function(data, type, row) {
+                                return data ? data : '-';
+                            }
                         },
                         {
                             "data": "user.name",
                             defaultContent: '-'
                         },
                         {
-                            "data": "sell.customer.name"
+                            "data": "sell.customer.name",
+                            "render": function(data, type, row) {
+                                return data ? data : '-';
+                            }
                         },
                         {
                             "data": "created_at",

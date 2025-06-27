@@ -53,9 +53,9 @@ class SellReturController extends Controller
         }
 
         if ($role[0] == 'master') {
-            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')->orderBy('id', 'asc');
+            $retur = SellRetur::with(['sell.customer', 'product', 'warehouse', 'unit', 'user'])->orderBy('id', 'asc');
         } else {
-            $retur = SellRetur::with('sell.customer', 'product', 'warehouse', 'unit', 'user')
+            $retur = SellRetur::with(['sell.customer', 'product', 'warehouse', 'unit', 'user'])
                 ->where('warehouse_id', auth()->user()->warehouse_id)
                 ->where('user_id', auth()->id())
                 ->orderBy('id', 'asc');
@@ -80,6 +80,24 @@ class SellReturController extends Controller
 
         $retur->each(function ($sellRetur) {
             $sellRetur->returNumber = "PJR-" . date('Ymd') . "-" . str_pad($sellRetur->id, 4, '0', STR_PAD_LEFT);
+
+            // Handle null relationships
+            if (!$sellRetur->sell) {
+                $sellRetur->sell = (object) [
+                    'order_number' => null,
+                    'customer' => (object) ['name' => null]
+                ];
+            } elseif (!$sellRetur->sell->customer) {
+                $sellRetur->sell->customer = (object) ['name' => null];
+            }
+
+            if (!$sellRetur->warehouse) {
+                $sellRetur->warehouse = (object) ['name' => null];
+            }
+
+            if (!$sellRetur->user) {
+                $sellRetur->user = (object) ['name' => null];
+            }
         });
 
         return response()->json($retur);
@@ -484,7 +502,7 @@ class SellReturController extends Controller
     public function destroy(string $id)
     {
         try {
-            $sellRetur = SellRetur::with('sellReturDetails', 'sell')->findOrFail($id);
+            $sellRetur = SellRetur::with('sellReturDetails', 'sell.customer')->findOrFail($id);
 
             // Check permissions - only master or return creator can delete
             $userRoles = auth()->user()->getRoleNames();
@@ -497,6 +515,11 @@ class SellReturController extends Controller
                 return redirect()->back()->with('error', 'Retur yang sudah diverifikasi tidak dapat dihapus');
             }
 
+            // Check if sell record exists
+            if (!$sellRetur->sell) {
+                return redirect()->back()->with('error', 'Data penjualan terkait tidak ditemukan. Retur tidak dapat dihapus.');
+            }
+
             DB::beginTransaction();
 
             // Get all return details
@@ -505,6 +528,10 @@ class SellReturController extends Controller
             // Restore the sell details quantities and grand total
             foreach ($sellReturDetails as $returnDetail) {
                 $product = Product::find($returnDetail->product_id);
+
+                if (!$product) {
+                    continue; // Skip if product not found
+                }
 
                 // Convert returned quantity to eceran
                 $returnQuantityInEceran = $this->convertToEceran($returnDetail->qty, $returnDetail->unit_id, $product);
@@ -574,7 +601,9 @@ class SellReturController extends Controller
             }
 
             // Delete cashflow if it was a paid return
-            if ($sellRetur->sell->status === 'lunas') {
+            if ($sellRetur->sell->status === 'lunas' && $sellRetur->sell->order_number) {
+                $customerName = $sellRetur->sell->customer ? $sellRetur->sell->customer->name : 'Unknown Customer';
+
                 Cashflow::where('description', 'like', '%Retur Penjualan ' . $sellRetur->sell->order_number . '%')
                     ->where('user_id', $sellRetur->user_id)
                     ->where('warehouse_id', $sellRetur->warehouse_id)
