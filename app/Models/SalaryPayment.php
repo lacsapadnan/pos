@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
+use App\Models\CashAdvance;
+use App\Models\CashAdvancePayment;
+use App\Models\Attendance;
 
 class SalaryPayment extends Model
 {
@@ -33,6 +36,7 @@ class SalaryPayment extends Model
         'calculated_at',
         'approved_at',
         'paid_at',
+        'cash_advance_ids',
     ];
 
     protected $casts = [
@@ -48,6 +52,7 @@ class SalaryPayment extends Model
         'calculated_at' => 'datetime',
         'approved_at' => 'datetime',
         'paid_at' => 'datetime',
+        'cash_advance_ids' => 'array',
     ];
 
     // Relationships
@@ -122,37 +127,68 @@ class SalaryPayment extends Model
             return $date->isWeekday(); // Only count weekdays
         }, $end) + 1;
 
-        // Calculate gross salary
-        if ($this->monthly_salary > 0) {
-            // Use monthly salary as base
+        // Calculate period duration in days
+        $periodDays = $start->diffInDays($end) + 1;
+        $isFullMonth = $this->isFullMonthPeriod();
+
+        // Calculate gross salary based on period and salary type
+        if ($this->monthly_salary > 0 && $isFullMonth) {
+            // Use monthly salary only if it's a full month period
             $this->gross_salary = $this->monthly_salary;
         } elseif ($this->daily_salary > 0) {
-            // Calculate based on daily salary and present days
+            // Use daily salary calculation for partial months or when daily salary is preferred
             $this->gross_salary = $this->daily_salary * $this->present_days;
+        } elseif ($this->monthly_salary > 0) {
+            // For partial month periods with monthly salary, calculate proportionally
+            $daysInMonth = $start->daysInMonth;
+            $proportionalSalary = ($this->monthly_salary / $daysInMonth) * $periodDays;
+            $attendanceRatio = $this->total_work_days > 0 ? ($this->present_days / $this->total_work_days) : 0;
+            $this->gross_salary = $proportionalSalary * $attendanceRatio;
         }
 
         // Calculate cash advance deductions for this period
         $cashAdvanceDeduction = 0;
 
-        // Get all approved cash advances for this employee
-        $cashAdvances = CashAdvance::where('employee_id', $this->employee_id)
-            ->where('status', 'approved')
-            ->get();
+        // Get selected cash advances from stored data or request
+        $selectedDeductions = $this->cash_advance_ids ?? request('cash_advance_ids', []);
 
-        foreach ($cashAdvances as $cashAdvance) {
-            if ($cashAdvance->type === 'direct') {
-                // For direct advances, deduct full amount only if advance date is within salary period
-                if ($cashAdvance->advance_date >= $this->period_start && $cashAdvance->advance_date <= $this->period_end) {
-                    $cashAdvanceDeduction += $cashAdvance->amount;
+        // Store the cash advance IDs for future reference
+        if (!$this->cash_advance_ids && !empty($selectedDeductions)) {
+            $this->cash_advance_ids = $selectedDeductions;
+        }
+
+        // Ensure we have deductions to process
+        if (!empty($selectedDeductions)) {
+            // Convert string IDs to integers for comparison
+            $selectedDeductions = array_map('intval', $selectedDeductions);
+
+            // Check direct cash advances first
+            $directAdvances = CashAdvance::where('employee_id', $this->employee_id)
+                ->where('status', 'approved')
+                ->where('type', 'direct')
+                ->whereIn('id', $selectedDeductions)
+                ->get();
+
+            foreach ($directAdvances as $cashAdvance) {
+                // For direct advances, deduct the remaining unpaid amount
+                $remainingAmount = $cashAdvance->amount - $cashAdvance->paid_amount;
+                if ($remainingAmount > 0) {
+                    $cashAdvanceDeduction += $remainingAmount;
                 }
-            } elseif ($cashAdvance->type === 'installment') {
-                // For installment advances, deduct installment payments due within this period
-                $installmentPayments = $cashAdvance->payments()
-                    ->where('status', 'pending')
-                    ->whereBetween('due_date', [$this->period_start, $this->period_end])
-                    ->sum('amount');
+            }
 
-                $cashAdvanceDeduction += $installmentPayments;
+            // Check installment payments
+            $installmentPayments = CashAdvancePayment::whereHas('cashAdvance', function ($query) {
+                $query->where('employee_id', $this->employee_id)
+                    ->where('status', 'approved')
+                    ->where('type', 'installment');
+            })
+                ->where('status', 'pending')
+                ->whereIn('id', $selectedDeductions)
+                ->get();
+
+            foreach ($installmentPayments as $payment) {
+                $cashAdvanceDeduction += $payment->amount;
             }
         }
 
@@ -167,6 +203,19 @@ class SalaryPayment extends Model
         $this->calculated_at = now();
 
         $this->save();
+    }
+
+    // Check if the period represents a full month
+    private function isFullMonthPeriod(): bool
+    {
+        $start = Carbon::parse($this->period_start);
+        $end = Carbon::parse($this->period_end);
+
+        // Check if start is first day of month and end is last day of same month
+        return $start->day === 1 &&
+            $end->day === $start->endOfMonth()->day &&
+            $start->month === $end->month &&
+            $start->year === $end->year;
     }
 
     // Get attendance efficiency percentage

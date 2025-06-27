@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CashAdvanceController as ApiCashAdvanceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
@@ -122,7 +123,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('gaji/{salary}/calculate', [SalaryController::class, 'calculate'])->name('gaji.calculate');
     Route::post('gaji/{salary}/approve', [SalaryController::class, 'approve'])->name('gaji.approve');
     Route::post('gaji/{salary}/mark-paid', [SalaryController::class, 'markPaid'])->name('gaji.mark-paid');
-    Route::get('gaji-master', [SalaryController::class, 'master'])->name('gaji.master');
+    Route::get('gaji/data', [SalaryController::class, 'data'])->name('gaji.data');
 
     // Salary Settings routes
     Route::resource('salary-settings', SalarySettingController::class)->except(['show']);
@@ -176,6 +177,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('pembelian-retur/api/data', [PurchaseReturController::class, 'data'])->name('api.purchaseRetur');
     Route::get('kasbon/api/data', [CashAdvanceController::class, 'data'])->name('api.kasbon');
     Route::get('gaji/api/data', [SalaryController::class, 'data'])->name('api.gaji');
+    Route::get('cash-advances/api/data', [ApiCashAdvanceController::class, 'getAvailableDeductions'])->name('api.cash-advances');
 
     // Import
     Route::post('supplier/import', [SupplierController::class, 'import'])->name('supplier.import');

@@ -114,14 +114,9 @@
                 <div class="col-md-6" id="installmentCountContainer" style="display: none;">
                     <div class="mb-8">
                         <label class="form-label required">Jumlah Cicilan</label>
-                        <select class="form-select" name="installment_count" id="installmentCount">
-                            <option value="">Pilih Jumlah Cicilan</option>
-                            @for ($i = 2; $i <= 36; $i++) <option value="{{ $i }}" {{ old('installment_count')==$i
-                                ? 'selected' : '' }}>
-                                {{ $i }} bulan
-                                </option>
-                                @endfor
-                        </select>
+                        <input type="number" class="form-control" name="installment_count" id="installmentCount" min="2"
+                            max="36" placeholder="Masukkan jumlah cicilan (2-36)"
+                            value="{{ old('installment_count') }}">
                         @error('installment_count')
                         <div class="text-danger">{{ $message }}</div>
                         @enderror

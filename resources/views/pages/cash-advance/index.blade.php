@@ -25,7 +25,7 @@
                     placeholder="Cari kasbon">
             </div>
         </div>
-        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-between">
             <!-- Filters -->
             <div class="row g-3">
                 <div class="col-md-3">
@@ -74,22 +74,24 @@
                 </div>
             </div>
 
-            <!-- Export and Add buttons -->
-            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                data-kt-menu-placement="bottom-end">
-                <i class="ki-duotone ki-exit-down fs-2">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                </i>
-                Export Data
-            </button>
+            <div class="gap-2 d-flex">
+                <!-- Export and Add buttons -->
+                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                    data-kt-menu-placement="bottom-end">
+                    <i class="ki-duotone ki-exit-down fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                    Export Data
+                </button>
 
-            @can('simpan kasbon')
-            <a href="{{ route('kasbon.create') }}" class="btn btn-primary">
-                <i class="ki-duotone ki-plus fs-2"></i>
-                Tambah Kasbon
-            </a>
-            @endcan
+                @can('simpan kasbon')
+                <a href="{{ route('kasbon.create') }}" class="btn btn-primary">
+                    <i class="ki-duotone ki-plus fs-2"></i>
+                    Tambah Kasbon
+                </a>
+                @endcan
+            </div>
 
             <!-- Export Menu -->
             <div id="kt_datatable_example_export_menu"

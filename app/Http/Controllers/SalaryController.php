@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use App\Models\SalaryPayment;
 use App\Models\SalarySetting;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\CashAdvance;
+use App\Models\CashAdvancePayment;
 
 class SalaryController extends Controller
 {
@@ -87,7 +89,7 @@ class SalaryController extends Controller
         // Get employees who have salary settings
         $employees = Employee::whereHas('salarySetting')->get();
         $warehouses = Warehouse::all();
-        return view('pages.salary.settings.form', compact('employees', 'warehouses'));
+        return view('pages.salary.payment.form', compact('employees', 'warehouses'));
     }
 
     /**
@@ -101,7 +103,32 @@ class SalaryController extends Controller
             'period_start' => 'required|date',
             'period_end' => 'required|date|after:period_start',
             'notes' => 'nullable|string',
+            'cash_advance_ids' => 'nullable|array',
         ]);
+
+        // Custom validation for cash advance IDs
+        if ($request->has('cash_advance_ids') && is_array($request->cash_advance_ids)) {
+            foreach ($request->cash_advance_ids as $id) {
+                $validDirectAdvance = CashAdvance::where('id', $id)
+                    ->where('employee_id', $request->employee_id)
+                    ->where('status', 'approved')
+                    ->exists();
+
+                $validInstallmentPayment = CashAdvancePayment::whereHas('cashAdvance', function ($query) use ($request) {
+                    $query->where('employee_id', $request->employee_id)
+                        ->where('status', 'approved');
+                })
+                    ->where('id', $id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (!$validDirectAdvance && !$validInstallmentPayment) {
+                    return redirect()->back()
+                        ->withErrors(['cash_advance_ids' => 'Salah satu kasbon yang dipilih tidak valid.'])
+                        ->withInput();
+                }
+            }
+        }
 
         // Check if salary setting exists
         $salarySetting = SalarySetting::where('employee_id', $request->employee_id)->first();
@@ -128,6 +155,12 @@ class SalaryController extends Controller
             $salaryPayment->daily_salary = $salarySetting->daily_salary;
             $salaryPayment->monthly_salary = $salarySetting->monthly_salary;
             $salaryPayment->status = 'draft';
+
+            // Store cash advance IDs if provided
+            if ($request->has('cash_advance_ids')) {
+                $salaryPayment->cash_advance_ids = $request->cash_advance_ids;
+            }
+
             $salaryPayment->save();
 
             // Automatically calculate the salary
@@ -148,7 +181,7 @@ class SalaryController extends Controller
      */
     public function show(string $id)
     {
-        $salary = Salary::with(['employee.user', 'warehouse', 'calculatedBy', 'approvedBy'])->findOrFail($id);
+        $salary = SalaryPayment::with(['employee.user', 'warehouse', 'calculatedBy', 'approvedBy'])->findOrFail($id);
         return view('pages.salary.show', compact('salary'));
     }
 
@@ -166,7 +199,7 @@ class SalaryController extends Controller
             ->orWhere('id', $gaji->employee_id)
             ->get();
         $warehouses = Warehouse::all();
-        return view('pages.salary.settings.form', compact('gaji', 'employees', 'warehouses'));
+        return view('pages.salary.payment.form', compact('gaji', 'employees', 'warehouses'));
     }
 
     /**
@@ -185,7 +218,32 @@ class SalaryController extends Controller
             'period_start' => 'required|date',
             'period_end' => 'required|date|after:period_start',
             'notes' => 'nullable|string',
+            'cash_advance_ids' => 'nullable|array',
         ]);
+
+        // Custom validation for cash advance IDs
+        if ($request->has('cash_advance_ids') && is_array($request->cash_advance_ids)) {
+            foreach ($request->cash_advance_ids as $id) {
+                $validDirectAdvance = CashAdvance::where('id', $id)
+                    ->where('employee_id', $request->employee_id)
+                    ->where('status', 'approved')
+                    ->exists();
+
+                $validInstallmentPayment = CashAdvancePayment::whereHas('cashAdvance', function ($query) use ($request) {
+                    $query->where('employee_id', $request->employee_id)
+                        ->where('status', 'approved');
+                })
+                    ->where('id', $id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (!$validDirectAdvance && !$validInstallmentPayment) {
+                    return redirect()->back()
+                        ->withErrors(['cash_advance_ids' => 'Salah satu kasbon yang dipilih tidak valid.'])
+                        ->withInput();
+                }
+            }
+        }
 
         // Check if salary setting exists
         $salarySetting = SalarySetting::where('employee_id', $request->employee_id)->first();
@@ -212,6 +270,12 @@ class SalaryController extends Controller
             $gaji->salary_setting_id = $salarySetting->id;
             $gaji->daily_salary = $salarySetting->daily_salary;
             $gaji->monthly_salary = $salarySetting->monthly_salary;
+
+            // Store cash advance IDs if provided
+            if ($request->has('cash_advance_ids')) {
+                $gaji->cash_advance_ids = $request->cash_advance_ids;
+            }
+
             $gaji->save();
 
             // Automatically recalculate the salary
@@ -291,16 +355,5 @@ class SalaryController extends Controller
         $salary->save();
 
         return redirect()->back()->with('success', 'Data gaji berhasil ditandai sudah dibayar.');
-    }
-
-    /**
-     * Display master salary management page
-     */
-    public function master()
-    {
-        $warehouses = Warehouse::orderBy('name')->get();
-        $employees = Employee::with(['user', 'warehouse'])->orderBy('name')->get();
-
-        return view('pages.salary.master', compact('warehouses', 'employees'));
     }
 }

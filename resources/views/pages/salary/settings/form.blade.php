@@ -1,23 +1,23 @@
 @extends('layouts.dashboard')
 
-@section('title', isset($gaji) ? 'Edit Pembayaran Gaji' : 'Tambah Pembayaran Gaji')
+@section('title', isset($salarySetting) ? 'Edit Pengaturan Gaji' : 'Tambah Pengaturan Gaji')
 
 @section('content')
 <!--begin::Card-->
 <div class="card">
     <!--begin::Card header-->
-    <div class="card-header border-0 pt-6">
+    <div class="pt-6 border-0 card-header">
         <!--begin::Card title-->
         <div class="card-title">
-            <h2 class="fw-bold">{{ isset($gaji) ? 'Edit Pembayaran Gaji' : 'Tambah Pembayaran Gaji' }}</h2>
+            <h2 class="fw-bold">{{ isset($salarySetting) ? 'Edit Pengaturan Gaji' : 'Tambah Pengaturan Gaji' }}</h2>
         </div>
         <!--end::Card title-->
     </div>
     <!--end::Card header-->
     <!--begin::Card body-->
-    <div class="card-body py-4">
+    <div class="py-4 card-body">
         <!--begin::Alert-->
-        <div class="alert alert-info d-flex align-items-center p-5 mb-10">
+        <div class="p-5 mb-10 alert alert-info d-flex align-items-center">
             <!--begin::Icon-->
             <span class="svg-icon svg-icon-2hx svg-icon-info me-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -33,14 +33,14 @@
             <!--begin::Wrapper-->
             <div class="d-flex flex-column">
                 <!--begin::Title-->
-                <h4 class="mb-1 text-info">Informasi Perhitungan Gaji</h4>
+                <h4 class="mb-1 text-info">Informasi Pengaturan Gaji</h4>
                 <!--end::Title-->
                 <!--begin::Content-->
-                <span>Gaji akan dihitung otomatis berdasarkan:</span>
+                <span>Pengaturan gaji ini akan digunakan sebagai dasar perhitungan gaji karyawan:</span>
                 <ul class="mb-0">
-                    <li>Data master gaji karyawan (gaji harian/bulanan)</li>
-                    <li>Kehadiran karyawan pada periode yang dipilih</li>
-                    <li>Potongan kasbon yang jatuh tempo pada periode tersebut</li>
+                    <li>Gaji harian digunakan untuk menghitung gaji berdasarkan kehadiran</li>
+                    <li>Gaji bulanan digunakan untuk karyawan dengan gaji tetap bulanan</li>
+                    <li>Setiap karyawan hanya dapat memiliki satu pengaturan gaji aktif</li>
                 </ul>
                 <!--end::Content-->
             </div>
@@ -49,34 +49,28 @@
         <!--end::Alert-->
 
         <!--begin::Form-->
-        <form id="salary_form" class="form"
-            action="{{ isset($gaji) ? route('gaji.update', $gaji) : route('gaji.store') }}"
+        <form id="salary_setting_form" class="form"
+            action="{{ isset($salarySetting) ? route('salary-settings.update', $salarySetting) : route('salary-settings.store') }}"
             method="POST">
             @csrf
-            @if(isset($gaji))
+            @if(isset($salarySetting))
             @method('PUT')
             @endif
 
             <!--begin::Input group-->
-            <div class="fv-row mb-7">
+            <div class="mb-7 fv-row">
                 <!--begin::Label-->
-                <label class="required fw-semibold fs-6 mb-2">Karyawan</label>
+                <label class="mb-2 required fw-semibold fs-6">Karyawan</label>
                 <!--end::Label-->
                 <!--begin::Input-->
                 <select name="employee_id" class="form-select form-select-solid" data-control="select2"
                     data-placeholder="Pilih Karyawan">
                     <option></option>
                     @foreach($employees as $employee)
-                    <option value="{{ $employee->id }}"
-                        {{ (isset($gaji) && $gaji->employee_id == $employee->id) || old('employee_id') == $employee->id ? 'selected' : '' }}
-                        data-daily-salary="{{ $employee->salarySetting->daily_salary ?? 0 }}"
-                        data-monthly-salary="{{ $employee->salarySetting->monthly_salary ?? 0 }}">
+                    <option value="{{ $employee->id }}" {{ (isset($salarySetting) && $salarySetting->employee_id ==
+                        $employee->id) ||
+                        old('employee_id') == $employee->id ? 'selected' : '' }}>
                         {{ $employee->name }}
-                        @if($employee->salarySetting)
-                        - ({{ $employee->salarySetting->monthly_salary > 0 ? 'Gaji Bulanan: Rp ' . number_format($employee->salarySetting->monthly_salary, 0, ',', '.') : 'Gaji Harian: Rp ' . number_format($employee->salarySetting->daily_salary, 0, ',', '.') }})
-                        @else
-                        - (Belum ada setting gaji)
-                        @endif
                     </option>
                     @endforeach
                 </select>
@@ -88,17 +82,18 @@
             <!--end::Input group-->
 
             <!--begin::Input group-->
-            <div class="fv-row mb-7">
+            <div class="mb-7 fv-row">
                 <!--begin::Label-->
-                <label class="required fw-semibold fs-6 mb-2">Gudang</label>
+                <label class="mb-2 required fw-semibold fs-6">Gudang</label>
                 <!--end::Label-->
                 <!--begin::Input-->
                 <select name="warehouse_id" class="form-select form-select-solid" data-control="select2"
                     data-placeholder="Pilih Gudang">
                     <option></option>
                     @foreach($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}"
-                        {{ (isset($gaji) && $gaji->warehouse_id == $warehouse->id) || old('warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                    <option value="{{ $warehouse->id }}" {{ (isset($salarySetting) && $salarySetting->warehouse_id ==
+                        $warehouse->id) ||
+                        old('warehouse_id') == $warehouse->id ? 'selected' : '' }}>
                         {{ $warehouse->name }}
                     </option>
                     @endforeach
@@ -111,20 +106,22 @@
             <!--end::Input group-->
 
             <!--begin::Input group-->
-            <div class="row mb-7">
-                <div class="col-md-6">
-                    <label class="required fw-semibold fs-6 mb-2">Tanggal Mulai Periode</label>
-                    <input type="date" name="period_start" class="form-control form-control-solid"
-                        value="{{ isset($gaji) ? $gaji->period_start->format('Y-m-d') : old('period_start', date('Y-m-01')) }}" required />
-                    @error('period_start')
+            <div class="mb-7 row">
+                <div class="col-md-6 fv-row">
+                    <label class="mb-2 required fw-semibold fs-6">Gaji Harian</label>
+                    <input type="number" name="daily_salary" class="form-control form-control-solid"
+                        value="{{ isset($salarySetting) ? $salarySetting->daily_salary : old('daily_salary', 0) }}"
+                        min="0" step="1000" required />
+                    @error('daily_salary')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6">
-                    <label class="required fw-semibold fs-6 mb-2">Tanggal Akhir Periode</label>
-                    <input type="date" name="period_end" class="form-control form-control-solid"
-                        value="{{ isset($gaji) ? $gaji->period_end->format('Y-m-d') : old('period_end', date('Y-m-t')) }}" required />
-                    @error('period_end')
+                <div class="col-md-6 fv-row">
+                    <label class="mb-2 required fw-semibold fs-6">Gaji Bulanan</label>
+                    <input type="number" name="monthly_salary" class="form-control form-control-solid"
+                        value="{{ isset($salarySetting) ? $salarySetting->monthly_salary : old('monthly_salary', 0) }}"
+                        min="0" step="10000" required />
+                    @error('monthly_salary')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
@@ -132,10 +129,10 @@
             <!--end::Input group-->
 
             <!--begin::Input group-->
-            <div class="fv-row mb-7">
-                <label class="fw-semibold fs-6 mb-2">Catatan</label>
+            <div class="mb-7 fv-row">
+                <label class="mb-2 fw-semibold fs-6">Catatan</label>
                 <textarea name="notes" class="form-control form-control-solid" rows="3"
-                    placeholder="Catatan tambahan (opsional)">{{ isset($gaji) ? $gaji->notes : old('notes') }}</textarea>
+                    placeholder="Catatan tambahan (opsional)">{{ isset($salarySetting) ? $salarySetting->notes : old('notes') }}</textarea>
                 @error('notes')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
@@ -143,14 +140,14 @@
             <!--end::Input group-->
 
             <!--begin::Actions-->
-            <div class="text-center pt-10">
-                <a href="{{ route('gaji.index') }}" class="btn btn-light me-3">Kembali</a>
+            <div class="pt-10 text-center">
+                <a href="{{ route('salary-settings.index') }}" class="btn btn-light me-3">Kembali</a>
                 <button type="submit" class="btn btn-primary" id="submit_btn">
                     <span class="indicator-label">
-                        {{ isset($gaji) ? 'Update & Hitung Ulang' : 'Simpan & Hitung' }}
+                        {{ isset($salarySetting) ? 'Update' : 'Simpan' }}
                     </span>
                     <span class="indicator-progress">
-                        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                        Please wait... <span class="align-middle spinner-border spinner-border-sm ms-2"></span>
                     </span>
                 </button>
             </div>
@@ -168,7 +165,7 @@
     "use strict";
 
     // Class definition
-    var KTSalaryForm = function () {
+    var KTSalarySettingForm = function () {
         // Elements
         var form;
         var submitButton;
@@ -246,34 +243,6 @@
                     }
                 });
             });
-
-            // Handle period date changes
-            const startDate = form.querySelector('[name="period_start"]');
-            const endDate = form.querySelector('[name="period_end"]');
-
-            startDate.addEventListener('change', function(e) {
-                if (!endDate.value) {
-                    // Set end date to last day of the month
-                    const date = new Date(e.target.value);
-                    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-                    endDate.value = lastDay.toISOString().split('T')[0];
-                }
-            });
-
-            endDate.addEventListener('change', function(e) {
-                if (startDate.value && e.target.value < startDate.value) {
-                    Swal.fire({
-                        text: "Tanggal akhir periode harus setelah tanggal mulai periode",
-                        icon: "warning",
-                        buttonsStyling: false,
-                        confirmButtonText: "Ok, mengerti!",
-                        customClass: {
-                            confirmButton: "btn btn-primary"
-                        }
-                    });
-                    e.target.value = '';
-                }
-            });
         }
 
         // Public functions
@@ -282,7 +251,6 @@
             init: function () {
                 form = document.querySelector('#salary_setting_form');
                 submitButton = document.querySelector('#submit_btn');
-
                 handleForm();
             }
         };

@@ -625,6 +625,83 @@ class SellReturController extends Controller
     }
 
     /**
+     * Get the original sale price for a product in a specific unit
+     */
+    private function getOriginalSalePrice($sellId, $productId, $unitId)
+    {
+        // Find the sell detail that matches the product and unit
+        $sellDetail = SellDetail::where('sell_id', $sellId)
+            ->where('product_id', $productId)
+            ->where('unit_id', $unitId)
+            ->first();
+
+        if ($sellDetail) {
+            // Return the net price per unit (price - discount per unit)
+            $pricePerUnit = $sellDetail->price;
+            if ($sellDetail->quantity > 0) {
+                $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
+                $pricePerUnit -= $discountPerUnit;
+            }
+            return $pricePerUnit;
+        }
+
+        // If no exact match, calculate price based on unit conversion from available sell details
+        $product = Product::find($productId);
+        $sellDetails = SellDetail::where('sell_id', $sellId)
+            ->where('product_id', $productId)
+            ->get();
+
+        foreach ($sellDetails as $sellDetail) {
+            if ($sellDetail->quantity > 0) {
+                // Calculate net price per unit
+                $netPricePerUnit = $sellDetail->price;
+                if ($sellDetail->quantity > 0) {
+                    $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
+                    $netPricePerUnit -= $discountPerUnit;
+                }
+
+                // Convert to eceran price first
+                $eceranPrice = $this->convertPriceToEceran($netPricePerUnit, $sellDetail->unit_id, $product);
+
+                // Then convert from eceran to the requested unit
+                return $this->convertPriceFromEceran($eceranPrice, $unitId, $product);
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Convert price to base unit (eceran) price
+     */
+    private function convertPriceToEceran($price, $unitId, $product)
+    {
+        if ($unitId == $product->unit_dus) {
+            return $price / $product->dus_to_eceran;
+        } elseif ($unitId == $product->unit_pak) {
+            return $price / $product->pak_to_eceran;
+        } elseif ($unitId == $product->unit_eceran) {
+            return $price;
+        }
+        return 0;
+    }
+
+    /**
+     * Convert price from base unit (eceran) to specific unit
+     */
+    private function convertPriceFromEceran($eceranPrice, $unitId, $product)
+    {
+        if ($unitId == $product->unit_dus) {
+            return $eceranPrice * $product->dus_to_eceran;
+        } elseif ($unitId == $product->unit_pak) {
+            return $eceranPrice * $product->pak_to_eceran;
+        } elseif ($unitId == $product->unit_eceran) {
+            return $eceranPrice;
+        }
+        return 0;
+    }
+
+    /**
      * Get total remaining quantity in eceran for a product in a specific sell
      */
     private function getTotalRemainingQuantityInEceran($sellId, $productId)
@@ -792,6 +869,9 @@ class SellReturController extends Controller
                     ], 422);
                 }
 
+                // Get the correct price from the original sale details
+                $correctPrice = $this->getOriginalSalePrice($sellId, $productId, $unitId);
+
                 // Check if cart item with same unit already exists
                 $existingCart = SellReturCart::where('user_id', $userId)
                     ->where('sell_id', $sellId)
@@ -809,7 +889,7 @@ class SellReturController extends Controller
                         'product_id' => $productId,
                         'unit_id' => $unitId,
                         'quantity' => $quantityRetur,
-                        'price' => $inputRequest['price'],
+                        'price' => $correctPrice,
                     ]);
                 }
             }
