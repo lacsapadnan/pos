@@ -379,36 +379,29 @@
         }
 
         function deleteRecord(id) {
-            // Use AJAX for asynchronous delete request
-            $.ajax({
-                url: "{{ route('laporan.destroy', '') }}/" + id,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                },
-                success: function(response) {
-                    Swal.fire(
-                        'Terhapus!',
-                        'Data cashflow berhasil dihapus.',
-                        'success'
-                    ).then((result) => {
-                        // Reload the DataTable instead of the entire page
-                        if (typeof datatable !== 'undefined') {
-                            datatable.ajax.reload(null, false);
-                        }
-                    });
-                },
-                error: function(xhr, status, error) {
-                    // Handle error
-                    console.error('Delete Error:', error);
-                    console.error('Response:', xhr.responseText);
-                    Swal.fire(
-                        'Error!',
-                        'Gagal menghapus data. Silakan coba lagi.',
-                        'error'
-                    );
-                }
-            });
+            // Create a form dynamically to handle the DELETE request properly
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('laporan.destroy', '') }}/" + id;
+            form.style.display = 'none';
+
+            // Add CSRF token
+            var csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = "{{ csrf_token() }}";
+            form.appendChild(csrfToken);
+
+            // Add method field for DELETE
+            var methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+
+            // Append form to body and submit
+            document.body.appendChild(form);
+            form.submit();
         }
 </script>
 @endpush

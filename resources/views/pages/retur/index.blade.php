@@ -391,7 +391,20 @@
                     var form = document.createElement('form');
                     form.action = '/penjualan-retur/' + id;
                     form.method = 'POST';
-                    form.innerHTML = '@csrf @method("DELETE")';
+                    form.style.display = 'none';
+
+                    var csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    form.appendChild(csrfToken);
+
+                    var methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+                    form.appendChild(methodField);
+
                     document.body.appendChild(form);
                     form.submit();
                 }
