@@ -445,4 +445,58 @@ class CashflowService
             ->where('description', 'like', "%{$description}%")
             ->delete();
     }
+
+    /**
+     * Handle return transactions (retur penjualan)
+     */
+    public function handleReturnTransaction(
+        int $warehouseId,
+        string $orderNumber,
+        string $customerName,
+        float $totalReturnAmount,
+        string $sellStatus,
+        float $paidAmount = 0,
+        bool $isPartialPayment = false
+    ): void {
+        if ($sellStatus === 'lunas') {
+            // For fully paid sales, refund the full return amount
+            $this->createCashflow([
+                'warehouse_id' => $warehouseId,
+                'for' => 'Retur penjualan',
+                'description' => "Retur Penjualan {$orderNumber} - {$customerName}",
+                'out' => $totalReturnAmount,
+                'in' => 0,
+                'payment_method' => null,
+            ]);
+        } elseif ($sellStatus === 'piutang' && $paidAmount > 0) {
+            // For debt sales with partial payment, only refund up to the amount that was paid
+            $refundAmount = min($totalReturnAmount, $paidAmount);
+
+            if ($refundAmount > 0) {
+                $description = $isPartialPayment
+                    ? "Retur Penjualan {$orderNumber} - {$customerName} (Sebagian terbayar)"
+                    : "Retur Penjualan {$orderNumber} - {$customerName}";
+
+                $this->createCashflow([
+                    'warehouse_id' => $warehouseId,
+                    'for' => 'Retur penjualan',
+                    'description' => $description,
+                    'out' => $refundAmount,
+                    'in' => 0,
+                    'payment_method' => null,
+                ]);
+            }
+        }
+        // For piutang with no payment ($paidAmount = 0), no cashflow entry is created
+    }
+
+    /**
+     * Delete cashflows related to return transactions
+     */
+    public function deleteReturnCashflows(string $orderNumber): int
+    {
+        return Cashflow::where('description', 'like', "%Retur Penjualan {$orderNumber}%")
+            ->where('for', 'Retur penjualan')
+            ->delete();
+    }
 }

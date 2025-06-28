@@ -14,6 +14,7 @@ use App\Models\SellReturDetail;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -23,6 +24,13 @@ use Illuminate\Support\Facades\DB;
 
 class SellReturController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -209,6 +217,32 @@ class SellReturController extends Controller
             ->where('sell_id', $request->sell_id)
             ->get();
 
+        // Get the sell record to check status and calculate remaining debt
+        $sell = Sell::where('id', $request->sell_id)->first();
+
+        if (!$sell) {
+            return redirect()->back()->with('error', 'Data penjualan tidak ditemukan');
+        }
+
+        // Calculate total return price
+        $totalReturnPrice = 0;
+        foreach ($returCart as $rc) {
+            $totalReturnPrice += $rc->quantity * $rc->price;
+        }
+
+        // Validation: Check if total return exceeds remaining debt for piutang status
+        if ($sell->status === 'piutang') {
+            $remainingDebt = $sell->grand_total - $sell->pay;
+
+            if ($totalReturnPrice > $remainingDebt) {
+                return redirect()->back()->with(
+                    'error',
+                    'Total retur (' . number_format($totalReturnPrice, 0, ',', '.') .
+                        ') tidak boleh melebihi sisa piutang (' . number_format($remainingDebt, 0, ',', '.') . ')'
+                );
+            }
+        }
+
         $totalPrice = 0;
 
         $sellRetur = SellRetur::create([
@@ -313,17 +347,16 @@ class SellReturController extends Controller
             $inventory->update();
         }
 
-        if ($sell->status == 'lunas') {
-            Cashflow::create([
-                'user_id' => auth()->id(),
-                'warehouse_id' => auth()->user()->warehouse_id,
-                'for' => 'Retur penjualan',
-                'description' => 'Retur Penjualan ' . $sell->order_number . ' - ' . $sell->customer->name,
-                'out' => $totalPrice,
-                'in' => 0,
-                'payment_method' => null,
-            ]);
-        }
+        // Create cashflow entry using CashflowService
+        $this->cashflowService->handleReturnTransaction(
+            warehouseId: auth()->user()->warehouse_id,
+            orderNumber: $sell->order_number,
+            customerName: $sell->customer->name,
+            totalReturnAmount: $totalPrice,
+            sellStatus: $sell->status,
+            paidAmount: $sell->pay,
+            isPartialPayment: $sell->status === 'piutang' && $sell->pay > 0
+        );
 
         $allReturned = true;
 
@@ -358,6 +391,31 @@ class SellReturController extends Controller
         $sell = Sell::where('id', $request->sell_id)
             ->with('customer')
             ->first();
+
+        if (!$sell) {
+            return response()->json(['error' => 'Data penjualan tidak ditemukan'], 404);
+        }
+
+        // Calculate total return price for validation
+        $totalReturnPrice = 0;
+        foreach ($selectedIds as $selectedId) {
+            $sellReturDetails = DB::table('sell_retur_details')->where('sell_retur_id', $selectedId)->get();
+            foreach ($sellReturDetails as $rc) {
+                $totalReturnPrice += $rc->qty * $rc->price;
+            }
+        }
+
+        // Validation: Check if total return exceeds remaining debt for piutang status
+        if ($sell->status === 'piutang') {
+            $remainingDebt = $sell->grand_total - $sell->pay;
+
+            if ($totalReturnPrice > $remainingDebt) {
+                return response()->json([
+                    'error' => 'Total retur (' . number_format($totalReturnPrice, 0, ',', '.') .
+                        ') tidak boleh melebihi sisa piutang (' . number_format($remainingDebt, 0, ',', '.') . ')'
+                ], 422);
+            }
+        }
 
         foreach ($selectedIds as $selectedId) {
             $sellReturDetails = DB::table('sell_retur_details')->where('sell_retur_id', $selectedId)->get();
@@ -446,19 +504,19 @@ class SellReturController extends Controller
             DB::table('sell_returs')
                 ->where('id', $selectedId)
                 ->update(['remark' => 'verify']);
-
-            if ($sell->status == 'lunas') {
-                Cashflow::create([
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => auth()->user()->warehouse_id,
-                    'for' => 'Retur penjualan',
-                    'description' => 'Retur Penjualan ' . $sell->order_number . ' - ' . $sell->customer->name,
-                    'out' => $totalPrice,
-                    'in' => 0,
-                    'payment_method' => null,
-                ]);
-            }
         }
+
+        // Create cashflow entry using CashflowService (moved outside the loop)
+        $this->cashflowService->handleReturnTransaction(
+            warehouseId: auth()->user()->warehouse_id,
+            orderNumber: $sell->order_number,
+            customerName: $sell->customer->name,
+            totalReturnAmount: $totalPrice,
+            sellStatus: $sell->status,
+            paidAmount: $sell->pay,
+            isPartialPayment: $sell->status === 'piutang' && $sell->pay > 0
+        );
+
         return response()->json(['message' => 'Return confirmed successfully']);
     }
 
@@ -601,13 +659,8 @@ class SellReturController extends Controller
                 }
 
                 // Delete cashflow if it was a paid return
-                if ($sellRetur->sell->status === 'lunas' && $sellRetur->sell->order_number) {
-                    $customerName = $sellRetur->sell->customer ? $sellRetur->sell->customer->name : 'Unknown Customer';
-
-                    Cashflow::where('description', 'like', '%Retur Penjualan ' . $sellRetur->sell->order_number . '%')
-                        ->where('user_id', $sellRetur->user_id)
-                        ->where('warehouse_id', $sellRetur->warehouse_id)
-                        ->delete();
+                if ($sellRetur->sell->order_number) {
+                    $this->cashflowService->deleteReturnCashflows($sellRetur->sell->order_number);
                 }
             } else {
                 // Force deletion process when sell record doesn't exist
@@ -641,7 +694,8 @@ class SellReturController extends Controller
                         ->first()?->delete();
                 }
 
-                // Try to delete any orphaned cashflow records
+                // Try to delete any orphaned cashflow records using service
+                // For force delete when sell record doesn't exist, we'll use a more specific deletion
                 Cashflow::where('for', 'Retur penjualan')
                     ->where('user_id', $sellRetur->user_id)
                     ->where('warehouse_id', $sellRetur->warehouse_id)
@@ -882,6 +936,47 @@ class SellReturController extends Controller
     {
         $userId = auth()->id();
         $inputRequests = $request->input_requests;
+
+        // Get the sell record to check status for piutang validation
+        $sellId = $inputRequests[0]['sell_id'] ?? null;
+        if ($sellId) {
+            $sell = Sell::find($sellId);
+            if (!$sell) {
+                return response()->json([
+                    'errors' => ['Data penjualan tidak ditemukan'],
+                ], 422);
+            }
+
+            // Calculate current cart total for piutang validation
+            $currentCartTotal = SellReturCart::where('user_id', $userId)
+                ->where('sell_id', $sellId)
+                ->sum(DB::raw('quantity * price'));
+
+            // Calculate new items total
+            $newItemsTotal = 0;
+            foreach ($inputRequests as $inputRequest) {
+                if (isset($inputRequest['quantity']) && $inputRequest['quantity']) {
+                    $correctPrice = $this->getOriginalSalePrice($sellId, $inputRequest['product_id'], $inputRequest['unit_id']);
+                    $newItemsTotal += $inputRequest['quantity'] * $correctPrice;
+                }
+            }
+
+            $totalReturnPrice = $currentCartTotal + $newItemsTotal;
+
+            // Validation: Check if total return exceeds remaining debt for piutang status
+            if ($sell->status === 'piutang') {
+                $remainingDebt = $sell->grand_total - $sell->pay;
+
+                if ($totalReturnPrice > $remainingDebt) {
+                    return response()->json([
+                        'errors' => [
+                            'Total retur (' . number_format($totalReturnPrice, 0, ',', '.') .
+                                ') tidak boleh melebihi sisa piutang (' . number_format($remainingDebt, 0, ',', '.') . ')'
+                        ],
+                    ], 422);
+                }
+            }
+        }
 
         foreach ($inputRequests as $inputRequest) {
             $productId = $inputRequest['product_id'];
