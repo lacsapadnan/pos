@@ -753,6 +753,7 @@ class SellReturController extends Controller
 
     /**
      * Get the original sale price for a product in a specific unit
+     * Considers warehouse out-of-town pricing when calculating prices for different units
      */
     private function getOriginalSalePrice($sellId, $productId, $unitId)
     {
@@ -774,6 +775,33 @@ class SellReturController extends Controller
 
         // If no exact match, calculate price based on unit conversion from available sell details
         $product = Product::find($productId);
+
+        // Get warehouse information from the original sale to check if it's out of town
+        $sell = Sell::with('warehouse')->find($sellId);
+        $isOutOfTown = $sell && $sell->warehouse ? $sell->warehouse->isOutOfTown : false;
+
+        // Try to get price from current product pricing based on warehouse type
+        if ($isOutOfTown) {
+            // Use out-of-town pricing
+            if ($unitId == $product->unit_dus && $product->price_sell_dus_out_of_town > 0) {
+                return $product->price_sell_dus_out_of_town;
+            } elseif ($unitId == $product->unit_pak && $product->price_sell_pak_out_of_town > 0) {
+                return $product->price_sell_pak_out_of_town;
+            } elseif ($unitId == $product->unit_eceran && $product->price_sell_eceran_out_of_town > 0) {
+                return $product->price_sell_eceran_out_of_town;
+            }
+        } else {
+            // Use regular pricing
+            if ($unitId == $product->unit_dus && $product->price_sell_dus > 0) {
+                return $product->price_sell_dus;
+            } elseif ($unitId == $product->unit_pak && $product->price_sell_pak > 0) {
+                return $product->price_sell_pak;
+            } elseif ($unitId == $product->unit_eceran && $product->price_sell_eceran > 0) {
+                return $product->price_sell_eceran;
+            }
+        }
+
+        // Fallback: calculate price based on unit conversion from available sell details
         $sellDetails = SellDetail::where('sell_id', $sellId)
             ->where('product_id', $productId)
             ->get();
