@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductReport;
@@ -167,17 +166,6 @@ class PurchaseController extends Controller
             $potongan = (int)str_replace([',', '.'], '', $request->potongan ?? 0);
             $grandTotal = (int) str_replace([',', '.'], '', $request->grand_total);
             $pay = (int) str_replace([',', '.'], '', $request->pay);
-
-            // Debug log the processed values
-            Log::info('Purchase payment debug:', [
-                'raw_pay' => $request->pay,
-                'processed_pay' => $pay,
-                'raw_grand_total' => $request->grand_total,
-                'processed_grand_total' => $grandTotal,
-                'raw_remaint' => $request->remaint,
-                'processed_remaint' => $remaint,
-                'cashflow_amount' => $pay - $remaint
-            ]);
 
             if ($pay < $grandTotal) {
                 $status = 'hutang';
@@ -649,6 +637,9 @@ class PurchaseController extends Controller
 
     private function createCashflow($debt, $bayarHutang, $potongan, $paymentMethod)
     {
+        // Map payment method ID to string
+        $paymentMethodString = $this->mapPaymentMethod($paymentMethod);
+
         // Handle debt payment using service
         $this->cashflowService->handleDebtPayment(
             warehouseId: $debt->warehouse_id,
@@ -656,7 +647,26 @@ class PurchaseController extends Controller
             supplierName: $debt->supplier->name,
             bayarHutang: $bayarHutang,
             potongan: $potongan,
-            paymentMethod: $paymentMethod
+            paymentMethod: $paymentMethodString
         );
+    }
+
+    /**
+     * Map payment method ID to string representation
+     */
+    private function mapPaymentMethod($paymentMethodId)
+    {
+        switch ($paymentMethodId) {
+            case 1:
+                return 'kas kecil';
+            case 2:
+                return 'kas besar';
+            case 'transfer':
+                return 'transfer';
+            case 'cash':
+                return 'cash';
+            default:
+                return 'kas kecil'; // Default fallback
+        }
     }
 }

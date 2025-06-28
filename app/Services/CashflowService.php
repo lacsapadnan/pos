@@ -214,7 +214,7 @@ class CashflowService
     ): void {
         $description = "Bayar hutang {$orderNumber} Supplier {$supplierName}";
 
-        // Create cash flow for payment
+        // Create cash flow for payment - debt payment is always money going out
         $this->createCashflow([
             'warehouse_id' => $warehouseId,
             'for' => 'Bayar hutang',
@@ -224,7 +224,7 @@ class CashflowService
             'payment_method' => $paymentMethod,
         ]);
 
-        // Create cash flow for potongan if applicable
+        // Create cash flow for potongan if applicable - discount is money saved (in)
         if ($potongan > 0) {
             $this->createCashflow([
                 'warehouse_id' => $warehouseId,
