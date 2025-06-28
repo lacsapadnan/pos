@@ -83,7 +83,6 @@
                             <th>KTP</th>
                             <th>No. Telp</th>
                             <th>Cabang</th>
-                            <th>User</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -176,19 +175,6 @@
                         },
                         {
                             data: 'warehouse.name',
-                        },
-                        {
-                            data: 'user',
-                            render: function(data, type, row) {
-                                if (data && data.name) {
-                                    return `<div>
-                                        <strong>${data.name}</strong><br>
-                                        <small class="text-muted">${data.email}</small>
-                                    </div>`;
-                                } else {
-                                    return '<span class="text-danger">Tidak ada user</span>';
-                                }
-                            }
                         },
                         {
                             data: "id",

@@ -14,7 +14,6 @@ class Employee extends Model
 
     protected $fillable = [
         'warehouse_id',
-        'user_id',
         'name',
         'phone',
         'nickname',
@@ -24,11 +23,6 @@ class Employee extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function cashAdvances(): HasMany

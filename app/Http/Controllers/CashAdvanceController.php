@@ -6,10 +6,11 @@ use App\Models\CashAdvance;
 use App\Models\CashAdvancePayment;
 use App\Models\Employee;
 use App\Models\Warehouse;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\CashAdvanceStoreRequest;
+use App\Http\Requests\CashAdvanceUpdateRequest;
+use App\Http\Requests\CashAdvanceRejectRequest;
 use Carbon\Carbon;
 
 class CashAdvanceController extends Controller
@@ -30,7 +31,7 @@ class CashAdvanceController extends Controller
     public function index()
     {
         $warehouses = Warehouse::orderBy('name')->get();
-        $employees = Employee::with('user')->orderBy('name')->get();
+        $employees = Employee::orderBy('name')->get();
         return view('pages.cash-advance.index', compact('warehouses', 'employees'));
     }
 
@@ -40,7 +41,7 @@ class CashAdvanceController extends Controller
     public function data(Request $request)
     {
         $userRoles = auth()->user()->getRoleNames();
-        $query = CashAdvance::with(['employee.user', 'warehouse', 'approvedBy'])
+        $query = CashAdvance::with(['employee', 'warehouse', 'approvedBy'])
             ->orderBy('created_at', 'desc');
 
         // Role-based filtering
@@ -85,10 +86,9 @@ class CashAdvanceController extends Controller
         $warehouses = Warehouse::orderBy('name')->get();
 
         if ($userRoles->first() === 'master') {
-            $employees = Employee::with('user')->orderBy('name')->get();
+            $employees = Employee::orderBy('name')->get();
         } else {
-            $employees = Employee::with('user')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
+            $employees = Employee::where('warehouse_id', auth()->user()->warehouse_id)
                 ->orderBy('name')->get();
         }
 
@@ -98,38 +98,8 @@ class CashAdvanceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CashAdvanceStoreRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'employee_id' => 'required|exists:employees,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'amount' => 'required|numeric|min:1|max:999999999.99',
-            'advance_date' => 'required|date',
-            'type' => 'required|in:direct,installment',
-            'installment_count' => 'required_if:type,installment|nullable|integer|min:2|max:36',
-            'description' => 'nullable|string|max:1000',
-        ], [
-            'employee_id.required' => 'Karyawan harus dipilih',
-            'employee_id.exists' => 'Karyawan tidak valid',
-            'warehouse_id.required' => 'Cabang harus dipilih',
-            'warehouse_id.exists' => 'Cabang tidak valid',
-            'amount.required' => 'Jumlah kasbon harus diisi',
-            'amount.numeric' => 'Jumlah kasbon harus berupa angka',
-            'amount.min' => 'Jumlah kasbon minimal Rp 1',
-            'advance_date.required' => 'Tanggal kasbon harus diisi',
-            'advance_date.date' => 'Format tanggal tidak valid',
-            'type.required' => 'Tipe pembayaran harus dipilih',
-            'type.in' => 'Tipe pembayaran tidak valid',
-            'installment_count.required_if' => 'Jumlah cicilan harus diisi untuk tipe cicilan',
-            'installment_count.integer' => 'Jumlah cicilan harus berupa angka',
-            'installment_count.min' => 'Jumlah cicilan minimal 2',
-            'installment_count.max' => 'Jumlah cicilan maksimal 36',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
         try {
             DB::beginTransaction();
 
@@ -161,7 +131,7 @@ class CashAdvanceController extends Controller
      */
     public function show(string $id)
     {
-        $cashAdvance = CashAdvance::with(['employee.user', 'warehouse', 'approvedBy', 'payments.processedBy'])->findOrFail($id);
+        $cashAdvance = CashAdvance::with(['employee', 'warehouse', 'approvedBy', 'payments.processedBy'])->findOrFail($id);
         return view('pages.cash-advance.show', compact('cashAdvance'));
     }
 
@@ -170,7 +140,7 @@ class CashAdvanceController extends Controller
      */
     public function edit(string $id)
     {
-        $cashAdvance = CashAdvance::with(['employee.user', 'warehouse', 'approvedBy', 'payments.processedBy'])->findOrFail($id);
+        $cashAdvance = CashAdvance::with(['employee', 'warehouse', 'approvedBy', 'payments.processedBy'])->findOrFail($id);
         // Only allow editing if status is pending
         if ($cashAdvance->status !== 'pending') {
             return redirect()->route('kasbon.index')->with('error', 'Kasbon yang sudah diproses tidak dapat diedit');
@@ -180,11 +150,9 @@ class CashAdvanceController extends Controller
         $warehouses = Warehouse::orderBy('name')->get();
 
         if ($userRoles->first() === 'master') {
-            $employees = Employee::with('user')->orderBy('name')->get();
+            $employees = Employee::orderBy('name')->get();
         } else {
-            $employees = Employee::with('user')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->orderBy('name')->get();
+            $employees = Employee::where('warehouse_id', auth()->user()->warehouse_id)->orderBy('name')->get();
         }
 
         return view('pages.cash-advance.edit', compact('cashAdvance', 'warehouses', 'employees'));
@@ -193,35 +161,18 @@ class CashAdvanceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CashAdvance $cashAdvance)
+    public function update(CashAdvanceUpdateRequest $request, string $id)
     {
+        $cashAdvance = CashAdvance::findOrFail($id);
         // Only allow updating if status is pending
         if ($cashAdvance->status !== 'pending') {
             return redirect()->route('kasbon.index')->with('error', 'Kasbon yang sudah diproses tidak dapat diedit');
         }
 
-        $validator = Validator::make($request->all(), [
-            'employee_id' => 'required|exists:employees,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'amount' => 'required|numeric|min:1|max:999999999.99',
-            'advance_date' => 'required|date',
-            'type' => 'required|in:direct,installment',
-            'installment_count' => 'required_if:type,installment|nullable|integer|min:2|max:36',
-            'description' => 'nullable|string|max:1000',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
         try {
             DB::beginTransaction();
 
-            // Delete existing payment records if changing type or installment count
-            if (
-                $cashAdvance->type !== $request->type ||
-                $cashAdvance->installment_count != $request->installment_count
-            ) {
+            if ($cashAdvance->type === 'installment' || $request->type === 'installment') {
                 $cashAdvance->payments()->delete();
             }
 
@@ -235,7 +186,7 @@ class CashAdvanceController extends Controller
                 'description' => $request->description,
             ]);
 
-            // Recreate installment payments if needed
+            // Create installment payments if the new type is installment
             if ($request->type === 'installment') {
                 $this->createInstallmentPayments($cashAdvance);
             }
@@ -295,18 +246,10 @@ class CashAdvanceController extends Controller
     /**
      * Reject cash advance
      */
-    public function reject(Request $request, CashAdvance $cashAdvance)
+    public function reject(CashAdvanceRejectRequest $request, CashAdvance $cashAdvance)
     {
         if ($cashAdvance->status !== 'pending') {
             return response()->json(['success' => false, 'message' => 'Kasbon ini sudah diproses']);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'rejection_reason' => 'required|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
         }
 
         try {
