@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Cache;
 
 class ReportService
 {
+    // Cache duration in seconds
+    private const CACHE_DURATION = 300; // 5 minutes
+
     public function __construct(
         private CashflowRepository $cashflowRepository,
         private CashflowService $cashflowService
@@ -19,10 +22,11 @@ class ReportService
     {
         $filters = $this->normalizeFilters($filters);
 
-        // Create cache key based on filters
-        $cacheKey = 'cashflow_report_' . md5(serialize($filters));
+        // Include cache version in the key to enable global invalidation
+        $cacheVersion = Cache::get('cashflow_cache_version', 1);
+        $cacheKey = "cashflow_report_v{$cacheVersion}_" . md5(serialize($filters));
 
-        return Cache::remember($cacheKey, 300, function () use ($filters) {
+        return Cache::remember($cacheKey, self::CACHE_DURATION, function () use ($filters) {
             return $this->cashflowRepository->getCashflowSummary($filters);
         });
     }
@@ -57,7 +61,7 @@ class ReportService
     private function normalizeFilters(array $filters): array
     {
         return [
-            'from_date' => $filters['from_date'] ?? now()->format('Y-m-d'),
+            'from_date' => $filters['from_date'] ?? now()->subDay()->format('Y-m-d'),
             'to_date' => $filters['to_date'] ?? now()->format('Y-m-d'),
             'warehouse_id' => $filters['warehouse_id'] ?? null,
             'user_id' => $filters['user_id'] ?? null,
@@ -65,28 +69,20 @@ class ReportService
     }
 
     /**
-     * Clear all cashflow related cache
+     * Clear all cashflow related cache efficiently
+     * Uses version-based invalidation instead of deleting individual keys
      */
     private function clearCashflowCache(): void
     {
-        // Clear all cashflow report cache keys
-        $tags = ['cashflow_report'];
+        // Instead of deleting all keys, we increment a version number
+        // This effectively invalidates all existing cache entries without
+        // having to scan and delete individual keys in Redis
+        $currentVersion = Cache::get('cashflow_cache_version', 1);
+        Cache::put('cashflow_cache_version', $currentVersion + 1, 86400 * 30); // 30 days
 
+        // For tag-based cache drivers, we can still use tags
         if (Cache::getStore() instanceof \Illuminate\Cache\TaggableStore) {
-            Cache::tags($tags)->flush();
-        } else {
-            // Fallback for stores that don't support tags
-            $keys = [
-                'cashflow_report_*',
-                'top_products_*',
-                'dashboard_stats_*'
-            ];
-
-            foreach ($keys as $pattern) {
-                // Note: This is a simplified approach
-                // In production, you might want to use Redis KEYS command
-                // or implement a more sophisticated cache invalidation strategy
-            }
+            Cache::tags(['cashflow_report'])->flush();
         }
     }
 
@@ -95,7 +91,8 @@ class ReportService
      */
     public function getSummaryStats(array $filters): array
     {
-        $data = $this->cashflowRepository->getCashflowSummary($filters);
+        // We can use cached data for summary stats since we have proper invalidation now
+        $data = $this->getCashflowReport($filters);
 
         return [
             'total_transactions' => $data['cashflows']->count(),
@@ -112,6 +109,7 @@ class ReportService
      */
     public function exportCashflowData(array $filters, string $format = 'array'): array
     {
+        // For exports, always use live data to ensure accuracy
         $data = $this->getCashflowReportLive($filters);
 
         switch ($format) {
