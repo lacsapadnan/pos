@@ -8,7 +8,6 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductReport;
 use App\Models\Sell;
-use App\Models\SellCart;
 use App\Models\SellCartDraft;
 use App\Models\SellDetail;
 use App\Models\Unit;
@@ -16,7 +15,6 @@ use App\Models\User;
 use App\Services\CashflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 
 class SellDraftController extends Controller
@@ -291,14 +289,10 @@ class SellDraftController extends Controller
         $inputRequests = $request->input('requests');
 
         if (is_null($inputRequests)) {
-            // Log the received data for debugging purposes
-            Log::error('Invalid input data: requests key is null or not present.');
             return response()->json(['error' => 'Invalid input data.'], 400);
         }
 
         if (!is_array($inputRequests)) {
-            // Log the received data for debugging purposes
-            Log::error('Invalid input data: requests key is not an array.');
             return response()->json(['error' => 'Invalid input data.'], 400);
         }
 
@@ -306,7 +300,6 @@ class SellDraftController extends Controller
             DB::beginTransaction();
 
             foreach ($inputRequests as $inputRequest) {
-                // Ensure $inputRequest is an array before proceeding
                 if (!is_array($inputRequest)) {
                     continue;
                 }
@@ -319,17 +312,14 @@ class SellDraftController extends Controller
                 $quantityEceran = isset($inputRequest['quantity_eceran']) ? intval($inputRequest['quantity_eceran']) : 0;
 
                 if (!isset($inputRequest['unit_dus'])) {
-                    Log::error('Invalid input data: unit_dus key is missing for product_id ' . $productId);
                     continue;
                 }
 
                 if (!isset($inputRequest['unit_pak'])) {
-                    Log::error('Invalid input data: unit_pak key is missing for product_id ' . $productId);
                     continue;
                 }
 
                 if (!isset($inputRequest['unit_eceran'])) {
-                    Log::error('Invalid input data: unit_eceran key is missing for product_id ' . $productId);
                     continue;
                 }
 
@@ -355,7 +345,6 @@ class SellDraftController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Exception occurred while processing data: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to add items to cart.'], 500);
         }
 
@@ -364,7 +353,6 @@ class SellDraftController extends Controller
 
     private function processCartItem($productId, $sellId, $quantity, $unitId, $price, $discount)
     {
-        Log::info('Processing cart item for product_id ' . $productId . ' with quantity ' . $quantity . ' and unit_id ' . $unitId . '.' . ' and sell_id ' . $sellId);
         $totalPrice = $price * $quantity;
 
         // Apply the discount to the total price if the discount is provided
