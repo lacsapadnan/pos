@@ -68,7 +68,7 @@ class IncomeStatementController extends Controller
         $warehouse_id = $request->input('warehouse');
 
         // Check if user can see all income statement data
-        if (!auth()->user()->hasPermissionTo('lihat semua laba rugi')) {
+        if (!auth()->user()->can('lihat semua laba rugi')) {
             // Restrict to user's own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
@@ -356,19 +356,24 @@ class IncomeStatementController extends Controller
 
     private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        // Get total expenses using raw SQL
-        $totalQuery = DB::table('kas')
-            ->select(DB::raw('SUM(CAST(amount as DECIMAL(15,2))) as total_expenses'))
-            ->where('type', 'Kas Keluar')
-            ->whereBetween('date', [$fromDate, $endDate]);
+        // Get total expenses using raw SQL, excluding "LAIN LAIN" category
+        $totalQuery = DB::table('kas as k')
+            ->leftJoin('kas_expense_items as kei', 'k.kas_expense_item_id', '=', 'kei.id')
+            ->select(DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_expenses'))
+            ->where('k.type', 'Kas Keluar')
+            ->where(function ($query) {
+                $query->whereNull('kei.name')
+                    ->orWhere('kei.name', '!=', 'LAIN LAIN');
+            })
+            ->whereBetween('k.date', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
-            $totalQuery->where('warehouse_id', $warehouse_id);
+            $totalQuery->where('k.warehouse_id', $warehouse_id);
         }
 
         $totalExpenses = floatval($totalQuery->first()->total_expenses ?? 0);
 
-        // Get expenses by category using optimized query
+        // Get expenses by category using optimized query, excluding "LAIN LAIN"
         $categoryQuery = DB::table('kas as k')
             ->leftJoin('kas_expense_items as kei', 'k.kas_expense_item_id', '=', 'kei.id')
             ->select(
@@ -377,6 +382,10 @@ class IncomeStatementController extends Controller
                 DB::raw('COUNT(*) as count')
             )
             ->where('k.type', 'Kas Keluar')
+            ->where(function ($query) {
+                $query->whereNull('kei.name')
+                    ->orWhere('kei.name', '!=', 'LAIN LAIN');
+            })
             ->whereBetween('k.date', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
@@ -404,49 +413,11 @@ class IncomeStatementController extends Controller
 
     private function calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        // Get total income using raw SQL
-        $totalQuery = DB::table('kas')
-            ->select(DB::raw('SUM(CAST(amount as DECIMAL(15,2))) as total_income'))
-            ->where('type', 'Kas Masuk')
-            ->whereBetween('date', [$fromDate, $endDate]);
-
-        if ($warehouse_id) {
-            $totalQuery->where('warehouse_id', $warehouse_id);
-        }
-
-        $totalIncome = floatval($totalQuery->first()->total_income ?? 0);
-
-        // Get income by category using optimized query
-        $categoryQuery = DB::table('kas as k')
-            ->leftJoin('kas_income_items as kii', 'k.kas_income_item_id', '=', 'kii.id')
-            ->select(
-                DB::raw('COALESCE(kii.name, "Lainnya") as category'),
-                DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_amount'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->where('k.type', 'Kas Masuk')
-            ->whereBetween('k.date', [$fromDate, $endDate]);
-
-        if ($warehouse_id) {
-            $categoryQuery->where('k.warehouse_id', $warehouse_id);
-        }
-
-        $incomeByCategory = $categoryQuery
-            ->groupBy('category')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'category' => $item->category,
-                    'total_amount' => floatval($item->total_amount),
-                    'count' => intval($item->count)
-                ];
-            })
-            ->toArray();
-
+        // Return zero for other income as per user requirement to remove PENDAPATAN LAIN-LAIN
         return [
-            'total_other_income' => $totalIncome,
-            'income_by_category' => $incomeByCategory,
-            'income_details' => [] // Don't return full details to save memory
+            'total_other_income' => 0,
+            'income_by_category' => [],
+            'income_details' => []
         ];
     }
 
