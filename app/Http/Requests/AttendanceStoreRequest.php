@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Attendance;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AttendanceStoreRequest extends FormRequest
@@ -22,7 +23,7 @@ class AttendanceStoreRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'user_id' => 'required|exists:users,id',
+            'employee_id' => 'required|exists:employees,id',
             'check_in_date' => 'required|date',
             'check_in_time' => 'required',
             'check_out_date' => 'nullable|date',
@@ -52,8 +53,8 @@ class AttendanceStoreRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.required' => 'Karyawan harus diisi!',
-            'user_id.exists' => 'Karyawan tidak ditemukan!',
+            'employee_id.required' => 'Karyawan harus diisi!',
+            'employee_id.exists' => 'Karyawan tidak ditemukan!',
             'check_in_date.required' => 'Tanggal masuk harus diisi!',
             'check_in_date.date' => 'Tanggal masuk harus berupa tanggal!',
             'check_in_time.required' => 'Jam masuk harus diisi!',
@@ -80,13 +81,13 @@ class AttendanceStoreRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             // Check if attendance already exists for this user on this date
-            if ($this->user_id && $this->check_in_date) {
-                $existingAttendance = \App\Models\Attendance::where('user_id', $this->user_id)
+            if ($this->employee_id && $this->check_in_date) {
+                $existingAttendance = Attendance::where('employee_id', $this->employee_id)
                     ->whereDate('check_in', $this->check_in_date)
                     ->first();
 
                 if ($existingAttendance) {
-                    $validator->errors()->add('user_id', 'Absensi untuk karyawan ini pada tanggal tersebut sudah ada');
+                    $validator->errors()->add('employee_id', 'Absensi untuk karyawan ini pada tanggal tersebut sudah ada');
                 }
             }
 

@@ -44,10 +44,11 @@
                 @endif
                 <div class="col-md-3">
                     <label class="form-label">Karyawan:</label>
-                    <select class="form-select" id="user_id">
+                    <select class="form-select" id="employee_id">
                         <option value="">Semua Karyawan</option>
-                        @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                        @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}">{{ $employee->name }} - {{ $employee->warehouse->name ?? 'No
+                            Warehouse' }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -95,10 +96,12 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Karyawan <span class="text-danger">*</span></label>
-                                <select class="form-select" name="user_id" id="add_user_id" required>
+                                <select class="form-select" name="employee_id" id="add_employee_id" required
+                                    data-dropdown-parent="#addAttendanceModal" data-control="select2">
                                     <option value="">Pilih Karyawan</option>
-                                    @foreach($users as $user)
-                                    <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->warehouse->name ?? 'No
+                                    @foreach($employees as $employee)
+                                    <option value="{{ $employee->id }}">{{ $employee->name }} - {{
+                                        $employee->warehouse->name ?? 'No
                                         Warehouse' }}</option>
                                     @endforeach
                                 </select>
@@ -352,7 +355,7 @@
     loadAttendanceData();
 
     // Auto-reload when filters change
-    $('#from_date, #to_date, #warehouse, #user_id').on('change', function() {
+    $('#from_date, #to_date, #warehouse, #employee_id').on('change', function() {
         loadAttendanceData();
     });
 
@@ -371,7 +374,7 @@
             from_date: $('#from_date').val(),
             to_date: $('#to_date').val(),
             warehouse: $('#warehouse').val(),
-            user_id: $('#user_id').val()
+            employee_id: $('#employee_id').val()
         })
         .done(function(data) {
             table.clear();
@@ -412,7 +415,7 @@
                 let row = [
                     index + 1,
                     new Date(attendance.check_in).toLocaleDateString('id-ID'),
-                    attendance.user.name,
+                    attendance.employee.name,
                 ];
 
                 @if(auth()->user()->hasRole('master'))

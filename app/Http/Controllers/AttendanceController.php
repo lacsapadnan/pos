@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Http\Requests\AttendanceStoreRequest;
 use App\Http\Requests\AttendanceUpdateRequest;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -27,16 +28,16 @@ class AttendanceController extends Controller
     private function adminIndex()
     {
         $warehouses = Warehouse::all();
-        $users = User::all();
+        $employees = Employee::all();
         $today = now()->format('Y-m-d');
 
-        return view('pages.attendance.admin', compact('warehouses', 'users', 'today'));
+        return view('pages.attendance.admin', compact('warehouses', 'employees', 'today'));
     }
 
     private function userIndex()
     {
         // Get today's attendance for current user (read-only)
-        $todayAttendance = Attendance::where('user_id', auth()->id())
+        $todayAttendance = Attendance::where('employee_id', auth()->id())
             ->whereDate('check_in', today())
             ->first();
 
@@ -45,7 +46,7 @@ class AttendanceController extends Controller
 
     public function create(AttendanceStoreRequest $request)
     {
-        $user = User::findOrFail($request->user_id);
+        $employee = Employee::findOrFail($request->employee_id);
 
         // Combine date and time for timestamps
         $checkIn = Carbon::parse($request->check_in_date . ' ' . $request->check_in_time);
@@ -66,8 +67,8 @@ class AttendanceController extends Controller
         }
 
         $attendance = Attendance::create([
-            'user_id' => $user->id,
-            'warehouse_id' => $user->warehouse_id,
+            'employee_id' => $employee->id,
+            'warehouse_id' => $employee->warehouse_id,
             'check_in' => $checkIn,
             'check_out' => $checkOut,
             'break_start' => $breakStart,
@@ -79,7 +80,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data absensi berhasil ditambahkan',
-            'attendance' => $attendance->load('user', 'warehouse')
+            'attendance' => $attendance->load('employee', 'warehouse')
         ]);
     }
 
@@ -137,12 +138,12 @@ class AttendanceController extends Controller
         }
 
         $userRoles = auth()->user()->getRoleNames();
-        $user_id = $request->input('user_id');
+        $employee_id = $request->input('employee_id');
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse = $request->input('warehouse');
 
-        $query = Attendance::with(['user', 'warehouse'])
+        $query = Attendance::with(['employee', 'warehouse'])
             ->orderBy('check_in', 'desc');
 
         // Role-based filtering
@@ -155,8 +156,8 @@ class AttendanceController extends Controller
             $query->where('warehouse_id', $warehouse);
         }
 
-        if ($user_id) {
-            $query->where('user_id', $user_id);
+        if ($employee_id) {
+            $query->where('employee_id', $employee_id);
         }
 
         if ($fromDate && $toDate) {
