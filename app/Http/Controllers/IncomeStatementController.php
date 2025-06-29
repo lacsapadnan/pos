@@ -14,6 +14,7 @@ use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class IncomeStatementController extends Controller
 {
@@ -135,7 +136,7 @@ class IncomeStatementController extends Controller
 
             return response()->json($response);
         } catch (\Exception $e) {
-            \Log::error('Income Statement calculation error: ' . $e->getMessage());
+            Log::error('Income Statement calculation error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to generate income statement. Please try with a smaller date range.',
                 'message' => $e->getMessage()
@@ -245,7 +246,7 @@ class IncomeStatementController extends Controller
         // Use raw SQL with chunking for better performance
         // First, get the sell IDs that are not draft, batal, or piutang
         $validSellIds = DB::table('sells')
-            ->select('id')
+            ->select('id', 'order_number')
             ->where('status', '!=', 'draft')
             ->where('status', '!=', 'batal')
             ->where('status', '!=', 'piutang')
@@ -259,9 +260,9 @@ class IncomeStatementController extends Controller
             $validSellIds->where('cashier_id', $user_id);
         }
 
-        $validSellIdsArray = $validSellIds->pluck('id')->toArray();
+        $validSells = $validSellIds->get();
 
-        if (empty($validSellIdsArray)) {
+        if ($validSells->isEmpty()) {
             return [
                 'total_cogs' => 0,
                 'cogs_by_product' => [],
@@ -269,7 +270,11 @@ class IncomeStatementController extends Controller
             ];
         }
 
-        // Now get product reports only for valid sell transactions
+        // Create a collection of order numbers from the valid sells
+        $orderNumbers = $validSells->pluck('order_number')->toArray();
+
+        // Now get product reports only for valid sell transactions by matching the description field
+        // which contains "Penjualan {order_number}"
         $query = DB::table('product_reports as pr')
             ->join('products as p', 'pr.product_id', '=', 'p.id')
             ->select(
@@ -284,7 +289,6 @@ class IncomeStatementController extends Controller
             )
             ->where('pr.for', 'KELUAR')
             ->where('pr.type', 'PENJUALAN')
-            ->whereIn('pr.reference_id', $validSellIdsArray)
             ->whereBetween('pr.created_at', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
@@ -294,6 +298,14 @@ class IncomeStatementController extends Controller
         if ($user_id) {
             $query->where('pr.user_id', $user_id);
         }
+
+        // Use a where clause that checks if the description contains any of the order numbers
+        // This is more complex but necessary since we don't have a direct reference_id
+        $query->where(function ($q) use ($orderNumbers) {
+            foreach ($orderNumbers as $orderNumber) {
+                $q->orWhere('pr.description', 'like', "%Penjualan $orderNumber%");
+            }
+        });
 
         // Process in chunks to avoid memory issues
         $query->orderBy('pr.id')->chunk(1000, function ($soldProducts) use (&$totalCogs, &$cogsByProduct, $isOutOfTown) {
