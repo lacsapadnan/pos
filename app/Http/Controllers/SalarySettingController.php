@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\SalarySetting;
 use App\Models\Warehouse;
+use App\Http\Requests\SalarySettingStoreRequest;
+use App\Http\Requests\SalarySettingUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -51,20 +53,12 @@ class SalarySettingController extends Controller
         return view('pages.salary.settings.form', compact('employees', 'warehouses'));
     }
 
-    public function store(Request $request)
+    public function store(SalarySettingStoreRequest $request)
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id|unique:salary_settings,employee_id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'daily_salary' => 'required|numeric|min:0',
-            'monthly_salary' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
-
-        SalarySetting::create($request->all());
+        SalarySetting::create($request->validated());
 
         return redirect()->route('salary-settings.index')
-            ->with('success', 'Salary setting created successfully.');
+            ->with('success', 'Pengaturan gaji berhasil dibuat.');
     }
 
     public function edit(SalarySetting $salarySetting)
@@ -80,20 +74,12 @@ class SalarySettingController extends Controller
         return view('pages.salary.settings.form', compact('salarySetting', 'employees', 'warehouses'));
     }
 
-    public function update(Request $request, SalarySetting $salarySetting)
+    public function update(SalarySettingUpdateRequest $request, SalarySetting $salarySetting)
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id|unique:salary_settings,employee_id,' . $salarySetting->id,
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'daily_salary' => 'required|numeric|min:0',
-            'monthly_salary' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
-
-        $salarySetting->update($request->all());
+        $salarySetting->update($request->validated());
 
         return redirect()->route('salary-settings.index')
-            ->with('success', 'Salary setting updated successfully.');
+            ->with('success', 'Pengaturan gaji berhasil diubah.');
     }
 
     public function destroy(SalarySetting $salarySetting)

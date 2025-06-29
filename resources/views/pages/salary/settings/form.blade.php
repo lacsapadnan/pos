@@ -109,18 +109,28 @@
             <div class="mb-7 row">
                 <div class="col-md-6 fv-row">
                     <label class="mb-2 required fw-semibold fs-6">Gaji Harian</label>
-                    <input type="number" name="daily_salary" class="form-control form-control-solid"
-                        value="{{ isset($salarySetting) ? $salarySetting->daily_salary : old('daily_salary', 0) }}"
-                        min="0" step="1000" required />
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" id="formatted_daily_salary" class="form-control form-control-solid"
+                            value="{{ isset($salarySetting) ? number_format($salarySetting->daily_salary, 0, ',', '.') : old('daily_salary', 0) }}"
+                            required />
+                        <input type="hidden" name="daily_salary" id="actual_daily_salary"
+                            value="{{ isset($salarySetting) ? $salarySetting->daily_salary : old('daily_salary', 0) }}" />
+                    </div>
                     @error('daily_salary')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-md-6 fv-row">
                     <label class="mb-2 required fw-semibold fs-6">Gaji Bulanan</label>
-                    <input type="number" name="monthly_salary" class="form-control form-control-solid"
-                        value="{{ isset($salarySetting) ? $salarySetting->monthly_salary : old('monthly_salary', 0) }}"
-                        min="0" step="10000" required />
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" id="formatted_monthly_salary" class="form-control form-control-solid"
+                            value="{{ isset($salarySetting) ? number_format($salarySetting->monthly_salary, 0, ',', '.') : old('monthly_salary', 0) }}"
+                            required />
+                        <input type="hidden" name="monthly_salary" id="actual_monthly_salary"
+                            value="{{ isset($salarySetting) ? $salarySetting->monthly_salary : old('monthly_salary', 0) }}" />
+                    </div>
                     @error('monthly_salary')
                     <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
@@ -147,7 +157,7 @@
                         {{ isset($salarySetting) ? 'Update' : 'Simpan' }}
                     </span>
                     <span class="indicator-progress">
-                        Please wait... <span class="align-middle spinner-border spinner-border-sm ms-2"></span>
+                        Mohon tunggu... <span class="align-middle spinner-border spinner-border-sm ms-2"></span>
                     </span>
                 </button>
             </div>
@@ -160,7 +170,7 @@
 <!--end::Card-->
 @endsection
 
-@push('scripts')
+@push('addon-script')
 <script>
     "use strict";
 
@@ -235,6 +245,13 @@
             submitButton.addEventListener('click', function (e) {
                 e.preventDefault();
 
+                // Ensure hidden fields have the correct values before validation
+                const dailySalary = $('#formatted_daily_salary').val().replace(/[^\d]/g, '');
+                const monthlySalary = $('#formatted_monthly_salary').val().replace(/[^\d]/g, '');
+
+                $('#actual_daily_salary').val(dailySalary || '0');
+                $('#actual_monthly_salary').val(monthlySalary || '0');
+
                 validator.validate().then(function (status) {
                     if (status == 'Valid') {
                         submitButton.setAttribute('data-kt-indicator', 'on');
@@ -259,6 +276,30 @@
     // On document ready
     KTUtil.onDOMContentLoaded(function () {
         KTSalarySettingForm.init();
+
+        // Format currency inputs
+        function formatCurrency(input, hiddenInput) {
+            $(input).on('input', function() {
+                // Remove non-numeric characters
+                let value = $(this).val().replace(/[^\d]/g, '');
+
+                // Format with thousand separators
+                if (value !== '') {
+                    // Convert to number and format
+                    const formattedValue = new Intl.NumberFormat('id-ID').format(value);
+                    $(this).val(formattedValue);
+
+                    // Update the hidden input with the actual numeric value
+                    $(hiddenInput).val(value);
+                } else {
+                    $(hiddenInput).val('0');
+                }
+            });
+        }
+
+        // Initialize currency formatting
+        formatCurrency('#formatted_daily_salary', '#actual_daily_salary');
+        formatCurrency('#formatted_monthly_salary', '#actual_monthly_salary');
     });
 </script>
 @endpush
