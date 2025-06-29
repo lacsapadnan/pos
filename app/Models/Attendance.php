@@ -25,8 +25,8 @@ class Attendance extends Model
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'break_start' => 'datetime',
-        'break_end' => 'datetime',
+        'break_start' => 'string',
+        'break_end' => 'string',
     ];
 
     public function employee(): BelongsTo
@@ -65,7 +65,10 @@ class Attendance extends Model
 
         // Subtract break time if any
         if ($this->break_start && $this->break_end) {
-            $breakMinutes = $this->break_start->diffInMinutes($this->break_end);
+            $breakStartTime = Carbon::createFromFormat('H:i:s', $this->break_start);
+            $breakEndTime = Carbon::createFromFormat('H:i:s', $this->break_end);
+
+            $breakMinutes = $breakStartTime->diffInMinutes($breakEndTime);
             $totalMinutes -= $breakMinutes;
         }
 

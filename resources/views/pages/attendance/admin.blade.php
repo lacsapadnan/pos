@@ -155,31 +155,14 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Mulai Istirahat</label>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control" name="break_start_date"
-                                            id="add_break_start_date">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="time" class="form-control" name="break_start_time"
-                                            id="add_break_start_time">
-                                    </div>
-                                </div>
+                                <input type="time" class="form-control" name="break_start_time"
+                                    id="add_break_start_time">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Selesai Istirahat</label>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control" name="break_end_date"
-                                            id="add_break_end_date">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="time" class="form-control" name="break_end_time"
-                                            id="add_break_end_time">
-                                    </div>
-                                </div>
+                                <input type="time" class="form-control" name="break_end_time" id="add_break_end_time">
                             </div>
                         </div>
                     </div>
@@ -265,31 +248,14 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Mulai Istirahat</label>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control" name="break_start_date"
-                                            id="edit_break_start_date">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="time" class="form-control" name="break_start_time"
-                                            id="edit_break_start_time">
-                                    </div>
-                                </div>
+                                <input type="time" class="form-control" name="break_start_time"
+                                    id="edit_break_start_time">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Selesai Istirahat</label>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <input type="date" class="form-control" name="break_end_date"
-                                            id="edit_break_end_date">
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="time" class="form-control" name="break_end_time"
-                                            id="edit_break_end_time">
-                                    </div>
-                                </div>
+                                <input type="time" class="form-control" name="break_end_time" id="edit_break_end_time">
                             </div>
                         </div>
                     </div>
@@ -382,9 +348,9 @@
             data.forEach(function(attendance, index) {
                 let breakTime = '';
                 if (attendance.break_start) {
-                    breakTime = new Date(attendance.break_start).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+                    breakTime = attendance.break_start;
                     if (attendance.break_end) {
-                        breakTime += ' - ' + new Date(attendance.break_end).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+                        breakTime += ' - ' + attendance.break_end;
                     }
                 }
 
@@ -484,7 +450,7 @@
 
         $.get(`/absensi/${id}/edit`)
         .done(function(attendance) {
-            $('#edit_user_name').val(attendance.user.name);
+            $('#edit_user_name').val(attendance.employee.name);
             $('#edit_warehouse_name').val(attendance.warehouse ? attendance.warehouse.name : '-');
 
             let checkInDate = new Date(attendance.check_in);
@@ -500,23 +466,9 @@
                 $('#edit_check_out_time').val('');
             }
 
-            if (attendance.break_start) {
-                let breakStartDate = new Date(attendance.break_start);
-                $('#edit_break_start_date').val(breakStartDate.toISOString().split('T')[0]);
-                $('#edit_break_start_time').val(breakStartDate.toTimeString().split(' ')[0].substring(0, 5));
-            } else {
-                $('#edit_break_start_date').val('');
-                $('#edit_break_start_time').val('');
-            }
-
-            if (attendance.break_end) {
-                let breakEndDate = new Date(attendance.break_end);
-                $('#edit_break_end_date').val(breakEndDate.toISOString().split('T')[0]);
-                $('#edit_break_end_time').val(breakEndDate.toTimeString().split(' ')[0].substring(0, 5));
-            } else {
-                $('#edit_break_end_date').val('');
-                $('#edit_break_end_time').val('');
-            }
+            // Handle break times as simple time strings
+            $('#edit_break_start_time').val(attendance.break_start || '');
+            $('#edit_break_end_time').val(attendance.break_end || '');
 
             $('#edit_status').val(attendance.status);
             $('#edit_notes').val(attendance.notes || '');

@@ -58,12 +58,13 @@ class AttendanceController extends Controller
             $checkOut = Carbon::parse($request->check_out_date . ' ' . $request->check_out_time);
         }
 
-        if ($request->break_start_date && $request->break_start_time) {
-            $breakStart = Carbon::parse($request->break_start_date . ' ' . $request->break_start_time);
+        // Just use the time for break fields
+        if ($request->break_start_time) {
+            $breakStart = $request->break_start_time;
         }
 
-        if ($request->break_end_date && $request->break_end_time) {
-            $breakEnd = Carbon::parse($request->break_end_date . ' ' . $request->break_end_time);
+        if ($request->break_end_time) {
+            $breakEnd = $request->break_end_time;
         }
 
         $attendance = Attendance::create([
@@ -186,7 +187,7 @@ class AttendanceController extends Controller
             ], 403);
         }
 
-        $attendance = Attendance::with(['user', 'warehouse'])->findOrFail($id);
+        $attendance = Attendance::with(['employee', 'warehouse'])->findOrFail($id);
         return response()->json($attendance);
     }
 
@@ -205,12 +206,13 @@ class AttendanceController extends Controller
             $checkOut = Carbon::parse($request->check_out_date . ' ' . $request->check_out_time);
         }
 
-        if ($request->break_start_date && $request->break_start_time) {
-            $breakStart = Carbon::parse($request->break_start_date . ' ' . $request->break_start_time);
+        // Just use the time for break fields
+        if ($request->break_start_time) {
+            $breakStart = $request->break_start_time;
         }
 
-        if ($request->break_end_date && $request->break_end_time) {
-            $breakEnd = Carbon::parse($request->break_end_date . ' ' . $request->break_end_time);
+        if ($request->break_end_time) {
+            $breakEnd = $request->break_end_time;
         }
 
         $attendance->update([
@@ -225,7 +227,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data absensi berhasil diperbarui',
-            'attendance' => $attendance->load('user', 'warehouse')
+            'attendance' => $attendance->load('employee', 'warehouse')
         ]);
     }
 
@@ -251,12 +253,12 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
-        $todayAttendance = Attendance::where('user_id', $user->id)
+        $todayAttendance = Attendance::where('employee_id', $user->id)
             ->whereDate('check_in', today())
             ->first();
 
         return response()->json([
-            'attendance' => $todayAttendance ? $todayAttendance->load('user', 'warehouse') : null,
+            'attendance' => $todayAttendance ? $todayAttendance->load('employee', 'warehouse') : null,
             'can_check_out' => $todayAttendance ? $todayAttendance->canCheckOut() : false,
             'is_on_break' => $todayAttendance ? $todayAttendance->isOnBreak() : false,
             'has_used_break' => $todayAttendance ? $todayAttendance->hasUsedBreak() : false,

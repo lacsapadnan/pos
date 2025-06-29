@@ -26,10 +26,8 @@ class AttendanceUpdateRequest extends FormRequest
             'check_in_time' => 'required',
             'check_out_date' => 'nullable|date',
             'check_out_time' => 'nullable',
-            'break_start_date' => 'nullable|date',
-            'break_start_time' => 'nullable',
-            'break_end_date' => 'nullable|date',
-            'break_end_time' => 'nullable',
+            'break_start_time' => 'nullable|string',
+            'break_end_time' => 'nullable|string',
             'status' => 'required|in:checked_in,checked_out,on_break',
             'notes' => 'nullable|string'
         ];
@@ -57,10 +55,8 @@ class AttendanceUpdateRequest extends FormRequest
             'check_out_date.required' => 'Tanggal keluar harus diisi ketika status "Sudah Pulang"!',
             'check_out_date.date' => 'Tanggal keluar harus berupa tanggal!',
             'check_out_time.required' => 'Jam keluar harus diisi ketika status "Sudah Pulang"!',
-            'break_start_date.date' => 'Tanggal mulai istirahat harus berupa tanggal!',
-            'break_start_time.date_format' => 'Format jam mulai istirahat tidak valid!',
-            'break_end_date.date' => 'Tanggal selesai istirahat harus berupa tanggal!',
-            'break_end_time.date_format' => 'Format jam selesai istirahat tidak valid!',
+            'break_start_time.string' => 'Format jam mulai istirahat tidak valid!',
+            'break_end_time.string' => 'Format jam selesai istirahat tidak valid!',
             'status.required' => 'Status harus diisi!',
             'status.in' => 'Status tidak valid!',
             'notes.string' => 'Catatan harus berupa teks!'
@@ -86,45 +82,11 @@ class AttendanceUpdateRequest extends FormRequest
                 }
             }
 
-            // Validate break times are within work hours
-            if ($this->break_start_date && $this->break_start_time && $this->check_in_date && $this->check_in_time) {
-                $checkIn = \Carbon\Carbon::parse($this->check_in_date . ' ' . $this->check_in_time);
-                $breakStart = \Carbon\Carbon::parse($this->break_start_date . ' ' . $this->break_start_time);
-
-                if ($breakStart->lt($checkIn)) {
-                    $validator->errors()->add('break_start_time', 'Waktu istirahat harus dalam jam kerja');
-                }
-
-                // Check if break start is after check out
-                if ($this->check_out_date && $this->check_out_time) {
-                    $checkOut = \Carbon\Carbon::parse($this->check_out_date . ' ' . $this->check_out_time);
-                    if ($breakStart->gt($checkOut)) {
-                        $validator->errors()->add('break_start_time', 'Waktu istirahat harus dalam jam kerja');
-                    }
-                }
-            }
-
-            if ($this->break_end_date && $this->break_end_time && $this->check_in_date && $this->check_in_time) {
-                $checkIn = \Carbon\Carbon::parse($this->check_in_date . ' ' . $this->check_in_time);
-                $breakEnd = \Carbon\Carbon::parse($this->break_end_date . ' ' . $this->break_end_time);
-
-                if ($breakEnd->lt($checkIn)) {
-                    $validator->errors()->add('break_end_time', 'Waktu selesai istirahat harus dalam jam kerja');
-                }
-
-                // Check if break end is after check out
-                if ($this->check_out_date && $this->check_out_time) {
-                    $checkOut = \Carbon\Carbon::parse($this->check_out_date . ' ' . $this->check_out_time);
-                    if ($breakEnd->gt($checkOut)) {
-                        $validator->errors()->add('break_end_time', 'Waktu selesai istirahat harus dalam jam kerja');
-                    }
-                }
-            }
-
             // Validate break end is after break start
-            if ($this->break_start_date && $this->break_start_time && $this->break_end_date && $this->break_end_time) {
-                $breakStart = \Carbon\Carbon::parse($this->break_start_date . ' ' . $this->break_start_time);
-                $breakEnd = \Carbon\Carbon::parse($this->break_end_date . ' ' . $this->break_end_time);
+            if ($this->break_start_time && $this->break_end_time) {
+                // Create Carbon instances for today with the specified times
+                $breakStart = \Carbon\Carbon::createFromFormat('H:i', $this->break_start_time);
+                $breakEnd = \Carbon\Carbon::createFromFormat('H:i', $this->break_end_time);
 
                 if ($breakEnd->lt($breakStart)) {
                     $validator->errors()->add('break_end_time', 'Waktu selesai istirahat harus setelah waktu mulai istirahat');
