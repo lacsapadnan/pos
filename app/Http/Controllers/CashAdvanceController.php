@@ -40,12 +40,12 @@ class CashAdvanceController extends Controller
      */
     public function data(Request $request)
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $isMaster = auth()->user()->hasRole('master');
         $query = CashAdvance::with(['employee', 'warehouse', 'approvedBy'])
             ->orderBy('created_at', 'desc');
 
         // Role-based filtering
-        if ($userRoles->first() !== 'master') {
+        if (!$isMaster) {
             $query->where('warehouse_id', auth()->user()->warehouse_id);
         }
 
@@ -82,10 +82,10 @@ class CashAdvanceController extends Controller
      */
     public function create()
     {
-        $userRoles = auth()->user()->getRoleNames();
+        $isMaster = auth()->user()->hasRole('master');
         $warehouses = Warehouse::orderBy('name')->get();
 
-        if ($userRoles->first() === 'master') {
+        if ($isMaster) {
             $employees = Employee::orderBy('name')->get();
         } else {
             $employees = Employee::where('warehouse_id', auth()->user()->warehouse_id)
@@ -146,10 +146,10 @@ class CashAdvanceController extends Controller
             return redirect()->route('kasbon.index')->with('error', 'Kasbon yang sudah diproses tidak dapat diedit');
         }
 
-        $userRoles = auth()->user()->getRoleNames();
+        $isMaster = auth()->user()->hasRole('master');
         $warehouses = Warehouse::orderBy('name')->get();
 
-        if ($userRoles->first() === 'master') {
+        if ($isMaster) {
             $employees = Employee::orderBy('name')->get();
         } else {
             $employees = Employee::where('warehouse_id', auth()->user()->warehouse_id)->orderBy('name')->get();
@@ -202,11 +202,16 @@ class CashAdvanceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(CashAdvance $cashAdvance)
+    public function destroy(string $id)
     {
-        // Only allow deletion if status is pending
-        if ($cashAdvance->status !== 'pending') {
-            return response()->json(['success' => false, 'message' => 'Kasbon yang sudah diproses tidak dapat dihapus']);
+        $cashAdvance = CashAdvance::findOrFail($id);
+
+        // Ensure status is properly cast to string for comparison
+        $status = (string)$cashAdvance->status;
+
+        // Only allow deletion if status is pending or rejected
+        if ($status !== 'pending' && $status !== 'rejected') {
+            return response()->json(['success' => false, 'message' => 'Hanya kasbon dengan status pending atau ditolak yang dapat dihapus']);
         }
 
         try {

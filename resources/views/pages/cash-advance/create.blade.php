@@ -74,8 +74,10 @@
                         <label class="form-label required">Jumlah Kasbon</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="number" class="form-control" name="amount" placeholder="Masukkan jumlah kasbon"
-                                value="{{ old('amount') }}" min="1" max="999999999.99" step="0.01" required>
+                            <input type="text" class="form-control" id="formatted_amount"
+                                placeholder="Masukkan jumlah kasbon"
+                                value="{{ old('amount') ? number_format(old('amount'), 0, ',', '.') : '' }}" required>
+                            <input type="hidden" name="amount" id="actual_amount" value="{{ old('amount') }}">
                         </div>
                         @error('amount')
                         <div class="text-danger">{{ $message }}</div>
@@ -167,6 +169,27 @@
     "use strict";
 
     $(document).ready(function() {
+        // Format currency input
+        $('#formatted_amount').on('input', function() {
+            // Remove non-numeric characters
+            let value = $(this).val().replace(/[^\d]/g, '');
+
+            // Format with thousand separators
+            if (value !== '') {
+                // Convert to number and format
+                const formattedValue = new Intl.NumberFormat('id-ID').format(value);
+                $(this).val(formattedValue);
+
+                // Update the hidden input with the actual numeric value
+                $('#actual_amount').val(value);
+            } else {
+                $('#actual_amount').val('');
+            }
+
+            // Update installment preview if needed
+            updateInstallmentPreview();
+        });
+
         // Handle payment type change
         $('#paymentType').change(function() {
             var type = $(this).val();
@@ -196,7 +219,7 @@
     });
 
     function updateInstallmentPreview() {
-        var amount = parseFloat($('input[name="amount"]').val()) || 0;
+        var amount = parseFloat($('#actual_amount').val()) || 0;
         var installmentCount = parseInt($('#installmentCount').val()) || 0;
         var advanceDate = $('input[name="advance_date"]').val();
 
@@ -235,11 +258,5 @@
             $('#installmentPreview').hide();
         }
     }
-
-    // Format currency input
-    $('input[name="amount"]').on('input', function() {
-        var value = $(this).val().replace(/[^0-9.]/g, '');
-        $(this).val(value);
-    });
 </script>
 @endpush

@@ -364,11 +364,13 @@
                         }
 
                         @can('hapus kasbon')
-                        actions += `
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashAdvance(':id')">
-                                <i class="ki-solid ki-trash"></i> Hapus
-                            </button>
-                        `.replace(':id', data);
+                        if (row.status === 'pending' || row.status === 'rejected') {
+                            actions += `
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashAdvance(':id')">
+                                    <i class="ki-solid ki-trash"></i> Hapus
+                                </button>
+                            `.replace(':id', data);
+                        }
                         @endcan
 
                         return actions;
@@ -404,7 +406,7 @@
         modal.modal('show');
     }
 
-        function handleApproval(id, action, rejectionReason = null) {
+    function handleApproval(id, action, rejectionReason = null) {
         var url = action === 'approve' ?
             "{{ route('kasbon.approve', ':id') }}".replace(':id', id) :
             "{{ route('kasbon.reject', ':id') }}".replace(':id', id);
@@ -421,40 +423,83 @@
             .done(function(response) {
                 if (response.success) {
                     $('#approvalModal').modal('hide');
-                    // Redirect to reload page and show alert via session
-                    window.location.reload();
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: action === 'approve' ? 'Kasbon berhasil disetujui' : 'Kasbon berhasil ditolak',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                        window.location.reload();
+                    });
                 } else {
-                    alert(response.message);
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: response.message,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
                 }
             })
             .fail(function() {
-                alert('Terjadi kesalahan sistem');
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Terjadi kesalahan sistem',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
             });
     }
 
-        function deleteCashAdvance(id) {
-        if (confirm('Apakah Anda yakin ingin menghapus kasbon ini?')) {
-            var url = "{{ route('kasbon.destroy', ':id') }}".replace(':id', id);
+    function deleteCashAdvance(id) {
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Kasbon yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var url = "{{ route('kasbon.destroy', ':id') }}".replace(':id', id);
 
-            $.ajax({
-                url: url,
-                type: 'DELETE',
-                data: {
-                    _token: "{{ csrf_token() }}"
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Redirect to reload page and show alert via session
-                        window.location.reload();
-                    } else {
-                        alert(response.message);
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Kasbon berhasil dihapus',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan sistem',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
                     }
-                },
-                error: function() {
-                    alert('Terjadi kesalahan sistem');
-                }
-            });
-        }
+                });
+            }
+        });
     }
 </script>
 @endpush
