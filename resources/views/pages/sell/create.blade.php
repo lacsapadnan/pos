@@ -27,10 +27,49 @@
     .dataTables_scrollBody table {
         transform: rotateX(180deg);
     }
+
+    /* Loading overlay styles */
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        visibility: hidden;
+    }
+
+    .spinner {
+        width: 80px;
+        height: 80px;
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 @endpush
 
 @section('content')
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
 <div class="mt-5 border-0 card card-p-0 card-flush">
     <div class="mt-3">
         @include('components.alert')
@@ -271,164 +310,213 @@
 
 {{-- calculated form --}}
 <script>
+    // Show loading overlay
+    function showLoading() {
+        document.getElementById('loading-overlay').style.visibility = 'visible';
+    }
+
+    // Hide loading overlay
+    function hideLoading() {
+        document.getElementById('loading-overlay').style.visibility = 'hidden';
+    }
+
     function formatNumber(input) {
-            // Hapus semua karakter non-digit
-            let value = input.value.replace(/\D/g, '');
+        // Hapus semua karakter non-digit
+        let value = input.value.replace(/\D/g, '');
 
-            // Tambahkan separator ribuan
-            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        // Tambahkan separator ribuan
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-            // Set nilai input dengan format yang baru
-            input.value = value;
+        // Set nilai input dengan format yang baru
+        input.value = value;
+    }
+
+    function calculateTotal() {
+        var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var grandTotal = subtotal;
+
+        var paymentMethod = document.getElementsByName('payment_method')[0].value;
+        var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+        // var grandTotal = parseFloat(document.getElementById('grandTotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        if (paymentMethod === 'split') {
+            // Calculate grand total based on the sum of transfer and cash
+            grandTotal = subtotal;
         }
 
-        function calculateTotal() {
-            var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var grandTotal = subtotal;
+        var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash);
 
-            var paymentMethod = document.getElementsByName('payment_method')[0].value;
-            var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
-            // var grandTotal = parseFloat(document.getElementById('grandTotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+        document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
+        document.getElementById('kembali').value = new Intl.NumberFormat('id-ID').format(kembali);
+    }
 
-            if (paymentMethod === 'split') {
-                // Calculate grand total based on the sum of transfer and cash
-                grandTotal = subtotal;
-            }
+    function calculateKembali(paymentMethod, grandTotal, transfer, cash) {
+        var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
 
-            var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash);
+        if (paymentMethod === 'transfer' || paymentMethod === 'cash') {
+            // For "Transfer" or "Cash," calculate the change as (transfer or cash) - grand total
+            return Math.max((paymentMethod === 'transfer' ? transfer : cash) - grandTotal, 0);
+        } else if (paymentMethod === 'split') {
+            // For "Split Payment," calculate the change as (transfer + cash) - grand total
+            return Math.max(transfer + cash - grandTotal, 0);
+        } else {
+            // Handle other payment methods, if any, here
+            return Math.max(bayar - grandTotal, 0);
+        }
+    }
 
-            document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
-            document.getElementById('kembali').value = new Intl.NumberFormat('id-ID').format(kembali);
+    function togglePaymentFields() {
+        const paymentMethod = document.getElementsByName('payment_method')[0].value;
+        const bayarDiv = document.getElementById('bayarDiv');
+        const transferDiv = document.getElementById('transferDiv');
+        const cashDiv = document.getElementById('cashDiv');
+
+        bayarDiv.style.display = 'none';
+        transferDiv.style.display = 'none';
+        cashDiv.style.display = 'none';
+
+        if (paymentMethod === 'transfer') {
+            transferDiv.style.display = 'block';
+        } else if (paymentMethod === 'cash') {
+            cashDiv.style.display = 'block';
+        } else if (paymentMethod === 'split') {
+            transferDiv.style.display = 'block';
+            cashDiv.style.display = 'block';
         }
 
-        function calculateKembali(paymentMethod, grandTotal, transfer, cash) {
-            var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+        // Recalculate grand total when payment method changes
+        calculateTotal();
+    }
 
-            if (paymentMethod === 'transfer' || paymentMethod === 'cash') {
-                // For "Transfer" or "Cash," calculate the change as (transfer or cash) - grand total
-                return Math.max((paymentMethod === 'transfer' ? transfer : cash) - grandTotal, 0);
-            } else if (paymentMethod === 'split') {
-                // For "Split Payment," calculate the change as (transfer + cash) - grand total
-                return Math.max(transfer + cash - grandTotal, 0);
-            } else {
-                // Handle other payment methods, if any, here
-                return Math.max(bayar - grandTotal, 0);
-            }
-        }
+    // Call the function initially to handle the default state of the form
+    togglePaymentFields();
 
-        function togglePaymentFields() {
-            const paymentMethod = document.getElementsByName('payment_method')[0].value;
-            const bayarDiv = document.getElementById('bayarDiv');
-            const transferDiv = document.getElementById('transferDiv');
-            const cashDiv = document.getElementById('cashDiv');
+    // Attach event listeners to the input fields to trigger the calculation
+    document.getElementById('bayar').addEventListener('input', calculateTotal);
+    document.getElementById('transfer').addEventListener('input', calculateTotal);
+    document.getElementById('cash').addEventListener('input', calculateTotal);
 
-            bayarDiv.style.display = 'none';
-            transferDiv.style.display = 'none';
-            cashDiv.style.display = 'none';
+    function submitForms() {
+        // Copy values from form1 to form2 hidden inputs
+        document.getElementById('transaction_date_form2').value = document.getElementById(
+            'kt_td_picker_date_only_input').value;
+        document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
+        document.getElementById('customer_form2').value = document.getElementById('customer').value;
+        document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
+        var customerId = document.getElementById('customer_form2').value;
+        var cash = document.getElementById('cash').value;
+        var transfer = document.getElementById('transfer').value;
+        var grandTotal = document.getElementById('grandTotal').value;
 
-            if (paymentMethod === 'transfer') {
-                transferDiv.style.display = 'block';
-            } else if (paymentMethod === 'cash') {
-                cashDiv.style.display = 'block';
-            } else if (paymentMethod === 'split') {
-                transferDiv.style.display = 'block';
-                cashDiv.style.display = 'block';
-            }
+        cash = parseInt(cash.replace(/[^0-9.-]+/g, '')) || 0;
+        transfer = parseInt(transfer.replace(/[^0-9.-]+/g, '')) || 0;
 
-            // Recalculate grand total when payment method changes
-            calculateTotal();
-        }
+        // Disable submit buttons to prevent double submission
+        const submitButtons = document.querySelectorAll('button[type="button"]');
+        submitButtons.forEach(button => {
+            button.disabled = true;
+        });
 
-        // Call the function initially to handle the default state of the form
-        togglePaymentFields();
-
-        // Attach event listeners to the input fields to trigger the calculation
-        document.getElementById('bayar').addEventListener('input', calculateTotal);
-        document.getElementById('transfer').addEventListener('input', calculateTotal);
-        document.getElementById('cash').addEventListener('input', calculateTotal);
-
-        function submitForms() {
-            // Copy values from form1 to form2 hidden inputs
-            document.getElementById('transaction_date_form2').value = document.getElementById(
-                'kt_td_picker_date_only_input').value;
-            document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
-            document.getElementById('customer_form2').value = document.getElementById('customer').value;
-            document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
-            var customerId = document.getElementById('customer_form2').value;
-            var cash = document.getElementById('cash').value;
-            var transfer = document.getElementById('transfer').value;
-            var grandTotal = document.getElementById('grandTotal').value;
-
-            cash = parseInt(cash.replace(/[^0-9.-]+/g, '')) || 0;
-            transfer = parseInt(transfer.replace(/[^0-9.-]+/g, '')) || 0;
-
-            if (cash < grandTotal || transfer < grandTotal || (cash + transfer) < grandTotal) {
-                $.ajax({
-                    url: '/check-customer-status', // Update the URL to your Laravel route
-                    method: 'GET',
-                    data: {
-                        customer_id: customerId
-                    },
-                    success: function(response) {
-                        if (response.status === 'not_piutang') {
-                            document.getElementById('form2').submit();
-                        } else {
-                            $('#passwordModal').modal('show');
-                        }
-                    },
-                    error: function(error) {
-                        console.error('Error checking customer status:', error);
-                    }
-                });
-            } else {
-                document.getElementById('form2').submit();
-            }
-        }
-
-        function checkMasterUserPassword() {
-            var userId = document.getElementById('user_master').value;
-            var masterUserPassword = document.getElementById('masterUserPassword').value;
-
-            // Make an AJAX request to validate the master user's password
+        if (cash < grandTotal || transfer < grandTotal || (cash + transfer) < grandTotal) {
+            showLoading(); // Show loading overlay
             $.ajax({
-                url: '/validate-master-password', // Update the URL to your Laravel route
-                method: 'POST',
+                url: '/check-customer-status', // Update the URL to your Laravel route
+                method: 'GET',
                 data: {
-                    user_id: userId,
-                    password: masterUserPassword
-                },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    customer_id: customerId
                 },
                 success: function(response) {
-                    if (response.status === 'success') {
-                        // Password is correct, submit form2
+                    if (response.status === 'not_piutang') {
                         document.getElementById('form2').submit();
                     } else {
-                        // Password is incorrect, show an error message
-                        alert('Invalid Master User Password. Please try again.');
+                        hideLoading(); // Hide loading overlay if showing modal
+                        $('#passwordModal').modal('show');
+                        // Re-enable buttons if showing modal
+                        submitButtons.forEach(button => {
+                            button.disabled = false;
+                        });
                     }
                 },
                 error: function(error) {
-                    console.error('Error validating master user password:', error);
+                    console.error('Error checking customer status:', error);
+                    hideLoading(); // Hide loading overlay on error
+                    // Re-enable buttons on error
+                    submitButtons.forEach(button => {
+                        button.disabled = false;
+                    });
                 }
             });
-        }
-
-        // function draft forms add value status is draft
-        function draftForms() {
-            // Copy values from form1 to form2 hidden inputs
-            document.getElementById('transaction_date_form2').value = document.getElementById(
-                'kt_td_picker_date_only_input').value;
-            document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
-            document.getElementById('customer_form2').value = document.getElementById('customer').value;
-            document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
-            document.getElementById('status_form2').value = 'draft';
-
-            // Submit form2
+        } else {
+            showLoading(); // Show loading overlay
             document.getElementById('form2').submit();
         }
+    }
+
+    function checkMasterUserPassword() {
+        var userId = document.getElementById('user_master').value;
+        var masterUserPassword = document.getElementById('masterUserPassword').value;
+
+        // Show loading overlay
+        showLoading();
+
+        // Disable submit button
+        document.querySelector('#passwordModal button[type="button"]').disabled = true;
+
+        // Make an AJAX request to validate the master user's password
+        $.ajax({
+            url: '/validate-master-password', // Update the URL to your Laravel route
+            method: 'POST',
+            data: {
+                user_id: userId,
+                password: masterUserPassword
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Password is correct, submit form2
+                    document.getElementById('form2').submit();
+                } else {
+                    // Password is incorrect, show an error message
+                    hideLoading();
+                    alert('Invalid Master User Password. Please try again.');
+                    // Re-enable submit button
+                    document.querySelector('#passwordModal button[type="button"]').disabled = false;
+                }
+            },
+            error: function(error) {
+                console.error('Error validating master user password:', error);
+                hideLoading();
+                // Re-enable submit button
+                document.querySelector('#passwordModal button[type="button"]').disabled = false;
+            }
+        });
+    }
+
+    // function draft forms add value status is draft
+    function draftForms() {
+        // Copy values from form1 to form2 hidden inputs
+        document.getElementById('transaction_date_form2').value = document.getElementById(
+            'kt_td_picker_date_only_input').value;
+        document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
+        document.getElementById('customer_form2').value = document.getElementById('customer').value;
+        document.getElementById('user_id_form2').value = document.getElementById('user_id').value;
+        document.getElementById('status_form2').value = 'draft';
+
+        // Disable submit buttons to prevent double submission
+        const submitButtons = document.querySelectorAll('button[type="button"]');
+        submitButtons.forEach(button => {
+            button.disabled = true;
+        });
+
+        // Show loading overlay
+        showLoading();
+
+        // Submit form2
+        document.getElementById('form2').submit();
+    }
 </script>
 
 {{-- Datepicker --}}

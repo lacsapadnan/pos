@@ -264,18 +264,15 @@ class SellController extends Controller
                 // delete all purchase cart
                 SellCart::where('cashier_id', auth()->id())->delete();
 
-                // Handle cashflow using service - only if payment was made (not for piutang/credit sales)
-                if ($status !== 'piutang' && $request->payment_method) {
-                    $this->cashflowService->handleSalePayment(
-                        warehouseId: auth()->user()->warehouse_id,
-                        orderNumber: $sell->order_number,
-                        customerName: $customer->name,
-                        paymentMethod: $request->payment_method,
-                        cash: $cash,
-                        transfer: $transfer,
-                        change: $sell->change
-                    );
-                }
+                $this->cashflowService->handleSalePayment(
+                    warehouseId: auth()->user()->warehouse_id,
+                    orderNumber: $sell->order_number,
+                    customerName: $customer->name,
+                    paymentMethod: $request->payment_method,
+                    cash: $cash,
+                    transfer: $transfer,
+                    change: $sell->change
+                );
             }
 
             // Commit all database operations before attempting to print
