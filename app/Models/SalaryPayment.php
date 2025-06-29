@@ -110,7 +110,7 @@ class SalaryPayment extends Model
         $this->monthly_salary = $this->salarySetting->monthly_salary;
 
         // Get attendance data for the period
-        $attendances = Attendance::where('user_id', $this->employee->user_id)
+        $attendances = Attendance::where('employee_id', $this->employee->id)
             ->whereBetween('check_in', [$this->period_start, $this->period_end])
             ->get();
 

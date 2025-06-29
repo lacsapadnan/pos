@@ -214,10 +214,7 @@
             const periodStart = $('input[name="period_start"]').val();
             const periodEnd = $('input[name="period_end"]').val();
 
-            console.log('loadCashAdvances called with:', { employeeId, periodStart, periodEnd });
-
             if (!employeeId || !periodStart || !periodEnd) {
-                console.log('Missing required fields');
                 return;
             }
 
@@ -239,12 +236,7 @@
                     period_start: periodStart,
                     period_end: periodEnd
                 },
-                beforeSend: function(xhr) {
-                    console.log('Making AJAX request to:', window.location.origin + '/cash-advances/api/data');
-                    console.log('Request headers:', xhr.getAllResponseHeaders());
-                },
                 success: function(response) {
-                    console.log('AJAX success:', response);
                     $('#loading_cash_advances').hide();
 
                     if (!response.data || response.data.length === 0) {
@@ -252,7 +244,7 @@
                         return;
                     }
 
-                    let html = '';
+                    let html = '<div class="row">';
                     response.data.forEach(function(item) {
                         const amountFormatted = new Intl.NumberFormat('id-ID', {
                             style: 'currency',
@@ -270,29 +262,32 @@
                         const isSelected = existingCashAdvanceIds.includes(item.id);
 
                         html += `
-                            <div class="mb-3 form-check">
-                                <input class="form-check-input" type="checkbox"
-                                    name="cash_advance_ids[]"
-                                    value="${item.id}"
-                                    id="cash_advance_${item.id}"
-                                    ${isSelected ? 'checked' : ''}>
-                                <label class="form-check-label" for="cash_advance_${item.id}">
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-2">
-                                            ${item.type === 'direct' ? 'Kasbon Langsung' : 'Cicilan ke-' + item.installment_number}:
-                                            ${amountFormatted}
-                                        </span>
-                                        ${statusBadge}
-                                    </div>
-                                    <small class="text-muted d-block">
-                                        ${item.type === 'direct' ?
-                                            'Tanggal Pinjam: ' + item.advance_date :
-                                            'Jatuh Tempo: ' + item.due_date}
-                                    </small>
-                                </label>
+                            <div class="mb-3 col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                        name="cash_advance_ids[]"
+                                        value="${item.id}"
+                                        id="cash_advance_${item.id}"
+                                        ${isSelected ? 'checked' : ''}>
+                                    <label class="form-check-label" for="cash_advance_${item.id}">
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">
+                                                ${item.type === 'direct' ? 'Kasbon Langsung' : 'Cicilan ke-' + item.installment_number}:
+                                                ${amountFormatted}
+                                            </span>
+                                            ${statusBadge}
+                                        </div>
+                                        <small class="text-muted d-block">
+                                            ${item.type === 'direct' ?
+                                                'Tanggal Pinjam: ' + item.advance_date :
+                                                'Jatuh Tempo: ' + item.due_date}
+                                        </small>
+                                    </label>
+                                </div>
                             </div>
                         `;
                     });
+                    html += '</div>';
 
                     $('#cash_advance_items').html(html);
                 },

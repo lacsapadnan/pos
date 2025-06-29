@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Salary;
 use App\Models\Employee;
 use App\Models\Warehouse;
-use App\Models\User;
-use App\Http\Requests\SalaryStoreRequest;
-use App\Http\Requests\SalaryUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -181,7 +178,7 @@ class SalaryController extends Controller
      */
     public function show(string $id)
     {
-        $salary = SalaryPayment::with(['employee.user', 'warehouse', 'calculatedBy', 'approvedBy'])->findOrFail($id);
+        $salary = SalaryPayment::with(['employee', 'warehouse', 'calculatedBy', 'approvedBy'])->findOrFail($id);
         return view('pages.salary.show', compact('salary'));
     }
 
@@ -350,10 +347,70 @@ class SalaryController extends Controller
             return redirect()->back()->with('error', 'Hanya data gaji yang sudah disetujui yang dapat ditandai sudah dibayar.');
         }
 
-        $salary->status = 'paid';
-        $salary->paid_at = now();
-        $salary->save();
+        DB::beginTransaction();
+        try {
+            // Mark salary as paid
+            $salary->status = 'paid';
+            $salary->paid_at = now();
+            $salary->save();
 
-        return redirect()->back()->with('success', 'Data gaji berhasil ditandai sudah dibayar.');
+            // Update cash advance payments if any were deducted
+            if (!empty($salary->cash_advance_ids)) {
+                $selectedDeductions = array_map('intval', $salary->cash_advance_ids);
+
+                // Handle direct cash advances
+                $directAdvances = CashAdvance::where('employee_id', $salary->employee_id)
+                    ->where('status', 'approved')
+                    ->where('type', 'direct')
+                    ->whereIn('id', $selectedDeductions)
+                    ->get();
+
+                foreach ($directAdvances as $cashAdvance) {
+                    $remainingAmount = $cashAdvance->amount - $cashAdvance->paid_amount;
+                    if ($remainingAmount > 0) {
+                        // Update paid amount and status
+                        $cashAdvance->paid_amount = $cashAdvance->amount;
+                        $cashAdvance->status = 'completed';
+                        $cashAdvance->save();
+                    }
+                }
+
+                // Handle installment payments
+                $installmentPayments = CashAdvancePayment::whereHas('cashAdvance', function ($query) use ($salary) {
+                    $query->where('employee_id', $salary->employee_id)
+                        ->where('status', 'approved')
+                        ->where('type', 'installment');
+                })
+                    ->where('status', 'pending')
+                    ->whereIn('id', $selectedDeductions)
+                    ->get();
+
+                foreach ($installmentPayments as $payment) {
+                    // Mark payment as paid
+                    $payment->status = 'paid';
+                    $payment->payment_date = now();
+                    $payment->processed_by = auth()->id();
+                    $payment->save();
+
+                    // Update cash advance paid amount
+                    $cashAdvance = $payment->cashAdvance;
+                    $cashAdvance->paid_amount += $payment->amount;
+
+                    // Check if all payments are completed
+                    $remainingPayments = $cashAdvance->payments()->where('status', 'pending')->count();
+                    if ($remainingPayments == 0) {
+                        $cashAdvance->status = 'completed';
+                    }
+
+                    $cashAdvance->save();
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Data gaji berhasil ditandai sudah dibayar dan kasbon terkait telah diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }
