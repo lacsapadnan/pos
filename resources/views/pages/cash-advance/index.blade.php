@@ -360,14 +360,16 @@
                             `.replace(/:id/g, data);
                             @endcan
 
-                            @can('hapus kasbon')
-                            actions += `
-                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashAdvance(':id')">
-                                    <i class="ki-solid ki-trash"></i> Hapus
-                                </button>
-                            `.replace(':id', data);
-                            @endcan
+
                         }
+
+                        @can('hapus kasbon')
+                        actions += `
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCashAdvance(':id')">
+                                <i class="ki-solid ki-trash"></i> Hapus
+                            </button>
+                        `.replace(':id', data);
+                        @endcan
 
                         return actions;
                     }
