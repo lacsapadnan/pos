@@ -68,7 +68,7 @@ class IncomeStatementController extends Controller
         $warehouse_id = $request->input('warehouse');
 
         // Check if user can see all income statement data
-        if (!auth()->user()->can('lihat semua laba rugi')) {
+        if (!auth()->user()->hasPermissionTo('lihat semua laba rugi')) {
             // Restrict to user's own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
@@ -356,53 +356,53 @@ class IncomeStatementController extends Controller
 
     private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id)
     {
-        // Get total expenses using raw SQL, excluding "LAIN LAIN" category
-        $totalQuery = DB::table('kas as k')
-            ->leftJoin('kas_expense_items as kei', 'k.kas_expense_item_id', '=', 'kei.id')
-            ->select(DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_expenses'))
-            ->where('k.type', 'Kas Keluar')
-            ->where(function ($query) {
-                $query->whereNull('kei.name')
-                    ->orWhere('kei.name', '!=', 'LAIN LAIN');
-            })
-            ->whereBetween('k.date', [$fromDate, $endDate]);
-
-        if ($warehouse_id) {
-            $totalQuery->where('k.warehouse_id', $warehouse_id);
-        }
-
-        $totalExpenses = floatval($totalQuery->first()->total_expenses ?? 0);
-
-        // Get expenses by category using optimized query, excluding "LAIN LAIN"
-        $categoryQuery = DB::table('kas as k')
+        // First, let's get ALL expenses to see what we have
+        $allExpensesQuery = DB::table('kas as k')
             ->leftJoin('kas_expense_items as kei', 'k.kas_expense_item_id', '=', 'kei.id')
             ->select(
-                DB::raw('COALESCE(kei.name, "Lainnya") as category'),
-                DB::raw('SUM(CAST(k.amount as DECIMAL(15,2))) as total_amount'),
-                DB::raw('COUNT(*) as count')
+                'k.amount',
+                'kei.name as category_name',
+                'k.kas_expense_item_id'
             )
             ->where('k.type', 'Kas Keluar')
-            ->where(function ($query) {
-                $query->whereNull('kei.name')
-                    ->orWhere('kei.name', '!=', 'LAIN LAIN');
-            })
             ->whereBetween('k.date', [$fromDate, $endDate]);
 
         if ($warehouse_id) {
-            $categoryQuery->where('k.warehouse_id', $warehouse_id);
+            $allExpensesQuery->where('k.warehouse_id', $warehouse_id);
         }
 
-        $expensesByCategory = $categoryQuery
-            ->groupBy('category')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'category' => $item->category,
-                    'total_amount' => floatval($item->total_amount),
-                    'count' => intval($item->count)
-                ];
-            })
-            ->toArray();
+        $allExpenses = $allExpensesQuery->get();
+
+        // Filter out "LAIN LAIN" and "LAIN-LAIN" categories
+        $filteredExpenses = $allExpenses->filter(function ($expense) {
+            // Include if:
+            // 1. No category assigned (kas_expense_item_id is null)
+            // 2. Category name is not "LAIN LAIN" or "LAIN-LAIN" (case insensitive)
+            if (is_null($expense->kas_expense_item_id) || is_null($expense->category_name)) {
+                return true;
+            }
+
+            $categoryUpper = strtoupper($expense->category_name);
+            return $categoryUpper !== 'LAIN LAIN' && $categoryUpper !== 'LAIN-LAIN';
+        });
+
+        // Calculate total
+        $totalExpenses = $filteredExpenses->sum(function ($expense) {
+            return floatval($expense->amount ?? 0);
+        });
+
+        // Group by category
+        $expensesByCategory = $filteredExpenses->groupBy(function ($expense) {
+            return $expense->category_name ?? 'Lainnya';
+        })->map(function ($categoryExpenses, $categoryName) {
+            return [
+                'category' => $categoryName,
+                'total_amount' => $categoryExpenses->sum(function ($expense) {
+                    return floatval($expense->amount ?? 0);
+                }),
+                'count' => $categoryExpenses->count()
+            ];
+        })->values()->toArray();
 
         return [
             'total_operating_expenses' => $totalExpenses,

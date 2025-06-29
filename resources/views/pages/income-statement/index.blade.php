@@ -239,17 +239,7 @@
             </div>
         </div>
 
-        <!-- Other Income Section -->
-        <div class="income-statement-section">
-            <div class="section-title">PENDAPATAN LAIN-LAIN</div>
-            <div id="otherIncomeSection">
-                <!-- Other income will be populated here -->
-            </div>
-            <div class="financial-item total-line">
-                <span><strong>Total Pendapatan Lain-lain</strong></span>
-                <span class="currency" id="totalOtherIncome"><strong>Rp 0</strong></span>
-            </div>
-        </div>
+        <!-- Other Income Section - REMOVED as per user request -->
 
         <!-- Net Income Section -->
         <div class="income-statement-section" style="background: #2c3e50; color: white;">
@@ -571,18 +561,7 @@
             $('#expensesSection').html(expensesHtml);
             $('#totalExpenses').text(formatCurrency(data.operating_expenses.total_operating_expenses));
 
-            // Update other income section
-            let otherIncomeHtml = '';
-            data.other_income.income_by_category.forEach(income => {
-                otherIncomeHtml += `
-                    <div class="financial-item">
-                        <span>${income.category}</span>
-                        <span class="currency">${formatCurrency(income.total_amount)}</span>
-                    </div>
-                `;
-            });
-            $('#otherIncomeSection').html(otherIncomeHtml);
-            $('#totalOtherIncome').text(formatCurrency(data.other_income.total_other_income));
+            // Other income section removed as per user request
 
             // Update net income
             const netIncomeClass = data.net_income >= 0 ? 'profit-positive' : 'profit-negative';
@@ -671,14 +650,6 @@
                 incomeStatementData.push([expense.category, formatCurrency(expense.total_amount)]);
             });
             incomeStatementData.push(['Total Beban Operasional', formatCurrency(reportData.operating_expenses.total_operating_expenses)]);
-            incomeStatementData.push(['']);
-            incomeStatementData.push(['PENDAPATAN LAIN-LAIN']);
-
-            // Add other income
-            reportData.other_income.income_by_category.forEach(income => {
-                incomeStatementData.push([income.category, formatCurrency(income.total_amount)]);
-            });
-            incomeStatementData.push(['Total Pendapatan Lain-lain', formatCurrency(reportData.other_income.total_other_income)]);
             incomeStatementData.push(['']);
             incomeStatementData.push(['LABA BERSIH', formatCurrency(reportData.net_income)]);
 
