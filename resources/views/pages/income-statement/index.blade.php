@@ -104,6 +104,7 @@
                     <select class="form-select" data-control="select2" data-placeholder="Pilih Gudang"
                         id="warehouseFilter">
                         <option value="">Semua Gudang</option>
+                        <option value="all_branches">Semua Cabang</option>
                         @foreach ($warehouses as $warehouse)
                         <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
                         @endforeach
@@ -413,14 +414,19 @@
             $('#exportReport').hide();
             $('#reportContent').hide();
 
+            // Check if "Semua Cabang" is selected
+            const isAllBranches = warehouse === 'all_branches';
+            const warehouseId = isAllBranches ? '' : warehouse;
+
             $.ajax({
                 url: '{{ route('api.income-statement') }}',
                 type: 'GET',
                 data: {
                     from_date: fromDate,
                     to_date: toDate,
-                    warehouse: warehouse,
-                    user_id: user
+                    warehouse: warehouseId,
+                    user_id: user,
+                    all_branches: isAllBranches
                 },
                 timeout: 300000, // 5 minutes timeout
                 success: function(response) {
@@ -487,6 +493,10 @@
             const warehouse = $('#warehouseFilter').val();
             const user = $('#userFilter').val();
 
+            // Check if "Semua Cabang" is selected
+            const isAllBranches = warehouse === 'all_branches';
+            const warehouseId = isAllBranches ? '' : warehouse;
+
             // Show loading state
             const clearBtn = $('#clearCache');
             clearBtn.attr('disabled', true);
@@ -499,8 +509,9 @@
                 data: {
                     from_date: fromDate,
                     to_date: toDate,
-                    warehouse: warehouse,
+                    warehouse: warehouseId,
                     user_id: user,
+                    all_branches: isAllBranches,
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {

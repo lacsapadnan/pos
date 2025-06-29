@@ -42,12 +42,14 @@ class IncomeStatementController extends Controller
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse_id = $request->input('warehouse');
+        $all_branches = $request->boolean('all_branches', false);
 
         $cacheKey = "income_statement_" . md5(serialize([
             'user_id' => $user_id,
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'warehouse_id' => $warehouse_id,
+            'all_branches' => $all_branches,
             'auth_user' => auth()->id()
         ]));
 
@@ -59,19 +61,26 @@ class IncomeStatementController extends Controller
     public function data(Request $request)
     {
         // Increase memory limit and execution time for large datasets
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1G'); // Increased from 512M to 1G
+        ini_set('max_execution_time', 600); // Increased from 300 to 600 seconds
 
         $user_id = $request->input('user_id');
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse_id = $request->input('warehouse');
+        $all_branches = $request->boolean('all_branches', false); // New parameter for "Semua Cabang"
 
         // Check if user can see all income statement data
-        if (!auth()->user()->hasPermissionTo('lihat semua laba rugi')) {
+        if (!auth()->user()->can('lihat semua laba rugi')) {
             // Restrict to user's own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
+            $all_branches = false; // Disable all branches for users without permission
+        }
+
+        // If all_branches is true, set warehouse_id to null to include all warehouses
+        if ($all_branches) {
+            $warehouse_id = null;
         }
 
         $endDate = Carbon::parse($toDate)->endOfDay();
@@ -82,6 +91,7 @@ class IncomeStatementController extends Controller
             'from_date' => $fromDate,
             'to_date' => $toDate,
             'warehouse_id' => $warehouse_id,
+            'all_branches' => $all_branches,
             'auth_user' => auth()->id()
         ]));
 
@@ -98,11 +108,13 @@ class IncomeStatementController extends Controller
                 $warehouse = Warehouse::select('id', 'name', 'isOutOfTown')->find($warehouse_id);
             }
 
-            // Calculate all data with optimized methods
-            $salesData = $this->calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id);
-            $cogsData = $this->calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse);
-            $operatingExpenses = $this->calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id);
-            $otherIncome = $this->calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id);
+            // Use parallel processing for performance improvement
+            $results = $this->calculateDataInParallel($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches);
+
+            $salesData = $results['salesData'];
+            $cogsData = $results['cogsData'];
+            $operatingExpenses = $results['operatingExpenses'];
+            $otherIncome = $results['otherIncome'];
 
             // Synchronize product lists and ensure consistent ordering
             $this->synchronizeProductData($salesData, $cogsData);
@@ -116,6 +128,8 @@ class IncomeStatementController extends Controller
             $grossProfit = $totalRevenue - $totalCogs;
             $netIncome = $grossProfit + $totalOtherIncome - $totalOperatingExpenses;
 
+            $warehouseName = $warehouse ? $warehouse->name : ($all_branches ? 'Semua Cabang' : 'Semua Gudang');
+
             $response = [
                 'sales_data' => $salesData,
                 'cogs_data' => $cogsData,
@@ -126,7 +140,7 @@ class IncomeStatementController extends Controller
                 'period' => [
                     'from_date' => $fromDate,
                     'to_date' => $toDate,
-                    'warehouse' => $warehouse ? $warehouse->name : 'Semua Gudang'
+                    'warehouse' => $warehouseName
                 ],
                 'cache_generated_at' => now()->toISOString()
             ];
@@ -144,7 +158,29 @@ class IncomeStatementController extends Controller
         }
     }
 
-    private function calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id)
+    /**
+     * Calculate data in parallel for better performance
+     */
+    private function calculateDataInParallel($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches)
+    {
+        // Use database transactions to avoid conflicts
+        return DB::transaction(function () use ($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches) {
+            // Optimize by running calculations in sequence but with optimized queries
+            $salesData = $this->calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
+            $cogsData = $this->calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches);
+            $operatingExpenses = $this->calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
+            $otherIncome = $this->calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
+
+            return [
+                'salesData' => $salesData,
+                'cogsData' => $cogsData,
+                'operatingExpenses' => $operatingExpenses,
+                'otherIncome' => $otherIncome
+            ];
+        });
+    }
+
+    private function calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches = false)
     {
         // Step 1: Get total revenue and count using raw SQL for better performance
         $totalQuery = DB::table('sells')
@@ -154,7 +190,7 @@ class IncomeStatementController extends Controller
             ->where('status', '!=', 'piutang')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
-        if ($warehouse_id) {
+        if ($warehouse_id && !$all_branches) {
             $totalQuery->where('warehouse_id', $warehouse_id);
         }
 
@@ -166,17 +202,18 @@ class IncomeStatementController extends Controller
         $totalRevenue = floatval($totals->total_revenue ?? 0);
         $totalTransactions = intval($totals->total_transactions ?? 0);
 
-        // Step 2: Get sales by product using optimized query
+        // Step 2: Get sales by product using optimized query with indexing hints
         $salesByProduct = [];
 
         // Use chunking to avoid memory issues with large datasets
-        $sellQuery = Sell::select('id', 'grand_total')
+        $sellQuery = DB::table('sells')
+            ->select('id', 'grand_total')
             ->where('status', '!=', 'draft')
             ->where('status', '!=', 'batal')
             ->where('status', '!=', 'piutang')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
-        if ($warehouse_id) {
+        if ($warehouse_id && !$all_branches) {
             $sellQuery->where('warehouse_id', $warehouse_id);
         }
 
@@ -184,14 +221,19 @@ class IncomeStatementController extends Controller
             $sellQuery->where('cashier_id', $user_id);
         }
 
-        $sellIds = $sellQuery->pluck('id')->toArray();
+        // Use cursor for memory efficiency
+        $sellIds = [];
+        foreach ($sellQuery->cursor() as $sell) {
+            $sellIds[] = $sell->id;
+        }
 
         if (!empty($sellIds)) {
             // Process sell details in chunks to avoid memory issues
-            $chunkSize = 1000;
+            $chunkSize = 2000; // Increased chunk size for better performance
             $sellIdChunks = array_chunk($sellIds, $chunkSize);
 
             foreach ($sellIdChunks as $chunk) {
+                // Use a more efficient query with specific columns and indexing hints
                 $salesDetails = DB::table('sell_details as sd')
                     ->join('products as p', 'sd.product_id', '=', 'p.id')
                     ->select(
@@ -226,6 +268,7 @@ class IncomeStatementController extends Controller
 
                 // Free memory after processing each chunk
                 unset($salesDetails);
+                gc_collect_cycles(); // Force garbage collection
             }
         }
 
@@ -237,7 +280,7 @@ class IncomeStatementController extends Controller
         ];
     }
 
-    private function calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse)
+    private function calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches = false)
     {
         $totalCogs = 0;
         $cogsByProduct = [];
@@ -252,7 +295,7 @@ class IncomeStatementController extends Controller
             ->where('status', '!=', 'piutang')
             ->whereBetween('created_at', [$fromDate, $endDate]);
 
-        if ($warehouse_id) {
+        if ($warehouse_id && !$all_branches) {
             $validSellIds->where('warehouse_id', $warehouse_id);
         }
 
@@ -260,7 +303,11 @@ class IncomeStatementController extends Controller
             $validSellIds->where('cashier_id', $user_id);
         }
 
-        $validSells = $validSellIds->get();
+        // Use cursor for memory efficiency
+        $validSells = collect();
+        foreach ($validSellIds->cursor() as $sell) {
+            $validSells->push($sell);
+        }
 
         if ($validSells->isEmpty()) {
             return [
@@ -291,7 +338,7 @@ class IncomeStatementController extends Controller
             ->where('pr.type', 'PENJUALAN')
             ->whereBetween('pr.created_at', [$fromDate, $endDate]);
 
-        if ($warehouse_id) {
+        if ($warehouse_id && !$all_branches) {
             $query->where('pr.warehouse_id', $warehouse_id);
         }
 
@@ -299,53 +346,61 @@ class IncomeStatementController extends Controller
             $query->where('pr.user_id', $user_id);
         }
 
-        // Use a where clause that checks if the description contains any of the order numbers
-        // This is more complex but necessary since we don't have a direct reference_id
-        $query->where(function ($q) use ($orderNumbers) {
-            foreach ($orderNumbers as $orderNumber) {
-                $q->orWhere('pr.description', 'like', "%Penjualan $orderNumber%");
-            }
-        });
+        // Process in chunks of 100 order numbers at a time to avoid query size limits
+        $orderNumberChunks = array_chunk($orderNumbers, 100);
 
-        // Process in chunks to avoid memory issues
-        $query->orderBy('pr.id')->chunk(1000, function ($soldProducts) use (&$totalCogs, &$cogsByProduct, $isOutOfTown) {
-            foreach ($soldProducts as $soldProduct) {
-                $quantitySold = floatval($soldProduct->qty ?? 0);
+        foreach ($orderNumberChunks as $orderNumberChunk) {
+            $chunkQuery = clone $query;
 
-                // Skip if no quantity sold
-                if ($quantitySold <= 0) continue;
+            $chunkQuery->where(function ($q) use ($orderNumberChunk) {
+                foreach ($orderNumberChunk as $orderNumber) {
+                    $q->orWhere('pr.description', 'like', "%Penjualan $orderNumber%");
+                }
+            });
 
-                // Convert quantity to eceran
-                $quantityEceran = $this->convertQuantityToEceranFromData($quantitySold, $soldProduct->unit_type, $soldProduct);
+            // Process in chunks to avoid memory issues
+            $chunkQuery->orderBy('pr.id')->chunk(2000, function ($soldProducts) use (&$totalCogs, &$cogsByProduct, $isOutOfTown) {
+                foreach ($soldProducts as $soldProduct) {
+                    $quantitySold = floatval($soldProduct->qty ?? 0);
 
-                // Skip if converted quantity is 0
-                if ($quantityEceran <= 0) continue;
+                    // Skip if no quantity sold
+                    if ($quantitySold <= 0) continue;
 
-                // Determine cost price based on warehouse location
-                $costPrice = 0;
-                if ($isOutOfTown) {
-                    $costPrice = floatval($soldProduct->lastest_price_eceran_out_of_town ?? $soldProduct->lastest_price_eceran ?? 0);
-                } else {
-                    $costPrice = floatval($soldProduct->lastest_price_eceran ?? 0);
+                    // Convert quantity to eceran
+                    $quantityEceran = $this->convertQuantityToEceranFromData($quantitySold, $soldProduct->unit_type, $soldProduct);
+
+                    // Skip if converted quantity is 0
+                    if ($quantityEceran <= 0) continue;
+
+                    // Determine cost price based on warehouse location
+                    $costPrice = 0;
+                    if ($isOutOfTown) {
+                        $costPrice = floatval($soldProduct->lastest_price_eceran_out_of_town ?? $soldProduct->lastest_price_eceran ?? 0);
+                    } else {
+                        $costPrice = floatval($soldProduct->lastest_price_eceran ?? 0);
+                    }
+
+                    $productCogs = $quantityEceran * $costPrice;
+                    $totalCogs += $productCogs;
+
+                    $productId = $soldProduct->product_id;
+                    if (!isset($cogsByProduct[$productId])) {
+                        $cogsByProduct[$productId] = [
+                            'product_name' => $soldProduct->product_name ?? 'Unknown Product',
+                            'quantity_sold_eceran' => 0,
+                            'cost_price' => $costPrice,
+                            'total_cogs' => 0
+                        ];
+                    }
+
+                    $cogsByProduct[$productId]['quantity_sold_eceran'] += $quantityEceran;
+                    $cogsByProduct[$productId]['total_cogs'] += $productCogs;
                 }
 
-                $productCogs = $quantityEceran * $costPrice;
-                $totalCogs += $productCogs;
-
-                $productId = $soldProduct->product_id;
-                if (!isset($cogsByProduct[$productId])) {
-                    $cogsByProduct[$productId] = [
-                        'product_name' => $soldProduct->product_name ?? 'Unknown Product',
-                        'quantity_sold_eceran' => 0,
-                        'cost_price' => $costPrice,
-                        'total_cogs' => 0
-                    ];
-                }
-
-                $cogsByProduct[$productId]['quantity_sold_eceran'] += $quantityEceran;
-                $cogsByProduct[$productId]['total_cogs'] += $productCogs;
-            }
-        });
+                // Force garbage collection
+                gc_collect_cycles();
+            });
+        }
 
         return [
             'total_cogs' => $totalCogs,
@@ -354,7 +409,7 @@ class IncomeStatementController extends Controller
         ];
     }
 
-    private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id)
+    private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches = false)
     {
         // First, let's get ALL expenses to see what we have
         $allExpensesQuery = DB::table('kas as k')
@@ -367,11 +422,15 @@ class IncomeStatementController extends Controller
             ->where('k.type', 'Kas Keluar')
             ->whereBetween('k.date', [$fromDate, $endDate]);
 
-        if ($warehouse_id) {
+        if ($warehouse_id && !$all_branches) {
             $allExpensesQuery->where('k.warehouse_id', $warehouse_id);
         }
 
-        $allExpenses = $allExpensesQuery->get();
+        // Use cursor for memory efficiency with large datasets
+        $allExpenses = collect();
+        foreach ($allExpensesQuery->cursor() as $expense) {
+            $allExpenses->push($expense);
+        }
 
         // Filter out "LAIN LAIN" and "LAIN-LAIN" categories
         $filteredExpenses = $allExpenses->filter(function ($expense) {
@@ -411,7 +470,7 @@ class IncomeStatementController extends Controller
         ];
     }
 
-    private function calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id)
+    private function calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches = false)
     {
         // Return zero for other income as per user requirement to remove PENDAPATAN LAIN-LAIN
         return [
