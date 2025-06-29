@@ -61,7 +61,7 @@ class ReportService
     private function normalizeFilters(array $filters): array
     {
         return [
-            'from_date' => $filters['from_date'] ?? now()->subDay()->format('Y-m-d'),
+            'from_date' => $filters['from_date'] ?? now()->format('Y-m-d'),
             'to_date' => $filters['to_date'] ?? now()->format('Y-m-d'),
             'warehouse_id' => $filters['warehouse_id'] ?? null,
             'user_id' => $filters['user_id'] ?? null,

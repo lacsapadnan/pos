@@ -62,7 +62,7 @@ class ReportRequest extends FormRequest
     {
         // Set default dates if not provided
         if (!$this->filled('from_date')) {
-            $this->merge(['from_date' => now()->subDay()->format('Y-m-d')]);
+            $this->merge(['from_date' => now()->format('Y-m-d')]);
         }
 
         if (!$this->filled('to_date')) {
