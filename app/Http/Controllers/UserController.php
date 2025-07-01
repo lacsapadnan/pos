@@ -89,6 +89,10 @@ class UserController extends Controller
                 return 'Laba';
             }
 
+            if (strpos($permission->name, 'kas') !== false) {
+                return 'Kas';
+            }
+
             return count($parts) > 1 ? ucfirst($parts[1]) : ucfirst($parts[0]);
         });
 
