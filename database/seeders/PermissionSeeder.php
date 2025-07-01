@@ -51,6 +51,8 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'baca kas']);
         // Permission::create(['name' => 'update kas']);
         // Permission::create(['name' => 'hapus kas']);
+        Permission::create(['name' => 'item pendapatan kas']);
+        Permission::create(['name' => 'item pengeluaran kas']);
 
         // // CRUD inventory permissions
         // Permission::create(['name' => 'simpan inventory']);
@@ -125,10 +127,10 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'approve gaji']);
 
         // Attendance management permissions (for admin/supervisor)
-        Permission::create(['name' => 'kelola absensi']);
-        Permission::create(['name' => 'baca absensi']);
-        Permission::create(['name' => 'simpan absensi']);
-        Permission::create(['name' => 'update absensi']);
-        Permission::create(['name' => 'hapus absensi']);
+        // Permission::create(['name' => 'kelola absensi']);
+        // Permission::create(['name' => 'baca absensi']);
+        // Permission::create(['name' => 'simpan absensi']);
+        // Permission::create(['name' => 'update absensi']);
+        // Permission::create(['name' => 'hapus absensi']);
     }
 }

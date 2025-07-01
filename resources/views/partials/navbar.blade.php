@@ -421,6 +421,7 @@
                         </div>
                         <!--end:Menu item-->
 
+                        @can('item pendapatan kas')
                         <!--begin:Menu item-->
                         <div class="menu-item {{ request()->routeIs('kas-income-item.*') ? ' here' : '' }}">
                             <!--begin:Menu link-->
@@ -430,7 +431,8 @@
                             <!--end:Menu link-->
                         </div>
                         <!--end:Menu item-->
-
+                        @endcan
+                        @can('item pengeluaran kas')
                         <!--begin:Menu item-->
                         <div class="menu-item {{ request()->routeIs('kas-expense-item.*') ? ' here' : '' }}">
                             <!--begin:Menu link-->
