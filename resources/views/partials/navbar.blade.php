@@ -420,7 +420,7 @@
                             <!--end:Menu link-->
                         </div>
                         <!--end:Menu item-->
-
+                        @endcan
                         @can('item pendapatan kas')
                         <!--begin:Menu item-->
                         <div class="menu-item {{ request()->routeIs('kas-income-item.*') ? ' here' : '' }}">
