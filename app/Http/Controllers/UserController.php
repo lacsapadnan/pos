@@ -89,7 +89,7 @@ class UserController extends Controller
                 return 'Laba';
             }
 
-            if (strpos($permission->name, 'kas') !== false) {
+            if (strpos($permission->name, 'kas') !== false && strpos($permission->name, 'kasbon') === false) {
                 return 'Kas';
             }
 
