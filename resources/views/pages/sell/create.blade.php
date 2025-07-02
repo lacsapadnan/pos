@@ -271,13 +271,18 @@
                         <div class="mb-1" style="display: none;" id="transferDiv">
                             <label for="transfer" class="col-form-label">Transfer</label>
                             <input type="text" name="transfer" class="form-control" id="transfer"
-                                oninput="formatNumber(this); calculateTotal()" />
+                                oninput="formatNumber(this); handleSplitPaymentInput(this, 'transfer');"
+                                placeholder="Masukkan jumlah transfer" />
+                            <small class="form-text text-muted">Sistem akan otomatis menghitung sisa untuk cash</small>
                         </div>
 
                         <div class="mb-1" style="display: none;" id="cashDiv">
                             <label for="cash" class="col-form-label">Cash</label>
                             <input type="text" name="cash" class="form-control" id="cash"
-                                oninput="formatNumber(this); calculateTotal()" />
+                                oninput="formatNumber(this); handleSplitPaymentInput(this, 'cash');"
+                                placeholder="Masukkan jumlah cash" />
+                            <small class="form-text text-muted">Sistem akan otomatis menghitung sisa untuk
+                                transfer</small>
                         </div>
 
                         <div class="mb-1">
@@ -394,19 +399,81 @@
         } else if (paymentMethod === 'split') {
             transferDiv.style.display = 'block';
             cashDiv.style.display = 'block';
+            // Clear both fields when switching to split payment
+            document.getElementById('transfer').value = '';
+            document.getElementById('cash').value = '';
         }
 
         // Recalculate grand total when payment method changes
         calculateTotal();
     }
 
+    function handleSplitPaymentInput(inputElement, inputType) {
+        // Only handle auto-calculation for split payment
+        const paymentMethod = document.getElementsByName('payment_method')[0].value;
+        if (paymentMethod !== 'split') {
+            calculateTotal(); // Still calculate for non-split payments
+            return;
+        }
+
+        // Use subtotal as the base for calculation (this is the grand total we need to reach)
+        const subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const inputValue = parseFloat(inputElement.value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // Calculate remaining amount needed
+        const remainingAmount = Math.max(0, subtotal - inputValue);
+
+        // Debug: You can uncomment the line below to debug the calculation
+        // console.log('Subtotal:', subtotal, 'Input Value:', inputValue, 'Remaining:', remainingAmount);
+
+        if (inputValue > 0) {
+            if (inputType === 'transfer') {
+                // User entered transfer amount, calculate remaining for cash
+                const cashInput = document.getElementById('cash');
+
+                // Auto-fill cash with remaining amount
+                if (remainingAmount > 0) {
+                    // Format the number with thousand separators (commas)
+                    let formattedValue = remainingAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    cashInput.value = formattedValue;
+                } else if (inputValue >= subtotal) {
+                    // If transfer covers the full amount, clear cash
+                    cashInput.value = '';
+                }
+            } else if (inputType === 'cash') {
+                // User entered cash amount, calculate remaining for transfer
+                const transferInput = document.getElementById('transfer');
+
+                // Auto-fill transfer with remaining amount
+                if (remainingAmount > 0) {
+                    // Format the number with thousand separators (commas)
+                    let formattedValue = remainingAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    transferInput.value = formattedValue;
+                } else if (inputValue >= subtotal) {
+                    // If cash covers the full amount, clear transfer
+                    transferInput.value = '';
+                }
+            }
+        }
+
+        // Always recalculate totals after auto-fill
+        calculateTotal();
+    }
+
     // Call the function initially to handle the default state of the form
     togglePaymentFields();
 
+    // Calculate initial grand total
+    calculateTotal();
+
     // Attach event listeners to the input fields to trigger the calculation
     document.getElementById('bayar').addEventListener('input', calculateTotal);
-    document.getElementById('transfer').addEventListener('input', calculateTotal);
-    document.getElementById('cash').addEventListener('input', calculateTotal);
+    document.getElementById('transfer').addEventListener('input', function() {
+        // Don't call calculateTotal here since handleSplitPaymentInput will call it
+    });
+    document.getElementById('cash').addEventListener('input', function() {
+        // Don't call calculateTotal here since handleSplitPaymentInput will call it
+    });
 
     function submitForms() {
         // Copy values from form1 to form2 hidden inputs
