@@ -68,11 +68,14 @@ class IncomeStatementController extends Controller
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
         $warehouse_id = $request->input('warehouse');
-        $all_branches = $request->boolean('all_branches', false); // New parameter for "Semua Cabang"
 
-        // Check if user can see all income statement data
+        // Set default all_branches based on user role
+        $defaultAllBranches = auth()->user()->can('lihat semua laba rugi');
+        $all_branches = $request->boolean('all_branches', $defaultAllBranches);
+
+        // If user doesn't have permission to see all income statements
         if (!auth()->user()->can('lihat semua laba rugi')) {
-            // Restrict to user's own warehouse and user data
+            // Force use their own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
             $all_branches = false; // Disable all branches for users without permission
@@ -125,14 +128,19 @@ class IncomeStatementController extends Controller
             $totalOtherIncome = floatval($otherIncome['total_other_income'] ?? 0);
             $totalOperatingExpenses = floatval($operatingExpenses['total_operating_expenses'] ?? 0);
 
-            $grossProfit = $totalRevenue - $totalCogs;
-            $netIncome = $grossProfit + $totalOtherIncome - $totalOperatingExpenses;
+            // Fix: Properly calculate gross profit by subtracting COGS from revenue
+            $grossProfit = $totalRevenue - abs($totalCogs);
+            $netIncome = $grossProfit - $totalOperatingExpenses + $totalOtherIncome;
 
             $warehouseName = $warehouse ? $warehouse->name : ($all_branches ? 'Semua Cabang' : 'Semua Gudang');
 
             $response = [
                 'sales_data' => $salesData,
-                'cogs_data' => $cogsData,
+                'cogs_data' => [
+                    'total_cogs' => -abs($cogsData['total_cogs']), // Ensure COGS is negative
+                    'cogs_by_product' => $cogsData['cogs_by_product'],
+                    'is_out_of_town' => $cogsData['is_out_of_town'] ?? false
+                ],
                 'operating_expenses' => $operatingExpenses,
                 'other_income' => $otherIncome,
                 'gross_profit' => $grossProfit,
@@ -182,231 +190,116 @@ class IncomeStatementController extends Controller
 
     private function calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches = false)
     {
-        // Step 1: Get total revenue and count using raw SQL for better performance
-        $totalQuery = DB::table('sells')
-            ->select(DB::raw('SUM(CAST(grand_total as DECIMAL(15,2))) as total_revenue, COUNT(*) as total_transactions'))
-            ->where('status', '!=', 'draft')
-            ->where('status', '!=', 'batal')
-            ->where('status', '!=', 'piutang')
-            ->whereBetween('created_at', [$fromDate, $endDate]);
+        try {
+            // Step 1: Get total revenue and count using a single optimized query
+            $baseQuery = DB::table('sells as s')
+                ->join('sell_details as sd', 's.id', '=', 'sd.sell_id')
+                ->join('products as p', 'sd.product_id', '=', 'p.id')
+                ->where('s.status', '!=', 'draft')
+                ->where('s.status', '!=', 'batal')
+                ->where('s.status', '!=', 'piutang')
+                ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
-        if ($warehouse_id && !$all_branches) {
-            $totalQuery->where('warehouse_id', $warehouse_id);
-        }
+            if ($warehouse_id && !$all_branches) {
+                $baseQuery->where('s.warehouse_id', $warehouse_id);
+            }
 
-        if ($user_id) {
-            $totalQuery->where('cashier_id', $user_id);
-        }
+            if ($user_id) {
+                $baseQuery->where('s.cashier_id', $user_id);
+            }
 
-        $totals = $totalQuery->first();
-        $totalRevenue = floatval($totals->total_revenue ?? 0);
-        $totalTransactions = intval($totals->total_transactions ?? 0);
+            // Get aggregated data in a single query
+            $aggregatedData = $baseQuery->select(
+                DB::raw('COUNT(DISTINCT s.id) as total_transactions'),
+                'sd.product_id',
+                'p.name as product_name',
+                DB::raw('SUM(sd.quantity) as total_quantity'),
+                DB::raw('SUM(sd.quantity * (sd.price - COALESCE(sd.diskon, 0))) as total_sales')
+            )
+                ->groupBy('sd.product_id', 'p.name')
+                ->get();
 
-        // Step 2: Get sales by product using optimized query with indexing hints
-        $salesByProduct = [];
+            // Initialize response structure
+            $salesData = [
+                'total_revenue' => 0,
+                'total_transactions' => 0,
+                'sales_by_product' => []
+            ];
 
-        // Use chunking to avoid memory issues with large datasets
-        $sellQuery = DB::table('sells')
-            ->select('id', 'grand_total')
-            ->where('status', '!=', 'draft')
-            ->where('status', '!=', 'batal')
-            ->where('status', '!=', 'piutang')
-            ->whereBetween('created_at', [$fromDate, $endDate]);
-
-        if ($warehouse_id && !$all_branches) {
-            $sellQuery->where('warehouse_id', $warehouse_id);
-        }
-
-        if ($user_id) {
-            $sellQuery->where('cashier_id', $user_id);
-        }
-
-        // Use cursor for memory efficiency
-        $sellIds = [];
-        foreach ($sellQuery->cursor() as $sell) {
-            $sellIds[] = $sell->id;
-        }
-
-        if (!empty($sellIds)) {
-            // Process sell details in chunks to avoid memory issues
-            $chunkSize = 2000; // Increased chunk size for better performance
-            $sellIdChunks = array_chunk($sellIds, $chunkSize);
-
-            foreach ($sellIdChunks as $chunk) {
-                // Use a more efficient query with specific columns and indexing hints
-                $salesDetails = DB::table('sell_details as sd')
-                    ->join('products as p', 'sd.product_id', '=', 'p.id')
-                    ->select(
-                        'sd.product_id',
-                        'p.name as product_name',
-                        'sd.quantity',
-                        'sd.price',
-                        'sd.diskon',
-                        'sd.sell_id'
-                    )
-                    ->whereIn('sd.sell_id', $chunk)
-                    ->get();
-
-                foreach ($salesDetails as $detail) {
-                    $productId = $detail->product_id;
-                    $quantity = floatval($detail->quantity ?? 0);
-                    $price = floatval($detail->price ?? 0);
-                    $diskon = floatval($detail->diskon ?? 0);
-                    $revenue = ($price * $quantity) - $diskon;
-
-                    if (!isset($salesByProduct[$productId])) {
-                        $salesByProduct[$productId] = [
-                            'product_name' => $detail->product_name ?? 'Unknown Product',
-                            'quantity_sold' => 0,
-                            'total_revenue' => 0
-                        ];
-                    }
-
-                    $salesByProduct[$productId]['quantity_sold'] += $quantity;
-                    $salesByProduct[$productId]['total_revenue'] += $revenue;
+            // Process aggregated data
+            foreach ($aggregatedData as $row) {
+                // Update totals
+                $salesData['total_revenue'] += floatval($row->total_sales);
+                if (!isset($salesData['total_transactions'])) {
+                    $salesData['total_transactions'] = intval($row->total_transactions);
                 }
 
-                // Free memory after processing each chunk
-                unset($salesDetails);
-                gc_collect_cycles(); // Force garbage collection
+                // Add product-specific data
+                $salesData['sales_by_product'][$row->product_id] = [
+                    'product_name' => $row->product_name,
+                    'quantity_sold' => floatval($row->total_quantity),
+                    'total_revenue' => floatval($row->total_sales)
+                ];
             }
-        }
 
-        return [
-            'total_revenue' => $totalRevenue,
-            'total_transactions' => $totalTransactions,
-            'sales_by_product' => $salesByProduct,
-            'sales_details' => [] // Don't return full details to save memory
-        ];
+            return $salesData;
+        } catch (\Exception $e) {
+            Log::error('Error in calculateSalesRevenueOptimized: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     private function calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches = false)
     {
-        $totalCogs = 0;
-        $cogsByProduct = [];
-        $isOutOfTown = $warehouse ? ($warehouse->isOutOfTown ?? false) : false;
+        try {
+            // Get COGS data in a single optimized query
+            $baseQuery = DB::table('product_reports as pr')
+                ->join('products as p', 'pr.product_id', '=', 'p.id')
+                ->whereBetween('pr.created_at', [$fromDate, $endDate])
+                ->where('pr.for', 'KELUAR')
+                ->where('pr.type', 'PENJUALAN');
 
-        // Use raw SQL with chunking for better performance
-        // First, get the sell IDs that are not draft, batal, or piutang
-        $validSellIds = DB::table('sells')
-            ->select('id', 'order_number')
-            ->where('status', '!=', 'draft')
-            ->where('status', '!=', 'batal')
-            ->where('status', '!=', 'piutang')
-            ->whereBetween('created_at', [$fromDate, $endDate]);
+            if ($warehouse_id && !$all_branches) {
+                $baseQuery->where('pr.warehouse_id', $warehouse_id);
+            }
 
-        if ($warehouse_id && !$all_branches) {
-            $validSellIds->where('warehouse_id', $warehouse_id);
-        }
+            if ($user_id) {
+                $baseQuery->where('pr.user_id', $user_id);
+            }
 
-        if ($user_id) {
-            $validSellIds->where('cashier_id', $user_id);
-        }
+            // Get aggregated data in a single query
+            $cogsData = $baseQuery
+                ->select(
+                    'pr.product_id',
+                    'p.name as product_name',
+                    DB::raw('SUM(pr.qty) as total_quantity'),
+                    DB::raw('SUM(pr.qty * COALESCE(pr.price, 0)) as total_cogs')
+                )
+                ->groupBy('pr.product_id', 'p.name')
+                ->get();
 
-        // Use cursor for memory efficiency
-        $validSells = collect();
-        foreach ($validSellIds->cursor() as $sell) {
-            $validSells->push($sell);
-        }
+            $totalCogs = 0;
+            $cogsByProduct = [];
 
-        if ($validSells->isEmpty()) {
+            foreach ($cogsData as $item) {
+                $totalCogs += floatval($item->total_cogs);
+                $cogsByProduct[$item->product_id] = [
+                    'product_name' => $item->product_name,
+                    'quantity_sold_eceran' => floatval($item->total_quantity),
+                    'total_cogs' => floatval($item->total_cogs),
+                    'cost_price' => $item->total_quantity > 0 ? floatval($item->total_cogs) / floatval($item->total_quantity) : 0
+                ];
+            }
+
             return [
-                'total_cogs' => 0,
-                'cogs_by_product' => [],
-                'is_out_of_town' => $isOutOfTown
+                'total_cogs' => $totalCogs,
+                'cogs_by_product' => $cogsByProduct,
+                'is_out_of_town' => $warehouse ? ($warehouse->isOutOfTown ?? false) : false
             ];
+        } catch (\Exception $e) {
+            \Log::error('Error in calculateCostOfGoodsSoldOptimized: ' . $e->getMessage());
+            throw $e;
         }
-
-        // Create a collection of order numbers from the valid sells
-        $orderNumbers = $validSells->pluck('order_number')->toArray();
-
-        // Now get product reports only for valid sell transactions by matching the description field
-        // which contains "Penjualan {order_number}"
-        $query = DB::table('product_reports as pr')
-            ->join('products as p', 'pr.product_id', '=', 'p.id')
-            ->select(
-                'pr.product_id',
-                'p.name as product_name',
-                'pr.qty',
-                'pr.unit_type',
-                'p.dus_to_eceran',
-                'p.pak_to_eceran',
-                'p.lastest_price_eceran',
-                'p.lastest_price_eceran_out_of_town'
-            )
-            ->where('pr.for', 'KELUAR')
-            ->where('pr.type', 'PENJUALAN')
-            ->whereBetween('pr.created_at', [$fromDate, $endDate]);
-
-        if ($warehouse_id && !$all_branches) {
-            $query->where('pr.warehouse_id', $warehouse_id);
-        }
-
-        if ($user_id) {
-            $query->where('pr.user_id', $user_id);
-        }
-
-        // Process in chunks of 100 order numbers at a time to avoid query size limits
-        $orderNumberChunks = array_chunk($orderNumbers, 100);
-
-        foreach ($orderNumberChunks as $orderNumberChunk) {
-            $chunkQuery = clone $query;
-
-            $chunkQuery->where(function ($q) use ($orderNumberChunk) {
-                foreach ($orderNumberChunk as $orderNumber) {
-                    $q->orWhere('pr.description', 'like', "%Penjualan $orderNumber%");
-                }
-            });
-
-            // Process in chunks to avoid memory issues
-            $chunkQuery->orderBy('pr.id')->chunk(2000, function ($soldProducts) use (&$totalCogs, &$cogsByProduct, $isOutOfTown) {
-                foreach ($soldProducts as $soldProduct) {
-                    $quantitySold = floatval($soldProduct->qty ?? 0);
-
-                    // Skip if no quantity sold
-                    if ($quantitySold <= 0) continue;
-
-                    // Convert quantity to eceran
-                    $quantityEceran = $this->convertQuantityToEceranFromData($quantitySold, $soldProduct->unit_type, $soldProduct);
-
-                    // Skip if converted quantity is 0
-                    if ($quantityEceran <= 0) continue;
-
-                    // Determine cost price based on warehouse location
-                    $costPrice = 0;
-                    if ($isOutOfTown) {
-                        $costPrice = floatval($soldProduct->lastest_price_eceran_out_of_town ?? $soldProduct->lastest_price_eceran ?? 0);
-                    } else {
-                        $costPrice = floatval($soldProduct->lastest_price_eceran ?? 0);
-                    }
-
-                    $productCogs = $quantityEceran * $costPrice;
-                    $totalCogs += $productCogs;
-
-                    $productId = $soldProduct->product_id;
-                    if (!isset($cogsByProduct[$productId])) {
-                        $cogsByProduct[$productId] = [
-                            'product_name' => $soldProduct->product_name ?? 'Unknown Product',
-                            'quantity_sold_eceran' => 0,
-                            'cost_price' => $costPrice,
-                            'total_cogs' => 0
-                        ];
-                    }
-
-                    $cogsByProduct[$productId]['quantity_sold_eceran'] += $quantityEceran;
-                    $cogsByProduct[$productId]['total_cogs'] += $productCogs;
-                }
-
-                // Force garbage collection
-                gc_collect_cycles();
-            });
-        }
-
-        return [
-            'total_cogs' => $totalCogs,
-            'cogs_by_product' => $cogsByProduct,
-            'is_out_of_town' => $isOutOfTown
-        ];
     }
 
     private function calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches = false)

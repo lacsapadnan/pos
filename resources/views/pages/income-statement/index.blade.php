@@ -308,6 +308,13 @@
         let reportData = null;
 
         $(document).ready(function() {
+            // Add CSRF token to all AJAX requests
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
             // Initialize Select2
             $('#warehouseFilter, #userFilter').select2();
 
@@ -327,6 +334,71 @@
             // Export report button click
             $('#exportReport').click(function() {
                 exportToExcel();
+            });
+
+            // Handle all_branches checkbox change
+            $('#all_branches').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#warehouse').val('').prop('disabled', true);
+                } else {
+                    $('#warehouse').prop('disabled', false);
+                }
+                loadData();
+            });
+
+            // Initial state setup
+            if ($('#all_branches').is(':checked')) {
+                $('#warehouse').val('').prop('disabled', true);
+            }
+
+            function loadData() {
+                $.ajax({
+                    url: '/income-statement/data',
+                    type: 'GET',
+                    data: {
+                        warehouse: $('#warehouse').val(),
+                        user_id: $('#user').val(),
+                        from_date: $('#from_date').val(),
+                        to_date: $('#to_date').val(),
+                        all_branches: $('#all_branches').is(':checked')
+                    },
+                    success: function(response) {
+                        // Update the display with the response data
+                        updateDisplay(response);
+                    },
+                    error: function(xhr) {
+                        console.error('Error loading data:', xhr);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to load data. Please try again.',
+                            icon: 'error'
+                        });
+                    }
+                });
+            }
+
+            // Handle filter button click
+            $('#filter').click(function() {
+                loadData();
+            });
+
+            // Handle clear cache button click
+            $('#clearCache').click(function() {
+                $.ajax({
+                    url: '/income-statement/clear-cache',
+                    type: 'POST',
+                    success: function() {
+                        loadData();
+                    },
+                    error: function(xhr) {
+                        console.error('Error clearing cache:', xhr);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to clear cache. Please try again.',
+                            icon: 'error'
+                        });
+                    }
+                });
             });
 
             // Auto-generate report on page load
