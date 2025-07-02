@@ -780,7 +780,45 @@ class SellReturController extends Controller
         $sell = Sell::with('warehouse')->find($sellId);
         $isOutOfTown = $sell && $sell->warehouse ? $sell->warehouse->isOutOfTown : false;
 
-        // Try to get price from current product pricing based on warehouse type
+        // Get all sell details for this product to calculate the average price per eceran
+        $sellDetails = SellDetail::where('sell_id', $sellId)
+            ->where('product_id', $productId)
+            ->get();
+
+        if ($sellDetails->isNotEmpty()) {
+            $totalPriceInEceran = 0;
+            $totalQuantityInEceran = 0;
+
+            foreach ($sellDetails as $sellDetail) {
+                if ($sellDetail->quantity > 0) {
+                    // Calculate net price per unit (after discount)
+                    $netPricePerUnit = $sellDetail->price;
+                    if ($sellDetail->quantity > 0) {
+                        $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
+                        $netPricePerUnit -= $discountPerUnit;
+                    }
+
+                    // Convert quantity to eceran
+                    $quantityInEceran = $this->convertToEceran($sellDetail->quantity, $sellDetail->unit_id, $product);
+
+                    // Calculate total price for this quantity in eceran
+                    $totalPriceForThisDetail = $netPricePerUnit * $sellDetail->quantity;
+
+                    $totalPriceInEceran += $totalPriceForThisDetail;
+                    $totalQuantityInEceran += $quantityInEceran;
+                }
+            }
+
+            if ($totalQuantityInEceran > 0) {
+                // Calculate price per eceran
+                $pricePerEceran = $totalPriceInEceran / $totalQuantityInEceran;
+
+                // Convert from eceran price to the requested unit price
+                return $this->convertPriceFromEceran($pricePerEceran, $unitId, $product);
+            }
+        }
+
+        // Fallback: Use current product pricing based on warehouse type
         if ($isOutOfTown) {
             // Use out-of-town pricing
             if ($unitId == $product->unit_dus && $product->price_sell_dus_out_of_town > 0) {
@@ -798,28 +836,6 @@ class SellReturController extends Controller
                 return $product->price_sell_pak;
             } elseif ($unitId == $product->unit_eceran && $product->price_sell_eceran > 0) {
                 return $product->price_sell_eceran;
-            }
-        }
-
-        // Fallback: calculate price based on unit conversion from available sell details
-        $sellDetails = SellDetail::where('sell_id', $sellId)
-            ->where('product_id', $productId)
-            ->get();
-
-        foreach ($sellDetails as $sellDetail) {
-            if ($sellDetail->quantity > 0) {
-                // Calculate net price per unit
-                $netPricePerUnit = $sellDetail->price;
-                if ($sellDetail->quantity > 0) {
-                    $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
-                    $netPricePerUnit -= $discountPerUnit;
-                }
-
-                // Convert to eceran price first
-                $eceranPrice = $this->convertPriceToEceran($netPricePerUnit, $sellDetail->unit_id, $product);
-
-                // Then convert from eceran to the requested unit
-                return $this->convertPriceFromEceran($eceranPrice, $unitId, $product);
             }
         }
 
