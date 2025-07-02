@@ -264,15 +264,18 @@ class SellController extends Controller
                 // delete all purchase cart
                 SellCart::where('cashier_id', auth()->id())->delete();
 
-                $this->cashflowService->handleSalePayment(
-                    warehouseId: auth()->user()->warehouse_id,
-                    orderNumber: $sell->order_number,
-                    customerName: $customer->name,
-                    paymentMethod: $request->payment_method,
-                    cash: $cash,
-                    transfer: $transfer,
-                    change: $sell->change
-                );
+                // Only create cashflow if there's actual payment
+                if ($pay > 0 && $request->payment_method) {
+                    $this->cashflowService->handleSalePayment(
+                        warehouseId: auth()->user()->warehouse_id,
+                        orderNumber: $sell->order_number,
+                        customerName: $customer->name,
+                        paymentMethod: $request->payment_method,
+                        cash: $cash,
+                        transfer: $transfer,
+                        change: $sell->change
+                    );
+                }
             }
 
             // Commit all database operations before attempting to print
