@@ -19,17 +19,22 @@
                 </select>
             </div>
             <div class="mb-10 row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label" for="name">Nama Produk</label>
                     <input name="name" type="text" class="form-control" placeholder="Masukan nama produk"
                         value="{{ $product->name }}" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label" for="promo">Promo</label>
                     <input name="promo" type="text" class="form-control" placeholder="Masukan promo produk"
                         value="{{ $product->promo }}" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="form-label" for="promo_out_of_town">Promo Luar Kota</label>
+                    <input name="promo_out_of_town" type="text" class="form-control"
+                        placeholder="Masukan promo luar kota" value="{{ $product->promo_out_of_town }}" />
+                </div>
+                <div class="col-md-3">
                     <div class="form-check form-switch form-check-custom form-check-solid">
                         <input class="form-check-input" type="checkbox" name="isShow" value="1" id="isShowToggle" {{
                             $product->isShow ? 'checked' : '' }} />
@@ -134,25 +139,32 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="mb-10">
                         <label class="form-label" for="dus_to_eceran">Jumlah DUS ke Eceran</label>
                         <input name="dus_to_eceran" type="number" class="form-control"
                             placeholder="Masukan jumlah DUS ke eceran" value="{{ $product->dus_to_eceran }}" />
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="mb-10">
                         <label class="form-label" for="pak_to_eceran">Jumlah Pak ke Eceran</label>
                         <input name="pak_to_eceran" type="number" class="form-control"
                             placeholder="Masukan jumlah pak ke eceran" value="{{ $product->pak_to_eceran }}" />
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="mb-10">
                         <label class="form-label" for="hadiah">Hadiah</label>
                         <input name="hadiah" type="text" class="form-control" placeholder="Masukan hadiah"
                             value="{{ $product->hadiah }}" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-10">
+                        <label class="form-label" for="hadiah_out_of_town">Hadiah Luar Kota</label>
+                        <input name="hadiah_out_of_town" type="text" class="form-control"
+                            placeholder="Masukan hadiah luar kota" value="{{ $product->hadiah_out_of_town }}" />
                     </div>
                 </div>
             </div>

@@ -5,7 +5,8 @@
                 <h3 class="modal-title">Tambah data produk</h3>
 
                 <!--begin::Close-->
-                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
+                    aria-label="Close">
                     <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
                 </div>
                 <!--end::Close-->
@@ -20,19 +21,23 @@
                             data-control="select2" data-dropdown-parent="#kt_modal_1">
                             <option disabled selected>Pilih Kelompok</option>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->name }}">{{ $category->name }}</option>
+                            <option value="{{ $category->name }}">{{ $category->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="mb-10 row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="name">Nama Produk</label>
-                            <input name="name" type="text" class="form-control"
-                                placeholder="Masukan nama produk" />
+                            <input name="name" type="text" class="form-control" placeholder="Masukan nama produk" />
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="name">Promo</label>
+                        <div class="col-md-4">
+                            <label class="form-label" for="promo">Promo</label>
                             <input name="promo" type="text" class="form-control" placeholder="Masukan promo" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="promo_out_of_town">Promo Luar Kota</label>
+                            <input name="promo_out_of_town" type="text" class="form-control"
+                                placeholder="Masukan promo luar kota" />
                         </div>
                     </div>
 
@@ -66,9 +71,9 @@
                                 <select name="unit_dus" class="form-select" aria-label="Select example">
                                     <option readonly>Pilih satuan dus</option>
                                     @forelse($unit as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
                                     @empty
-                                        <option readonly>Belum ada satuan</option>
+                                    <option readonly>Belum ada satuan</option>
                                     @endforelse
                                 </select>
                             </div>
@@ -79,9 +84,9 @@
                                 <select name="unit_pak" class="form-select" aria-label="Select example">
                                     <option readonly>Pilih satuan pak</option>
                                     @forelse($unit as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
                                     @empty
-                                        <option readonly>Belum ada satuan</option>
+                                    <option readonly>Belum ada satuan</option>
                                     @endforelse
                                 </select>
                             </div>
@@ -92,34 +97,40 @@
                                 <select name="unit_eceran" class="form-select" aria-label="Select example">
                                     <option readonly>Pilih satuan eceran</option>
                                     @forelse($unit as $item)
-                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
                                     @empty
-                                        <option readonly>Belum ada satuan</option>
+                                    <option readonly>Belum ada satuan</option>
                                     @endforelse
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-10">
                                 <label class="form-label" for="name">Jumlah DUS ke Eceran</label>
                                 <input name="dus_to_eceran" type="number" class="form-control"
                                     placeholder="Masukan jumlah DUS ke eceran" />
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-10">
                                 <label class="form-label" for="name">Jumlah Pak ke Eceran</label>
                                 <input name="pak_to_eceran" type="number" class="form-control"
                                     placeholder="Masukan jumlah pak ke eceran" />
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="mb-10">
-                                <label class="form-label" for="name">Hadiah</label>
-                                <input name="hadiah" type="text" class="form-control"
-                                    placeholder="Masukan hadiah" />
+                                <label class="form-label" for="hadiah">Hadiah</label>
+                                <input name="hadiah" type="text" class="form-control" placeholder="Masukan hadiah" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-10">
+                                <label class="form-label" for="hadiah_out_of_town">Hadiah Luar Kota</label>
+                                <input name="hadiah_out_of_town" type="text" class="form-control"
+                                    placeholder="Masukan hadiah luar kota" />
                             </div>
                         </div>
                     </div>

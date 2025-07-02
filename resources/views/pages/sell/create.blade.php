@@ -149,7 +149,14 @@
                         <tr class="text-start fw-bold fs-7 text-uppercase">
                             <th>Kelompok</th>
                             <th>Nama Barang</th>
+                            @php
+                            $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                            @endphp
+                            @if($isOutOfTown)
+                            <th>Promo Luar Kota</th>
+                            @else
                             <th>Promo</th>
+                            @endif
                             <th>Stok</th>
                             <th>Jml Per Dus</th>
                             <th>Jml Per Pak</th>
@@ -177,7 +184,11 @@
                             @else
                             <th>Harga Eceran Luar Kota</th>
                             @endif
+                            @if($isOutOfTown)
+                            <th>Hadiah Luar Kota</th>
+                            @else
                             <th>Hadiah</th>
+                            @endif
                             <th class="min-w-100px">Aksi</th>
                         </tr>
                     </thead>
@@ -582,7 +593,16 @@
                             data: "product.name"
                         },
                         {
-                            data: "product.promo"
+                            data: function(row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                @if($isOutOfTown)
+                                    return row.product.promo_out_of_town || row.product.promo || '';
+                                @else
+                                    return row.product.promo || '';
+                                @endif
+                            }
                         },
                         {
                             data: "quantity"
@@ -735,7 +755,16 @@
                         },
                         @endif
                         {
-                            data: "product.hadiah",
+                            data: function(row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                @if($isOutOfTown)
+                                    return row.product.hadiah_out_of_town || row.product.hadiah || '';
+                                @else
+                                    return row.product.hadiah || '';
+                                @endif
+                            }
                         },
                         {
                             data: null,

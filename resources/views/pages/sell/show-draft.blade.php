@@ -111,7 +111,14 @@
                         <tr class="text-start fw-bold fs-7 text-uppercase">
                             <th>Kelompok</th>
                             <th>Nama Barang</th>
+                            @php
+                            $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                            @endphp
+                            @if($isOutOfTown)
+                            <th>Promo Luar Kota</th>
+                            @else
                             <th>Promo</th>
+                            @endif
                             <th>Stok</th>
                             <th>Jml Per Dus</th>
                             <th>Jml Per Pak</th>
@@ -471,7 +478,16 @@
                             data: "product.name"
                         },
                         {
-                            data: "product.promo"
+                            data: function(row) {
+                                @php
+                                    $isOutOfTown = auth()->user()->warehouse->isOutOfTown ?? false;
+                                @endphp
+                                @if($isOutOfTown)
+                                    return row.product.promo_out_of_town || row.product.promo || '';
+                                @else
+                                    return row.product.promo || '';
+                                @endif
+                            }
                         },
                         {
                             data: "quantity"
