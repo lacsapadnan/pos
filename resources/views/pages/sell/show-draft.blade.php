@@ -250,6 +250,11 @@
                             <label for="kembali" class="col-form-label">Kembali</label>
                             <input type="text" name="change" class="form-control" id="kembali" readonly />
                         </div>
+
+                        <div class="mb-1" id="sisaDiv" style="display: none;">
+                            <label for="sisa" class="col-form-label">Sisa</label>
+                            <input type="text" name="sisa" class="form-control" id="sisa" readonly />
+                        </div>
                     </div>
                 </div>
                 <div class="mt-5 row">
@@ -289,6 +294,7 @@
             var paymentMethod = document.getElementsByName('payment_method')[0].value;
             var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
             var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+            var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
 
             if (paymentMethod === 'split') {
                 // Calculate grand total based on the sum of transfer and cash
@@ -296,9 +302,19 @@
             }
 
             var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash);
+            var sisa = calculateSisa(paymentMethod, grandTotal, transfer, cash, bayar);
 
             document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
             document.getElementById('kembali').value = new Intl.NumberFormat('id-ID').format(kembali);
+
+            // Show/hide and update sisa field
+            var sisaDiv = document.getElementById('sisaDiv');
+            if (sisa > 0) {
+                sisaDiv.style.display = 'block';
+                document.getElementById('sisa').value = new Intl.NumberFormat('id-ID').format(sisa);
+            } else {
+                sisaDiv.style.display = 'none';
+            }
         }
 
         function calculateKembali(paymentMethod, grandTotal, transfer, cash) {
@@ -314,6 +330,22 @@
                 // Handle other payment methods, if any, here
                 return Math.max(bayar - grandTotal, 0);
             }
+        }
+
+        function calculateSisa(paymentMethod, grandTotal, transfer, cash, bayar) {
+            var totalPayment = 0;
+
+            if (paymentMethod === 'transfer') {
+                totalPayment = transfer;
+            } else if (paymentMethod === 'cash') {
+                totalPayment = cash;
+            } else if (paymentMethod === 'split') {
+                totalPayment = transfer + cash;
+            } else {
+                totalPayment = bayar;
+            }
+
+            return Math.max(grandTotal - totalPayment, 0);
         }
 
         function togglePaymentFields() {
