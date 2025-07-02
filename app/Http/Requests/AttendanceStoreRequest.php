@@ -12,35 +12,25 @@ class AttendanceStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->can('simpan absensi');
+        return auth()->user()->can('kelola absensi');
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $rules = [
+        return [
             'employee_id' => 'required|exists:employees,id',
             'check_in_date' => 'required|date',
-            'check_in_time' => 'required',
+            'check_in_time' => 'required|date_format:H:i:s',
             'check_out_date' => 'nullable|date',
-            'check_out_time' => 'nullable',
-            'break_start_time' => 'nullable|string',
-            'break_end_time' => 'nullable|string',
-            'status' => 'required|in:checked_in,checked_out,on_break',
-            'notes' => 'nullable|string'
+            'check_out_time' => 'nullable|date_format:H:i:s',
+            'status' => 'required|in:checked_in,checked_out',
+            'notes' => 'nullable|string|max:255',
         ];
-
-        // If status is checked_out, make check_out fields required
-        if ($this->input('status') === 'checked_out') {
-            $rules['check_out_date'] = 'required|date';
-            $rules['check_out_time'] = 'required';
-        }
-
-        return $rules;
     }
 
     /**
@@ -59,11 +49,10 @@ class AttendanceStoreRequest extends FormRequest
             'check_out_date.required' => 'Tanggal keluar harus diisi ketika status "Sudah Pulang"!',
             'check_out_date.date' => 'Tanggal keluar harus berupa tanggal!',
             'check_out_time.required' => 'Jam keluar harus diisi ketika status "Sudah Pulang"!',
-            'break_start_time.string' => 'Format jam mulai istirahat tidak valid!',
-            'break_end_time.string' => 'Format jam selesai istirahat tidak valid!',
             'status.required' => 'Status harus diisi!',
             'status.in' => 'Status tidak valid!',
-            'notes.string' => 'Catatan harus berupa teks!'
+            'notes.string' => 'Catatan harus berupa teks!',
+            'notes.max' => 'Catatan tidak boleh lebih dari 255 karakter!'
         ];
     }
 
@@ -94,17 +83,6 @@ class AttendanceStoreRequest extends FormRequest
 
                 if ($checkOut->lt($checkIn)) {
                     $validator->errors()->add('check_out_time', 'Jam keluar harus setelah jam masuk');
-                }
-            }
-
-            // Validate break end is after break start
-            if ($this->break_start_time && $this->break_end_time) {
-                // Create Carbon instances for today with the specified times
-                $breakStart = \Carbon\Carbon::createFromFormat('H:i', $this->break_start_time);
-                $breakEnd = \Carbon\Carbon::createFromFormat('H:i', $this->break_end_time);
-
-                if ($breakEnd->lt($breakStart)) {
-                    $validator->errors()->add('break_end_time', 'Waktu selesai istirahat harus setelah waktu mulai istirahat');
                 }
             }
         });

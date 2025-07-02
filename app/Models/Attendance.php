@@ -16,8 +16,6 @@ class Attendance extends Model
         'warehouse_id',
         'check_in',
         'check_out',
-        'break_start',
-        'break_end',
         'status',
         'notes'
     ];
@@ -25,8 +23,6 @@ class Attendance extends Model
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'break_start' => 'string',
-        'break_end' => 'string',
     ];
 
     public function employee(): BelongsTo
@@ -63,31 +59,6 @@ class Attendance extends Model
         $checkOut = $this->check_out ?? now();
         $totalMinutes = $this->check_in->diffInMinutes($checkOut);
 
-        // Subtract break time if any
-        if ($this->break_start && $this->break_end) {
-            $breakStartTime = Carbon::createFromFormat('H:i:s', $this->break_start);
-            $breakEndTime = Carbon::createFromFormat('H:i:s', $this->break_end);
-
-            $breakMinutes = $breakStartTime->diffInMinutes($breakEndTime);
-            $totalMinutes -= $breakMinutes;
-        }
-
         return round($totalMinutes / 60, 2);
-    }
-
-    /**
-     * Check if user is currently on break
-     */
-    public function isOnBreak(): bool
-    {
-        return $this->status === 'on_break' && $this->break_start && !$this->break_end;
-    }
-
-    /**
-     * Check if user already took a break today
-     */
-    public function hasUsedBreak(): bool
-    {
-        return $this->break_start !== null;
     }
 }

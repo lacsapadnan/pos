@@ -10,7 +10,7 @@
             <div class="card-title d-flex justify-content-between align-items-center w-100">
                 <h3>Kelola Absensi Karyawan</h3>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                    data-bs-target="#addAttendanceModal" onclick="setTimeout(() => handleStatusChange('add'), 100)">
+                    data-bs-target="#addAttendanceModal">
                     <i class="ki-duotone ki-plus fs-2">
                         <span class="path1"></span>
                         <span class="path2"></span>
@@ -67,7 +67,6 @@
                             @endif
                             <th>Jam Masuk</th>
                             <th>Jam Keluar</th>
-                            <th>Istirahat</th>
                             <th>Total Jam</th>
                             <th>Status</th>
                             <th>Catatan</th>
@@ -113,7 +112,6 @@
                                 <select class="form-select" name="status" id="add_status" required>
                                     <option value="checked_in">Sedang Bekerja</option>
                                     <option value="checked_out">Sudah Pulang</option>
-                                    <option value="on_break">Sedang Istirahat</option>
                                 </select>
                             </div>
                         </div>
@@ -131,7 +129,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Jam Masuk <span class="text-danger">*</span></label>
                                 <input type="time" class="form-control" name="check_in_time" id="add_check_in_time"
-                                    required>
+                                    required step="1">
                             </div>
                         </div>
                     </div>
@@ -146,23 +144,8 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="add_check_out_time">Jam Keluar</label>
-                                <input type="time" class="form-control" name="check_out_time" id="add_check_out_time">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Mulai Istirahat</label>
-                                <input type="time" class="form-control" name="break_start_time"
-                                    id="add_break_start_time">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Selesai Istirahat</label>
-                                <input type="time" class="form-control" name="break_end_time" id="add_break_end_time">
+                                <input type="time" class="form-control" name="check_out_time" id="add_check_out_time"
+                                    step="1">
                             </div>
                         </div>
                     </div>
@@ -224,7 +207,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Jam Masuk <span class="text-danger">*</span></label>
                                 <input type="time" class="form-control" name="check_in_time" id="edit_check_in_time"
-                                    required>
+                                    required step="1">
                             </div>
                         </div>
                     </div>
@@ -239,23 +222,8 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" for="edit_check_out_time">Jam Keluar</label>
-                                <input type="time" class="form-control" name="check_out_time" id="edit_check_out_time">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Mulai Istirahat</label>
-                                <input type="time" class="form-control" name="break_start_time"
-                                    id="edit_break_start_time">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Selesai Istirahat</label>
-                                <input type="time" class="form-control" name="break_end_time" id="edit_break_end_time">
+                                <input type="time" class="form-control" name="check_out_time" id="edit_check_out_time"
+                                    step="1">
                             </div>
                         </div>
                     </div>
@@ -267,7 +235,6 @@
                                 <select class="form-select" name="status" id="edit_status" required>
                                     <option value="checked_in">Sedang Bekerja</option>
                                     <option value="checked_out">Sudah Pulang</option>
-                                    <option value="on_break">Sedang Istirahat</option>
                                 </select>
                             </div>
                         </div>
@@ -325,14 +292,15 @@
         loadAttendanceData();
     });
 
-    // Handle status change in Add form
-    $('#add_status').on('change', function() {
-        handleStatusChange('add');
-    });
-
-    // Handle status change in Edit form
-    $('#edit_status').on('change', function() {
-        handleStatusChange('edit');
+    // Set default time values with seconds for time inputs
+    $('input[type="time"]').each(function() {
+        if (!$(this).val()) {
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' +
+                             now.getMinutes().toString().padStart(2, '0') + ':' +
+                             now.getSeconds().toString().padStart(2, '0');
+            $(this).val(timeString);
+        }
     });
 
     function loadAttendanceData() {
@@ -346,14 +314,6 @@
             table.clear();
 
             data.forEach(function(attendance, index) {
-                let breakTime = '';
-                if (attendance.break_start) {
-                    breakTime = attendance.break_start;
-                    if (attendance.break_end) {
-                        breakTime += ' - ' + attendance.break_end;
-                    }
-                }
-
                 let statusBadge = '';
                 switch(attendance.status) {
                     case 'checked_in':
@@ -361,9 +321,6 @@
                         break;
                     case 'checked_out':
                         statusBadge = '<span class="badge badge-primary">Sudah Pulang</span>';
-                        break;
-                    case 'on_break':
-                        statusBadge = '<span class="badge badge-warning">Sedang Istirahat</span>';
                         break;
                 }
 
@@ -389,9 +346,8 @@
                 @endif
 
                 row.push(
-                    new Date(attendance.check_in).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}),
-                    attendance.check_out ? new Date(attendance.check_out).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '-',
-                    breakTime || '-',
+                    new Date(attendance.check_in).toLocaleTimeString('id-ID'),
+                    attendance.check_out ? new Date(attendance.check_out).toLocaleTimeString('id-ID') : '-',
                     attendance.total_hours + ' jam',
                     statusBadge,
                     attendance.notes || '-',
@@ -409,18 +365,6 @@
     $('#addAttendanceForm').on('submit', function(e) {
         e.preventDefault();
 
-        // Validate required fields based on status
-        const status = $('#add_status').val();
-        if (status === 'checked_out') {
-            const checkOutDate = $('#add_check_out_date').val();
-            const checkOutTime = $('#add_check_out_time').val();
-
-            if (!checkOutDate || !checkOutTime) {
-                showToast('error', 'Tanggal Keluar dan Jam Keluar harus diisi ketika status "Sudah Pulang"');
-                return;
-            }
-        }
-
         $.post('/absensi/create', {
             _token: '{{ csrf_token() }}',
             ...Object.fromEntries(new FormData(this))
@@ -431,6 +375,14 @@
                 showToast('success', response.message);
                 loadAttendanceData();
                 $('#addAttendanceForm')[0].reset();
+                // Set default time values after reset
+                $('input[type="time"]').each(function() {
+                    const now = new Date();
+                    const timeString = now.getHours().toString().padStart(2, '0') + ':' +
+                                     now.getMinutes().toString().padStart(2, '0') + ':' +
+                                     now.getSeconds().toString().padStart(2, '0');
+                    $(this).val(timeString);
+                });
             } else {
                 showToast('error', response.message);
             }
@@ -448,64 +400,45 @@
     $(document).on('click', '.edit-btn', function() {
         let id = $(this).data('id');
 
-        $.get(`/absensi/${id}/edit`)
-        .done(function(attendance) {
-            $('#edit_user_name').val(attendance.employee.name);
-            $('#edit_warehouse_name').val(attendance.warehouse ? attendance.warehouse.name : '-');
+        $.get(`/absensi/edit/${id}`)
+            .done(function(attendance) {
+                $('#edit_user_name').val(attendance.employee.name);
+                $('#edit_warehouse_name').val(attendance.warehouse ? attendance.warehouse.name : '-');
 
-            let checkInDate = new Date(attendance.check_in);
-            $('#edit_check_in_date').val(checkInDate.toISOString().split('T')[0]);
-            $('#edit_check_in_time').val(checkInDate.toTimeString().split(' ')[0].substring(0, 5));
+                // Set check-in date and time
+                let checkIn = new Date(attendance.check_in);
+                $('#edit_check_in_date').val(checkIn.toISOString().split('T')[0]);
+                $('#edit_check_in_time').val(checkIn.toTimeString().slice(0,8));
 
-            if (attendance.check_out) {
-                let checkOutDate = new Date(attendance.check_out);
-                $('#edit_check_out_date').val(checkOutDate.toISOString().split('T')[0]);
-                $('#edit_check_out_time').val(checkOutDate.toTimeString().split(' ')[0].substring(0, 5));
-            } else {
-                $('#edit_check_out_date').val('');
-                $('#edit_check_out_time').val('');
-            }
+                // Set check-out date and time if exists
+                if (attendance.check_out) {
+                    let checkOut = new Date(attendance.check_out);
+                    $('#edit_check_out_date').val(checkOut.toISOString().split('T')[0]);
+                    $('#edit_check_out_time').val(checkOut.toTimeString().slice(0,8));
+                }
 
-            // Handle break times as simple time strings
-            $('#edit_break_start_time').val(attendance.break_start || '');
-            $('#edit_break_end_time').val(attendance.break_end || '');
+                $('#edit_status').val(attendance.status);
+                $('#edit_notes').val(attendance.notes);
 
-            $('#edit_status').val(attendance.status);
-            $('#edit_notes').val(attendance.notes || '');
+                // Store attendance ID for update
+                $('#editAttendanceForm').data('id', attendance.id);
 
-            $('#editAttendanceForm').data('id', id);
-            $('#editAttendanceModal').modal('show');
-
-            // Initialize status-based validation for edit form
-            handleStatusChange('edit');
-        });
+                $('#editAttendanceModal').modal('show');
+            })
+            .fail(function(xhr) {
+                showToast('error', 'Gagal memuat data absensi');
+            });
     });
 
-    // Edit form submit
+    // Edit form submission
     $('#editAttendanceForm').on('submit', function(e) {
         e.preventDefault();
-
-        // Validate required fields based on status
-        const status = $('#edit_status').val();
-        if (status === 'checked_out') {
-            const checkOutDate = $('#edit_check_out_date').val();
-            const checkOutTime = $('#edit_check_out_time').val();
-
-            if (!checkOutDate || !checkOutTime) {
-                showToast('error', 'Tanggal Keluar dan Jam Keluar harus diisi ketika status "Sudah Pulang"');
-                return;
-            }
-        }
-
         let id = $(this).data('id');
 
-        $.ajax({
-            url: `/absensi/${id}`,
-            method: 'PUT',
-            data: {
-                _token: '{{ csrf_token() }}',
-                ...Object.fromEntries(new FormData(this))
-            }
+        $.post(`/absensi/update/${id}`, {
+            _token: '{{ csrf_token() }}',
+            _method: 'PUT',
+            ...Object.fromEntries(new FormData(this))
         })
         .done(function(response) {
             if (response.success) {
@@ -529,81 +462,28 @@
     $(document).on('click', '.delete-btn', function() {
         let id = $(this).data('id');
 
-        Swal.fire({
-            title: 'Hapus Data Absensi?',
-            text: 'Data yang dihapus tidak dapat dikembalikan!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Hapus',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: `/absensi/${id}`,
-                    method: 'DELETE',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    }
-                })
-                .done(function(response) {
-                    if (response.success) {
-                        showToast('success', response.message);
-                        loadAttendanceData();
-                    } else {
-                        showToast('error', response.message);
-                    }
-                })
-                .fail(function() {
-                    showToast('error', 'Terjadi kesalahan sistem');
-                });
-            }
-        });
-    });
-
-    function handleStatusChange(formType) {
-        const status = $('#' + formType + '_status').val();
-        const checkOutDateField = $('#' + formType + '_check_out_date');
-        const checkOutTimeField = $('#' + formType + '_check_out_time');
-        const checkOutDateLabel = $('label[for="' + formType + '_check_out_date"]');
-        const checkOutTimeLabel = $('label[for="' + formType + '_check_out_time"]');
-
-        if (status === 'checked_out') {
-            // Make check out fields required
-            checkOutDateField.prop('required', true);
-            checkOutTimeField.prop('required', true);
-
-            // Add required indicator to labels
-            if (!checkOutDateLabel.find('.text-danger').length) {
-                checkOutDateLabel.append(' <span class="text-danger">*</span>');
-            }
-            if (!checkOutTimeLabel.find('.text-danger').length) {
-                checkOutTimeLabel.append(' <span class="text-danger">*</span>');
-            }
-
-            // Set current date and time if fields are empty
-            if (!checkOutDateField.val()) {
-                checkOutDateField.val(new Date().toISOString().split('T')[0]);
-            }
-            if (!checkOutTimeField.val()) {
-                const now = new Date();
-                const timeString = now.getHours().toString().padStart(2, '0') + ':' +
-                                 now.getMinutes().toString().padStart(2, '0');
-                checkOutTimeField.val(timeString);
-            }
-        } else {
-            // Remove required attribute
-            checkOutDateField.prop('required', false);
-            checkOutTimeField.prop('required', false);
-
-            // Remove required indicator from labels
-            checkOutDateLabel.find('.text-danger').remove();
-            checkOutTimeLabel.find('.text-danger').remove();
+        if (confirm('Apakah Anda yakin ingin menghapus data absensi ini?')) {
+            $.post(`/absensi/${id}`, {
+                _token: '{{ csrf_token() }}',
+                _method: 'DELETE'
+            })
+            .done(function(response) {
+                if (response.success) {
+                    showToast('success', response.message);
+                    loadAttendanceData();
+                } else {
+                    showToast('error', response.message);
+                }
+            })
+            .fail(function(xhr) {
+                showToast('error', 'Gagal menghapus data absensi');
+            });
         }
-    }
-
-    function showToast(type, message) {
-        toastr[type](message);
-    }
+    });
 });
+
+function showToast(type, message) {
+    toastr[type](message);
+}
 </script>
 @endpush

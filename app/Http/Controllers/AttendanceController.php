@@ -10,13 +10,14 @@ use App\Http\Requests\AttendanceUpdateRequest;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Spatie\Permission\Traits\HasRoles;
 
 class AttendanceController extends Controller
 {
     public function index()
     {
         // Check if user has permission to manage attendance
-        if (auth()->user()->can('kelola absensi')) {
+        if (auth()->user()->hasPermissionTo('kelola absensi')) {
             // Show attendance management interface for admins
             return $this->adminIndex();
         }
@@ -51,20 +52,9 @@ class AttendanceController extends Controller
         // Combine date and time for timestamps
         $checkIn = Carbon::parse($request->check_in_date . ' ' . $request->check_in_time);
         $checkOut = null;
-        $breakStart = null;
-        $breakEnd = null;
 
         if ($request->check_out_date && $request->check_out_time) {
             $checkOut = Carbon::parse($request->check_out_date . ' ' . $request->check_out_time);
-        }
-
-        // Just use the time for break fields
-        if ($request->break_start_time) {
-            $breakStart = $request->break_start_time;
-        }
-
-        if ($request->break_end_time) {
-            $breakEnd = $request->break_end_time;
         }
 
         $attendance = Attendance::create([
@@ -72,8 +62,6 @@ class AttendanceController extends Controller
             'warehouse_id' => $employee->warehouse_id,
             'check_in' => $checkIn,
             'check_out' => $checkOut,
-            'break_start' => $breakStart,
-            'break_end' => $breakEnd,
             'status' => $request->status,
             'notes' => $request->notes
         ]);
@@ -102,25 +90,9 @@ class AttendanceController extends Controller
         ], 403);
     }
 
-    public function startBreak(Request $request)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Fitur absen mandiri telah dinonaktifkan. Silakan hubungi admin untuk mengelola absensi.'
-        ], 403);
-    }
-
-    public function endBreak(Request $request)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Fitur absen mandiri telah dinonaktifkan. Silakan hubungi admin untuk mengelola absensi.'
-        ], 403);
-    }
-
     public function recap()
     {
-        if (!auth()->user()->can('baca absensi')) {
+        if (!auth()->user()->hasPermissionTo('baca absensi')) {
             abort(403, 'Anda tidak memiliki izin untuk melihat rekap absensi');
         }
 
@@ -131,14 +103,14 @@ class AttendanceController extends Controller
 
     public function data(Request $request)
     {
-        if (!auth()->user()->can('baca absensi')) {
+        if (!auth()->user()->hasPermissionTo('baca absensi')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki izin untuk melihat data absensi'
             ], 403);
         }
 
-        $userRoles = auth()->user()->getRoleNames();
+        $user = auth()->user();
         $employee_id = $request->input('employee_id');
         $fromDate = $request->input('from_date') ?? now()->format('Y-m-d');
         $toDate = $request->input('to_date') ?? now()->format('Y-m-d');
@@ -148,8 +120,8 @@ class AttendanceController extends Controller
             ->orderBy('check_in', 'desc');
 
         // Role-based filtering
-        if ($userRoles->first() !== 'master' && !auth()->user()->can('kelola absensi')) {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
+        if (!$user->hasRole('master') && !$user->hasPermissionTo('kelola absensi')) {
+            $query->where('warehouse_id', $user->warehouse_id);
         }
 
         // Apply filters
@@ -172,7 +144,6 @@ class AttendanceController extends Controller
         $attendances->each(function ($attendance) {
             $attendance->total_hours = $attendance->getTotalWorkHours();
             $attendance->can_check_out = $attendance->canCheckOut();
-            $attendance->is_on_break = $attendance->isOnBreak();
         });
 
         return response()->json($attendances);
@@ -180,7 +151,7 @@ class AttendanceController extends Controller
 
     public function edit($id)
     {
-        if (!auth()->user()->can('update absensi')) {
+        if (!auth()->user()->hasPermissionTo('update absensi')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki izin untuk mengedit absensi'
@@ -193,33 +164,19 @@ class AttendanceController extends Controller
 
     public function update(AttendanceUpdateRequest $request, $id)
     {
-
         $attendance = Attendance::findOrFail($id);
 
         // Combine date and time for timestamps
         $checkIn = Carbon::parse($request->check_in_date . ' ' . $request->check_in_time);
         $checkOut = null;
-        $breakStart = null;
-        $breakEnd = null;
 
         if ($request->check_out_date && $request->check_out_time) {
             $checkOut = Carbon::parse($request->check_out_date . ' ' . $request->check_out_time);
         }
 
-        // Just use the time for break fields
-        if ($request->break_start_time) {
-            $breakStart = $request->break_start_time;
-        }
-
-        if ($request->break_end_time) {
-            $breakEnd = $request->break_end_time;
-        }
-
         $attendance->update([
             'check_in' => $checkIn,
             'check_out' => $checkOut,
-            'break_start' => $breakStart,
-            'break_end' => $breakEnd,
             'status' => $request->status,
             'notes' => $request->notes
         ]);
@@ -233,7 +190,7 @@ class AttendanceController extends Controller
 
     public function destroy($id)
     {
-        if (!auth()->user()->can('hapus absensi')) {
+        if (!auth()->user()->hasPermissionTo('hapus absensi')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki izin untuk menghapus absensi'
@@ -260,8 +217,6 @@ class AttendanceController extends Controller
         return response()->json([
             'attendance' => $todayAttendance ? $todayAttendance->load('employee', 'warehouse') : null,
             'can_check_out' => $todayAttendance ? $todayAttendance->canCheckOut() : false,
-            'is_on_break' => $todayAttendance ? $todayAttendance->isOnBreak() : false,
-            'has_used_break' => $todayAttendance ? $todayAttendance->hasUsedBreak() : false,
         ]);
     }
 }
