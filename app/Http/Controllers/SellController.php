@@ -707,10 +707,11 @@ class SellController extends Controller
 
         $sisaHutang = $grandTotal - $currentPay;
 
-        if ($payment > $sisaHutang) {
+        // Validate total payment (payment + potongan) against remaining debt
+        if (($payment + $potongan) > $sisaHutang) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Pembayaran piutang tidak boleh lebih dari sisa piutang'
+                'message' => 'Total pembayaran dan potongan tidak boleh lebih dari sisa piutang'
             ]);
         }
 
