@@ -167,6 +167,11 @@ class SellController extends Controller
     {
         $sellCart = SellCart::where('cashier_id', auth()->id())->get();
 
+        // Validate cart has items if not a draft
+        if ($sellCart->isEmpty() && $request->status !== 'draft') {
+            return redirect()->back()->withInput()->withErrors('Keranjang penjualan kosong');
+        }
+
         $transfer = (int)str_replace(',', '', $request->transfer ?? 0);
         $cash = (int)str_replace(',', '', $request->cash ?? 0);
         $grandtotal = (int)preg_replace('/[,.]/', '', $request->grand_total);
@@ -189,26 +194,37 @@ class SellController extends Controller
             return redirect()->back()->withInput()->withErrors('Terjadi Kesalahan Kalkulasi Total');
         }
 
-        $sell = Sell::create([
-            'cashier_id' => auth()->id(),
-            'warehouse_id' => auth()->user()->warehouse_id,
-            'order_number' => $request->order_number,
-            'customer_id' => $request->customer,
-            'subtotal' => preg_replace('/[,.]/', '', $request->subtotal),
-            'grand_total' => preg_replace('/[,.]/', '', $request->grand_total),
-            'cash' => preg_replace('/[,.]/', '', $cash),
-            'transfer' => preg_replace('/[,.]/', '', $transfer),
-            'pay' => preg_replace('/[,.]/', '', $pay),
-            'change' => preg_replace('/[,.]/', '', $request->change ?? 0),
-            'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
-            'payment_method' => $request->payment_method,
-            'status' => $status,
-        ]);
-
-        $customer = Customer::find($request->customer);
-
         try {
             DB::beginTransaction();
+
+            Log::info('Starting sale transaction', [
+                'cart_items' => $sellCart->count(),
+                'status' => $request->status,
+                'payment_method' => $request->payment_method
+            ]);
+
+            $sell = Sell::create([
+                'cashier_id' => auth()->id(),
+                'warehouse_id' => auth()->user()->warehouse_id,
+                'order_number' => $request->order_number,
+                'customer_id' => $request->customer,
+                'subtotal' => preg_replace('/[,.]/', '', $request->subtotal),
+                'grand_total' => preg_replace('/[,.]/', '', $request->grand_total),
+                'cash' => preg_replace('/[,.]/', '', $cash),
+                'transfer' => preg_replace('/[,.]/', '', $transfer),
+                'pay' => preg_replace('/[,.]/', '', $pay),
+                'change' => preg_replace('/[,.]/', '', $request->change ?? 0),
+                'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
+                'payment_method' => $request->payment_method,
+                'status' => $status,
+            ]);
+
+            Log::info('Created sell record', [
+                'sell_id' => $sell->id,
+                'order_number' => $sell->order_number
+            ]);
+
+            $customer = Customer::find($request->customer);
 
             if ($request->status == 'draft') {
                 foreach ($sellCart as $sc) {
@@ -222,17 +238,23 @@ class SellController extends Controller
                         'diskon' => $sc->diskon,
                     ]);
                 }
-
-                SellCart::where('cashier_id', auth()->id())->delete();
             } else {
+                // Create sell details first
                 foreach ($sellCart as $sc) {
-                    SellDetail::create([
+                    $detail = SellDetail::create([
                         'sell_id' => $sell->id,
                         'product_id' => $sc->product_id,
                         'unit_id' => $sc->unit_id,
                         'quantity' => $sc->quantity,
                         'price' => $sc->price,
                         'diskon' => $sc->diskon,
+                    ]);
+
+                    Log::info('Created sell detail', [
+                        'sell_id' => $sell->id,
+                        'detail_id' => $detail->id,
+                        'product_id' => $sc->product_id,
+                        'quantity' => $sc->quantity
                     ]);
 
                     $unit = Unit::find($sc->unit_id);
@@ -261,9 +283,6 @@ class SellController extends Controller
                     ]);
                 }
 
-                // delete all purchase cart
-                SellCart::where('cashier_id', auth()->id())->delete();
-
                 // Only create cashflow if there's actual payment
                 if ($pay > 0 && $request->payment_method) {
                     $this->cashflowService->handleSalePayment(
@@ -276,33 +295,63 @@ class SellController extends Controller
                         change: $sell->change
                     );
                 }
+
+                // Move cart deletion to end of transaction
+                SellCart::where('cashier_id', auth()->id())->delete();
             }
 
-            // Commit all database operations before attempting to print
             DB::commit();
+
+            // Verify sell details were created if not a draft
+            if ($request->status !== 'draft') {
+                $detailCount = SellDetail::where('sell_id', $sell->id)->count();
+                if ($detailCount === 0) {
+                    Log::error('Sell details missing after commit', [
+                        'sell_id' => $sell->id,
+                        'order_number' => $sell->order_number
+                    ]);
+                    return redirect()->back()->withInput()
+                        ->withErrors('Terjadi kesalahan: Detail penjualan tidak tersimpan');
+                }
+            }
+
+            Log::info('Sale transaction completed successfully', [
+                'order_number' => $sell->order_number,
+                'status' => $status,
+                'detail_count' => $detailCount ?? 0
+            ]);
+
+            if ($request->status != 'draft') {
+                try {
+                    // Add a small delay to ensure database operations are fully committed
+                    sleep(1);
+
+                    $printUrl = route('penjualan.print', $sell->id);
+                    $script = "<script>
+                        setTimeout(function() {
+                            window.open('$printUrl', '_blank');
+                        }, 500);
+                    </script>";
+                    return Response::make($script . '<script>setTimeout(function() { window.location.href = "' . route('penjualan.index') . '"; }, 1000);</script>');
+                } catch (\Throwable $th) {
+                    Log::error('Print error', [
+                        'error' => $th->getMessage(),
+                        'sell_id' => $sell->id
+                    ]);
+                    return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
+                }
+            } else {
+                return redirect()->route('penjualan.index');
+            }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error storing sale: ' . $e->getMessage());
-            return redirect()->back()->withInput()->withErrors('Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
-        }
-
-        if ($request->status != 'draft') {
-            try {
-                // Add a small delay to ensure database operations are fully committed
-                sleep(1);
-
-                $printUrl = route('penjualan.print', $sell->id);
-                $script = "<script>
-                    setTimeout(function() {
-                        window.open('$printUrl', '_blank');
-                    }, 500);
-                </script>";
-                return Response::make($script . '<script>setTimeout(function() { window.location.href = "' . route('penjualan.index') . '"; }, 1000);</script>');
-            } catch (\Throwable $th) {
-                return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
-            }
-        } else {
-            return redirect()->route('penjualan.index');
+            Log::error('Error storing sale', [
+                'error' => $e->getMessage(),
+                'cart_items' => $sellCart->count(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->withInput()
+                ->withErrors('Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
         }
     }
 
