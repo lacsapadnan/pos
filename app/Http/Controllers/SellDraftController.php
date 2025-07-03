@@ -117,6 +117,31 @@ class SellDraftController extends Controller
             $status = 'lunas';
         }
 
+        // Generate new order number if status is not draft and cashier changed
+        if ($status !== 'draft' && $sell->cashier_id !== auth()->id()) {
+            $today = date('Ymd');
+            $today = substr($today, 2);
+            $warehouseId = auth()->user()->warehouse_id;
+            $userId = auth()->id();
+
+            $lastOrder = Sell::where('cashier_id', $userId)
+                ->where('warehouse_id', $warehouseId)
+                ->whereDate('created_at', now())
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($lastOrder) {
+                $lastOrderNumberPart = explode('-', $lastOrder->order_number);
+                $lastOrderNumber = intval(end($lastOrderNumberPart));
+                $newOrderNumber = $lastOrderNumber + 1;
+            } else {
+                $newOrderNumber = 1;
+            }
+
+            $formattedOrderNumber = str_pad($newOrderNumber, 4, '0', STR_PAD_LEFT);
+            $sell->order_number = "PJ-" . $today . "-" . $warehouseId . $userId . "-" . $formattedOrderNumber;
+        }
+
         $sell->status = $status;
         $sell->customer_id = $request->customer;
         $sell->grand_total = preg_replace('/[,.]/', '', $request->grand_total);

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cashflow;
 use App\Models\Customer;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -20,7 +19,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Mike42\Escpos\EscposImage;
 use Mike42\Escpos\ImagickEscposImage;
@@ -197,12 +195,6 @@ class SellController extends Controller
         try {
             DB::beginTransaction();
 
-            Log::info('Starting sale transaction', [
-                'cart_items' => $sellCart->count(),
-                'status' => $request->status,
-                'payment_method' => $request->payment_method
-            ]);
-
             $sell = Sell::create([
                 'cashier_id' => auth()->id(),
                 'warehouse_id' => auth()->user()->warehouse_id,
@@ -217,11 +209,6 @@ class SellController extends Controller
                 'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->transaction_date)->format('Y-m-d'),
                 'payment_method' => $request->payment_method,
                 'status' => $status,
-            ]);
-
-            Log::info('Created sell record', [
-                'sell_id' => $sell->id,
-                'order_number' => $sell->order_number
             ]);
 
             $customer = Customer::find($request->customer);
@@ -253,12 +240,6 @@ class SellController extends Controller
                         'diskon' => $sc->diskon,
                     ]);
 
-                    Log::info('Created sell detail', [
-                        'sell_id' => $sell->id,
-                        'detail_id' => $detail->id,
-                        'product_id' => $sc->product_id,
-                        'quantity' => $sc->quantity
-                    ]);
 
                     $unit = Unit::find($sc->unit_id);
                     $product = Product::find($sc->product_id);
@@ -309,20 +290,10 @@ class SellController extends Controller
             if ($request->status !== 'draft') {
                 $detailCount = SellDetail::where('sell_id', $sell->id)->count();
                 if ($detailCount === 0) {
-                    Log::error('Sell details missing after commit', [
-                        'sell_id' => $sell->id,
-                        'order_number' => $sell->order_number
-                    ]);
                     return redirect()->back()->withInput()
                         ->withErrors('Terjadi kesalahan: Detail penjualan tidak tersimpan');
                 }
             }
-
-            Log::info('Sale transaction completed successfully', [
-                'order_number' => $sell->order_number,
-                'status' => $status,
-                'detail_count' => $detailCount ?? 0
-            ]);
 
             if ($request->status != 'draft') {
                 try {
@@ -337,10 +308,6 @@ class SellController extends Controller
                     </script>";
                     return Response::make($script . '<script>setTimeout(function() { window.location.href = "' . route('penjualan.index') . '"; }, 1000);</script>');
                 } catch (\Throwable $th) {
-                    Log::error('Print error', [
-                        'error' => $th->getMessage(),
-                        'sell_id' => $sell->id
-                    ]);
                     return redirect()->route('penjualan.index')->withErrors('Transaksi berhasil disimpan, tetapi gagal mencetak struk');
                 }
             } else {
@@ -348,11 +315,6 @@ class SellController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error storing sale', [
-                'error' => $e->getMessage(),
-                'cart_items' => $sellCart->count(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return redirect()->back()->withInput()
                 ->withErrors('Terjadi kesalahan saat menyimpan transaksi: ' . $e->getMessage());
         }
@@ -527,7 +489,6 @@ class SellController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Exception occurred while processing data: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to add items to cart.'], 500);
         }
 
