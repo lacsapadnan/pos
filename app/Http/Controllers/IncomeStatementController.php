@@ -252,43 +252,78 @@ class IncomeStatementController extends Controller
     private function calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches = false)
     {
         try {
-            // Get COGS data in a single optimized query
-            $baseQuery = DB::table('product_reports as pr')
-                ->join('products as p', 'pr.product_id', '=', 'p.id')
-                ->whereBetween('pr.created_at', [$fromDate, $endDate])
-                ->where('pr.for', 'KELUAR')
-                ->where('pr.type', 'PENJUALAN');
+            // Get COGS data from sell_details with proper cost pricing
+            $baseQuery = DB::table('sells as s')
+                ->join('sell_details as sd', 's.id', '=', 'sd.sell_id')
+                ->join('products as p', 'sd.product_id', '=', 'p.id')
+                ->where('s.status', '!=', 'draft')
+                ->where('s.status', '!=', 'batal')
+                ->where('s.status', '!=', 'piutang')
+                ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
             if ($warehouse_id && !$all_branches) {
-                $baseQuery->where('pr.warehouse_id', $warehouse_id);
+                $baseQuery->where('s.warehouse_id', $warehouse_id);
             }
 
             if ($user_id) {
-                $baseQuery->where('pr.user_id', $user_id);
+                $baseQuery->where('s.cashier_id', $user_id);
             }
 
-            // Get aggregated data in a single query
-            $cogsData = $baseQuery
+            // Get the data with warehouse info for cost price calculation
+            $salesData = $baseQuery
                 ->select(
-                    'pr.product_id',
+                    'sd.product_id',
                     'p.name as product_name',
-                    DB::raw('SUM(pr.qty) as total_quantity'),
-                    DB::raw('SUM(pr.qty * COALESCE(pr.price, 0)) as total_cogs')
+                    'sd.quantity',
+                    'sd.unit_id',
+                    'p.lastest_price_eceran',
+                    'p.lastest_price_eceran_out_of_town',
+                    's.warehouse_id'
                 )
-                ->groupBy('pr.product_id', 'p.name')
                 ->get();
 
             $totalCogs = 0;
             $cogsByProduct = [];
 
-            foreach ($cogsData as $item) {
-                $totalCogs += floatval($item->total_cogs);
-                $cogsByProduct[$item->product_id] = [
-                    'product_name' => $item->product_name,
-                    'quantity_sold_eceran' => floatval($item->total_quantity),
-                    'total_cogs' => floatval($item->total_cogs),
-                    'cost_price' => $item->total_quantity > 0 ? floatval($item->total_cogs) / floatval($item->total_quantity) : 0
-                ];
+            foreach ($salesData as $item) {
+                // Determine if warehouse is out of town
+                $isOutOfTown = false;
+                if ($item->warehouse_id) {
+                    $itemWarehouse = Warehouse::find($item->warehouse_id);
+                    $isOutOfTown = $itemWarehouse ? ($itemWarehouse->isOutOfTown ?? false) : false;
+                }
+
+                // Get cost price based on location
+                $costPrice = $isOutOfTown ?
+                    floatval($item->lastest_price_eceran_out_of_town ?? $item->lastest_price_eceran ?? 0) :
+                    floatval($item->lastest_price_eceran ?? 0);
+
+                // Convert quantity to eceran for consistency
+                $product = Product::find($item->product_id);
+                $quantityInEceran = $this->convertToEceran($item->quantity, $item->unit_id, $product);
+
+                // Calculate total cost for this item (cost per eceran * quantity in eceran)
+                $itemTotalCost = $quantityInEceran * $costPrice;
+                $totalCogs += $itemTotalCost;
+
+                // Aggregate by product
+                if (!isset($cogsByProduct[$item->product_id])) {
+                    $cogsByProduct[$item->product_id] = [
+                        'product_name' => $item->product_name,
+                        'quantity_sold_eceran' => 0,
+                        'total_cogs' => 0,
+                        'cost_price' => $costPrice
+                    ];
+                }
+
+                $cogsByProduct[$item->product_id]['quantity_sold_eceran'] += $quantityInEceran;
+                $cogsByProduct[$item->product_id]['total_cogs'] += $itemTotalCost;
+
+                // Update average cost price
+                if ($cogsByProduct[$item->product_id]['quantity_sold_eceran'] > 0) {
+                    $cogsByProduct[$item->product_id]['cost_price'] =
+                        $cogsByProduct[$item->product_id]['total_cogs'] / $cogsByProduct[$item->product_id]['quantity_sold_eceran'];
+                }
             }
 
             return [
@@ -297,7 +332,7 @@ class IncomeStatementController extends Controller
                 'is_out_of_town' => $warehouse ? ($warehouse->isOutOfTown ?? false) : false
             ];
         } catch (\Exception $e) {
-            \Log::error('Error in calculateCostOfGoodsSoldOptimized: ' . $e->getMessage());
+            Log::error('Error in calculateCostOfGoodsSoldOptimized: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -654,5 +689,49 @@ class IncomeStatementController extends Controller
             default:
                 return $safeQuantity;
         }
+    }
+
+    /**
+     * Get cost price (harga modal) for a product based on warehouse location
+     * Uses lastest_price_eceran for in-town and lastest_price_eceran_out_of_town for out-of-town
+     */
+    private function getCostPrice($productId, $unitId, $warehouseId = null)
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return 0;
+        }
+
+        // Determine if warehouse is out of town
+        $isOutOfTown = false;
+        if ($warehouseId) {
+            $warehouse = Warehouse::find($warehouseId);
+            $isOutOfTown = $warehouse ? ($warehouse->isOutOfTown ?? false) : false;
+        }
+
+        // Get base cost price based on location
+        $baseCostPrice = $isOutOfTown ?
+            floatval($product->lastest_price_eceran_out_of_town ?? $product->lastest_price_eceran ?? 0) :
+            floatval($product->lastest_price_eceran ?? 0);
+
+        // For non-eceran units, we use the same base cost price
+        // since lastest_price_eceran is the reference cost price per unit
+        return $baseCostPrice;
+    }
+
+    /**
+     * Get cost price by unit type string and warehouse location
+     */
+    private function getCostPriceByUnitType($product, $unitType, $isOutOfTown = false)
+    {
+        // Get base cost price based on location
+        $baseCostPrice = $isOutOfTown ?
+            floatval($product->lastest_price_eceran_out_of_town ?? $product->lastest_price_eceran ?? 0) :
+            floatval($product->lastest_price_eceran ?? 0);
+
+        // All units use the same base cost price per unit
+        // since lastest_price_eceran is the reference cost price
+        return $baseCostPrice;
     }
 }
