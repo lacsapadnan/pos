@@ -94,83 +94,53 @@
 
         // Private functions
         var initDatatable = function() {
-            // Init datatable
             datatable = $(table).DataTable({
-                "info": false,
-                'order': [[0, 'desc']],
-                'pageLength': 10,
-            processing: true,
-            serverSide: true,
-            ajax: {
-                url: "{{ route('activity-log.data') }}",
-                data: function(d) {
-                    d.log_name = $('#filter_log_name').val();
-                    d.causer_id = $('#filter_user').val();
-                    d.subject_type = $('#filter_subject_type').val();
+                processing: true,
+                serverSide: true,
+                order: [[0, 'desc']],
+                pageLength: 10,
+                ajax: {
+                    url: "{{ route('activity-log.data') }}",
+                    data: function(d) {
+                        d.log_name = $('#filter_log_name').val();
+                        d.causer_id = $('#filter_user').val();
+                        d.subject_type = $('#filter_subject_type').val();
 
-                    let dateRange = $('#filter_date_range').val();
-                    if (dateRange) {
-                        let dates = dateRange.split(' to ');
-                        d.from_date = dates[0];
-                        d.to_date = dates[1];
-                    }
-                }
-            },
-            columns: [
-                {
-                    data: 'formatted_date',
-                    name: 'created_at'
-                },
-                {
-                    data: 'causer_name',
-                    name: 'causer_id',
-                    render: function(data) {
-                        return data || 'System';
+                        let dateRange = $('#filter_date_range').val();
+                        if (dateRange) {
+                            let dates = dateRange.split(' to ');
+                            d.from_date = dates[0];
+                            d.to_date = dates[1];
+                        }
                     }
                 },
-                {
-                    data: 'description',
-                    name: 'description'
-                },
-                {
-                    data: 'subject_name',
-                    name: 'subject_id',
-                    render: function(data, type, row) {
-                        return data || 'N/A';
+                columns: [
+                    {
+                        data: 'formatted_date',
+                        name: 'created_at'
+                    },
+                    {
+                        data: 'causer_name',
+                        name: 'causer_id'
+                    },
+                    {
+                        data: 'description',
+                        name: 'description'
+                    },
+                    {
+                        data: 'subject_name',
+                        name: 'subject_id'
+                    },
+                    {
+                        data: 'log_name',
+                        name: 'log_name'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false
                     }
-                },
-                {
-                    data: 'log_name',
-                    name: 'log_name'
-                },
-                {
-                        data: 'id',
-                    orderable: false,
-                    searchable: false,
-                    render: function(data, type, row) {
-                        return `
-                            <div class="flex-shrink-0 d-flex justify-content-end">
-                                <a href="/activity-log/${data}" class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1" title="View Details">
-                                <i class="ki-duotone ki-eye fs-2">
-                                    <span class="path1"></span>
-                                    <span class="path2"></span>
-                                    <span class="path3"></span>
-                                </i>
-                            </a>
-                            @can('hapus activity log')
-                                <button type="button" class="btn btn-icon btn-bg-light btn-active-color-danger btn-sm delete-activity" data-id="${data}" title="Delete">
-                                <i class="ki-duotone ki-trash fs-2">
-                                    <span class="path1"></span>
-                                    <span class="path2"></span>
-                                    <span class="path3"></span>
-                                    <span class="path4"></span>
-                                    <span class="path5"></span>
-                                </i>
-                            </button>
-                            @endcan
-                        </div>`;
-                    }
-                }
                 ]
             });
         }
@@ -218,75 +188,75 @@
                     });
                     $('#filter_subject_type').html(options);
                 }
-        });
+            });
 
-        // Apply filters
-        $('#apply_filter').on('click', function() {
+            // Apply filters
+            $('#apply_filter').on('click', function() {
                 datatable.ajax.reload();
-        });
+            });
 
-        // Reset filters
-        $('#reset_filter').on('click', function() {
-            $('#filter_log_name').val('');
-            $('#filter_user').val('');
-            $('#filter_subject_type').val('');
-            $('#filter_date_range').val('');
+            // Reset filters
+            $('#reset_filter').on('click', function() {
+                $('#filter_log_name').val('');
+                $('#filter_user').val('');
+                $('#filter_subject_type').val('');
+                $('#filter_date_range').val('');
                 datatable.ajax.reload();
-        });
+            });
         }
 
         var handleDeleteRows = function() {
-        // Delete activity log
-        $(document).on('click', '.delete-activity', function() {
-            let id = $(this).data('id');
+            // Delete activity log
+            $(document).on('click', '.delete-activity', function() {
+                let id = $(this).data('id');
 
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
                             url: '/activity-log/' + id,
-                        type: 'DELETE',
-                        data: {
-                            _token: '{{ csrf_token() }}'
-                        },
-                                                    success: function(response) {
-                            if (response.success) {
-                            Swal.fire(
-                                'Deleted!',
-                                    response.message,
-                                'success'
-                            );
-                                datatable.ajax.reload();
-                            } else {
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire(
+                                        'Deleted!',
+                                        response.message,
+                                        'success'
+                                    );
+                                    datatable.ajax.reload();
+                                } else {
+                                    Swal.fire(
+                                        'Error!',
+                                        response.message,
+                                        'error'
+                                    );
+                                }
+                            },
+                            error: function(xhr) {
+                                let errorMessage = 'Something went wrong.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
                                 Swal.fire(
                                     'Error!',
-                                    response.message,
+                                    errorMessage,
                                     'error'
                                 );
                             }
-                        },
-                        error: function(xhr) {
-                            let errorMessage = 'Something went wrong.';
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            }
-                            Swal.fire(
-                                'Error!',
-                                errorMessage,
-                                'error'
-                            );
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             });
-        });
         }
 
         // Public methods

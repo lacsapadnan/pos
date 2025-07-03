@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 use App\Models\User;
 use Carbon\Carbon;
+use DataTables;
 
 class ActivityLogController extends Controller
 {
@@ -50,40 +51,21 @@ class ActivityLogController extends Controller
             $query->where('subject_type', 'LIKE', '%' . $request->subject_type . '%');
         }
 
-        // Filter by description
-        if ($request->has('description') && $request->description) {
-            $query->where('description', 'LIKE', '%' . $request->description . '%');
-        }
-
-        // Get total count before applying pagination
-        $totalCount = Activity::count();
-        $filteredCount = $query->count();
-
-        // Apply DataTables pagination
-        $start = $request->get('start', 0);
-        $length = $request->get('length', 10);
-
-        $activities = $query->orderBy('created_at', 'desc')
-            ->skip($start)
-            ->take($length)
-            ->get();
-
-        // Format data for better display
-        $activities->transform(function ($activity) {
-            $activity->formatted_properties = $this->formatProperties($activity->properties);
-            $activity->causer_name = $activity->causer ? $activity->causer->name : 'System';
-            $activity->subject_name = $this->getSubjectName($activity);
-            $activity->formatted_date = Carbon::parse($activity->created_at)->format('d M Y H:i:s');
-            return $activity;
-        });
-
-        // Return DataTables format
-        return response()->json([
-            'draw' => $request->get('draw', 1),
-            'recordsTotal' => $totalCount,
-            'recordsFiltered' => $filteredCount,
-            'data' => $activities
-        ]);
+        return DataTables::of($query)
+            ->addColumn('formatted_date', function ($activity) {
+                return Carbon::parse($activity->created_at)->format('d M Y H:i:s');
+            })
+            ->addColumn('causer_name', function ($activity) {
+                return $activity->causer ? $activity->causer->name : 'System';
+            })
+            ->addColumn('subject_name', function ($activity) {
+                return $this->getSubjectName($activity);
+            })
+            ->addColumn('action', function ($activity) {
+                return view('pages.activity-log.partials.action-buttons', compact('activity'))->render();
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function show($id)
