@@ -34,6 +34,12 @@ class Inventory extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('inventory_management')
-            ->setDescriptionForEvent(fn(string $eventName) => "Inventory for {$this->product->name} at {$this->warehouse->name} has been {$eventName}");
+            ->setDescriptionForEvent(fn(string $eventName) => "Inventory for {$this->product->name} at {$this->warehouse->name} has been {$eventName}")
+            ->logOnly(['quantity'])
+            ->dontLogIfAttributesChangedOnly(['quantity'], function (Inventory $inventory) {
+                // Get the current URL to determine if we're in a sell route
+                $currentUrl = request()->url();
+                return str_contains($currentUrl, '/sell/');
+            });
     }
 }
