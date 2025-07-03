@@ -238,6 +238,9 @@ class SellController extends Controller
                         'diskon' => $sc->diskon,
                     ]);
                 }
+
+                // Clear the cart after creating draft
+                SellCart::where('cashier_id', auth()->id())->delete();
             } else {
                 // Create sell details first
                 foreach ($sellCart as $sc) {
