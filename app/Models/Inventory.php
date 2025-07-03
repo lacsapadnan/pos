@@ -9,7 +9,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Inventory extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory;
     protected $fillable =
     [
         'product_id',
@@ -27,19 +27,19 @@ class Inventory extends Model
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logFillable()
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->useLogName('inventory_management')
-            ->setDescriptionForEvent(fn(string $eventName) => "Inventory for {$this->product->name} at {$this->warehouse->name} has been {$eventName}")
-            ->logOnly(['quantity'])
-            ->dontLogIfAttributesChangedOnly(['quantity'], function (Inventory $inventory) {
-                // Get the current URL to determine if we're in a sell route
-                $currentUrl = request()->url();
-                return str_contains($currentUrl, '/sell/');
-            });
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logFillable()
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->useLogName('inventory_management')
+    //         ->setDescriptionForEvent(fn(string $eventName) => "Inventory for {$this->product->name} at {$this->warehouse->name} has been {$eventName}")
+    //         ->logOnly(['quantity'])
+    //         ->dontLogIfAttributesChangedOnly(['quantity'], function (Inventory $inventory) {
+    //             // Get the current URL to determine if we're in a sell route
+    //             $currentUrl = request()->url();
+    //             return str_contains($currentUrl, '/sell/');
+    //         });
+    // }
 }
