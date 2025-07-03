@@ -323,7 +323,7 @@ class PurchaseController extends Controller
     {
         // Optimized query with only necessary relationships
         $purchase = Purchase::with([
-            'details.product:id,name,price_sell_dus',
+            'details.product:id,name,price_sell_dus,unit_dus,unit_pak,unit_eceran,dus_to_eceran,pak_to_eceran',
             'details.unit:id,name',
             'supplier:id,name',
             'warehouse:id,name'
@@ -332,26 +332,28 @@ class PurchaseController extends Controller
         // Only get suppliers for the dropdown
         $suppliers = Supplier::select('id', 'name')->orderBy('name', 'asc')->get();
 
-        // Get only products and units that are currently used in this purchase
-        $usedProductIds = $purchase->details->pluck('product_id')->unique();
-        $usedUnitIds = $purchase->details->pluck('unit_id')->unique();
-
-        // Get all products for the select dropdowns (optimize by selecting only needed fields)
-        $products = Product::select('id', 'name')->where('isShow', true)->orderBy('name', 'asc')->get();
+        // Get all active products with their units
+        $products = Product::select(
+            'id',
+            'name',
+            'price_sell_dus',
+            'unit_dus',
+            'unit_pak',
+            'unit_eceran'
+        )
+            ->where('isShow', true)
+            ->orderBy('name', 'asc')
+            ->get();
 
         // Get all units for the select dropdowns
         $units = Unit::select('id', 'name')->orderBy('name', 'asc')->get();
 
-        // Pre-build options for better performance
-        $productOptions = $products->mapWithKeys(function ($product) {
-            return [$product->id => $product->name];
-        });
-
+        // Pre-build unit options for better performance
         $unitOptions = $units->mapWithKeys(function ($unit) {
             return [$unit->id => $unit->name];
         });
 
-        return view('pages.purchase.edit', compact('purchase', 'suppliers', 'productOptions', 'unitOptions'));
+        return view('pages.purchase.edit', compact('purchase', 'suppliers', 'products', 'unitOptions'));
     }
 
     /**
@@ -359,65 +361,68 @@ class PurchaseController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        DB::beginTransaction();
         try {
-            $product_id = $request->input('product_id', []);
-            $unit_id = $request->input('unit_id', []);
-            $qty = $request->input('qty', []);
-            $discount_fix = $request->input('discount_fix', []);
-            $discount_percent = $request->input('discount_percent', []);
-            $price_unit = $request->input('price_unit', []);
-            $tax = $request->tax;
+            // 1. Get original purchase details for reversal
+            $purchase = Purchase::with(['details.product', 'details.unit'])->findOrFail($id);
 
-            $subtotal = 0;
+            $product_ids = $request->input('product_id', []);
+            $unit_ids = $request->input('unit_id', []);
+            $quantities = $request->input('qty', []);
+            $discount_fixes = $request->input('discount_fix', []);
+            $discount_percents = $request->input('discount_percent', []);
+            $price_units = $request->input('price_unit', []);
+            $tax = $request->tax ?? 0;
 
-            foreach ($product_id as $key => $productIdValue) {
-                $formattedPriceUnit = $price_unit[$key];
-                $numericPriceUnit = str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
-
-                if (
-                    isset($unit_id[$key]) &&
-                    isset($qty[$key]) &&
-                    isset($discount_fix[$key]) &&
-                    isset($discount_percent[$key])
-                ) {
-                    $subtotal += ($numericPriceUnit - $discount_fix[$key]) * (1 - $discount_percent[$key] / 100) * $qty[$key];
-                } else {
-                    Log::error("Invalid data at index {$key} for purchase detail update.");
-                    throw new \Exception("Invalid data at index {$key} for purchase detail update.");
+            // Validate inputs
+            foreach ($quantities as $qty) {
+                if ($qty <= 0) {
+                    throw new \Exception('Quantity must be greater than 0');
                 }
             }
 
-            if ($tax == null) {
-                $tax = 0;
-            }
+            // 2. Calculate new subtotal
+            $subtotal = $this->calculateSubtotal($product_ids, $quantities, $price_units, $discount_fixes, $discount_percents);
             $grand_total = $subtotal + ($subtotal * $tax / 100);
 
-            $purchase = Purchase::with('details')->find($id);
-            $purchase->invoice = $request->invoice ?? $purchase->invoice;
-            $purchase->supplier_id = $request->supplier_id ?? $purchase->supplier_id;
-            $purchase->subtotal = $subtotal ?? $purchase->subtotal;
-            $purchase->tax = $tax ?? $purchase->tax;
-            $purchase->grand_total = $grand_total ?? $purchase->grand_total;
-            $purchase->update();
+            // 3. For each detail, reverse old inventory and create new
+            foreach ($purchase->details as $index => $detail) {
+                // Reverse old inventory
+                $this->reverseInventoryChange($detail, $purchase->warehouse_id);
 
-            $purchaseDetail = PurchaseDetail::where('purchase_id', $id)->get();
-            foreach ($purchaseDetail as $key => $pd) {
-                $formattedPriceUnit = $price_unit[$key];
-                $numericPriceUnit = str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
+                // Format price for new inventory
+                $formattedPriceUnit = $price_units[$index];
+                $numericPriceUnit = (int)str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
 
-                $pd->product_id = $product_id[$key];
-                $pd->unit_id = $unit_id[$key];
-                $pd->quantity = $qty[$key];
-                $pd->discount_fix = $discount_fix[$key];
-                $pd->discount_percent = $discount_percent[$key];
-                $pd->price_unit = $numericPriceUnit;
-                $pd->total_price = ($price_unit[$key] - $discount_fix[$key]) * (1 - $discount_percent[$key] / 100) * $qty[$key];
-                $pd->update();
+                // Apply new inventory
+                $this->applyNewInventoryChange(
+                    $product_ids[$index],
+                    $unit_ids[$index],
+                    $quantities[$index],
+                    $purchase->warehouse_id,
+                    $purchase->order_number,
+                    $numericPriceUnit
+                );
             }
 
+            // 4. Update purchase record
+            $purchase->update([
+                'invoice' => $request->invoice,
+                'supplier_id' => $request->supplier_id,
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'grand_total' => $grand_total
+            ]);
+
+            // 5. Update purchase details
+            $this->updatePurchaseDetails($purchase, $product_ids, $unit_ids, $quantities, $price_units, $discount_fixes, $discount_percents);
+
+            DB::commit();
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diupdate');
-        } catch (\Throwable $th) {
-            return redirect()->back()->withErrors(['error' => "Gagal mengupdate pembelian, silahkan cek ulang"]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Purchase update failed: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Gagal mengupdate pembelian: ' . $e->getMessage()]);
         }
     }
 
@@ -667,6 +672,119 @@ class PurchaseController extends Controller
                 return 'cash';
             default:
                 return 'kas kecil'; // Default fallback
+        }
+    }
+
+    private function convertToBaseUnit($quantity, $unitId, $product)
+    {
+        if ($unitId == $product->unit_dus) {
+            return $quantity * $product->dus_to_eceran;
+        } elseif ($unitId == $product->unit_pak) {
+            return $quantity * $product->pak_to_eceran;
+        }
+        return $quantity; // Already in eceran
+    }
+
+    private function getUnitType($unitId, $product)
+    {
+        if ($unitId == $product->unit_dus) {
+            return 'DUS';
+        } elseif ($unitId == $product->unit_pak) {
+            return 'PAK';
+        }
+        return 'ECERAN';
+    }
+
+    private function reverseInventoryChange($detail, $warehouseId)
+    {
+        // Convert quantity to base unit (eceran)
+        $baseQuantity = $this->convertToBaseUnit($detail->quantity, $detail->unit_id, $detail->product);
+
+        // Update inventory
+        $inventory = Inventory::where('warehouse_id', $warehouseId)
+            ->where('product_id', $detail->product_id)
+            ->first();
+
+        if ($inventory) {
+            $inventory->quantity -= $baseQuantity;
+            $inventory->save();
+        }
+
+        // Create reversal product report
+        ProductReport::create([
+            'product_id' => $detail->product_id,
+            'warehouse_id' => $warehouseId,
+            'user_id' => auth()->id(),
+            'unit' => $detail->unit->name,
+            'unit_type' => $this->getUnitType($detail->unit_id, $detail->product),
+            'qty' => -$detail->quantity, // Negative to indicate reversal
+            'price' => $detail->price_unit,
+            'for' => 'KELUAR',
+            'type' => 'PEMBELIAN_EDIT_REVERSAL',
+            'description' => 'Reversal Pembelian Edit ' . $detail->purchase->order_number
+        ]);
+    }
+
+    private function applyNewInventoryChange($productId, $unitId, $quantity, $warehouseId, $orderNumber, $priceUnit)
+    {
+        $product = Product::findOrFail($productId);
+        $unit = Unit::findOrFail($unitId);
+
+        // Convert quantity to base unit (eceran)
+        $baseQuantity = $this->convertToBaseUnit($quantity, $unitId, $product);
+
+        // Update inventory
+        $inventory = Inventory::firstOrCreate(
+            ['warehouse_id' => $warehouseId, 'product_id' => $productId],
+            ['quantity' => 0]
+        );
+
+        $inventory->quantity += $baseQuantity;
+        $inventory->save();
+
+        // Create new product report
+        ProductReport::create([
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'user_id' => auth()->id(),
+            'unit' => $unit->name,
+            'unit_type' => $this->getUnitType($unitId, $product),
+            'qty' => $quantity,
+            'price' => $priceUnit,
+            'for' => 'MASUK',
+            'type' => 'PEMBELIAN_EDIT',
+            'description' => 'Update Pembelian ' . $orderNumber
+        ]);
+    }
+
+    private function calculateSubtotal($productIds, $quantities, $priceUnits, $discountFixes, $discountPercents)
+    {
+        $subtotal = 0;
+        foreach ($productIds as $key => $productId) {
+            $formattedPriceUnit = $priceUnits[$key];
+            $numericPriceUnit = (int)str_replace(['Rp. ', '.', ','], '', $formattedPriceUnit);
+
+            if (isset($quantities[$key]) && isset($discountFixes[$key]) && isset($discountPercents[$key])) {
+                $subtotal += ($numericPriceUnit - $discountFixes[$key]) * (1 - $discountPercents[$key] / 100) * $quantities[$key];
+            }
+        }
+        return $subtotal;
+    }
+
+    private function updatePurchaseDetails($purchase, $productIds, $unitIds, $quantities, $priceUnits, $discountFixes, $discountPercents)
+    {
+        foreach ($purchase->details as $key => $detail) {
+            $numericPriceUnit = (int)str_replace(['Rp. ', '.', ','], '', $priceUnits[$key]);
+
+            $detail->update([
+                'product_id' => $productIds[$key],
+                'unit_id' => $unitIds[$key],
+                'quantity' => $quantities[$key],
+                'discount_fix' => $discountFixes[$key],
+                'discount_percent' => $discountPercents[$key],
+                'price_unit' => $numericPriceUnit,
+                'total_price' => ($numericPriceUnit - $discountFixes[$key]) * (1 - $discountPercents[$key] / 100) * $quantities[$key]
+            ]);
         }
     }
 }

@@ -60,14 +60,22 @@
                         @foreach ($purchase->details as $key => $purchase_detail)
                         <tr>
                             <td>
-                                <div class="form-control-plaintext fw-bold">
-                                    {{ $purchase_detail->product->name }}
-                                </div>
-                                <input type="hidden" name="product_id[]" value="{{ $purchase_detail->product_id }}" />
+                                <select class="form-select product-select" name="product_id[]" data-control="select2"
+                                    data-placeholder="Pilih Produk" data-allow-clear="true" data-row="{{ $key }}">
+                                    <option></option>
+                                    @foreach ($products as $product)
+                                    <option value="{{ $product->id }}" data-unit-dus="{{ $product->unit_dus }}"
+                                        data-unit-pak="{{ $product->unit_pak }}"
+                                        data-unit-eceran="{{ $product->unit_eceran }}" {{ $product->id ==
+                                        $purchase_detail->product_id ? 'selected' : '' }}>
+                                        {{ $product->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
                                 <select class="form-select unit-select" name="unit_id[]" data-control="select2"
-                                    data-placeholder="Pilih Unit" data-allow-clear="true">
+                                    data-placeholder="Pilih Unit" data-allow-clear="true" data-row="{{ $key }}">
                                     <option></option>
                                     @foreach ($unitOptions as $unitId => $unitName)
                                     <option value="{{ $unitId }}" {{ $unitId==$purchase_detail->unit_id ? 'selected' :
@@ -111,28 +119,69 @@
 @push('addon-script')
 <script type="text/javascript">
     $(document).ready(function() {
-        // Initialize Select2 only for visible elements
+        // Initialize Select2 for all dropdowns
         initializeSelect2();
 
         // Format price inputs with debounce for better performance
         setupPriceFormatting();
 
-        // Enable lazy loading for Select2
-        $('.unit-select').select2({
-            width: '100%',
-            placeholder: function() {
-                return $(this).data('placeholder');
-            },
-            allowClear: true,
-            minimumInputLength: 0
+        // Handle product change events
+        $('.product-select').on('change', function() {
+            const row = $(this).data('row');
+            const selectedOption = $(this).find('option:selected');
+
+            // Get unit IDs from data attributes
+            const unitDus = selectedOption.data('unit-dus');
+            const unitPak = selectedOption.data('unit-pak');
+            const unitEceran = selectedOption.data('unit-eceran');
+
+            // Get the unit select in the same row
+            const unitSelect = $(`.unit-select[data-row="${row}"]`);
+
+            // Clear and disable unit select if no product selected
+            if (!selectedOption.val()) {
+                unitSelect.val(null).trigger('change');
+                unitSelect.prop('disabled', true);
+                return;
+            }
+
+            // Enable unit select
+            unitSelect.prop('disabled', false);
+
+            // Store current selection
+            const currentUnit = unitSelect.val();
+
+            // Clear existing options
+            unitSelect.empty();
+
+            // Add empty option
+            unitSelect.append(new Option('', '', false, false));
+
+            // Add available units from unitOptions
+            @foreach ($unitOptions as $unitId => $unitName)
+                if ([unitDus, unitPak, unitEceran].includes({{ $unitId }})) {
+                    const option = new Option('{{ $unitName }}', {{ $unitId }}, false, {{ $unitId }} == currentUnit);
+                    unitSelect.append(option);
+                }
+            @endforeach
+
+            // Trigger change event to refresh Select2
+            unitSelect.trigger('change');
+        });
+
+        // Trigger initial product change events to set up unit dropdowns
+        $('.product-select').each(function() {
+            $(this).trigger('change');
         });
     });
 
     function initializeSelect2() {
         // Initialize select2 with optimized settings
-        $('.unit-select').select2({
+        $('.unit-select, .product-select').select2({
             width: '100%',
-            placeholder: 'Pilih Unit',
+            placeholder: function() {
+                return $(this).data('placeholder');
+            },
             allowClear: true,
             minimumInputLength: 0,
             escapeMarkup: function (markup) { return markup; }
