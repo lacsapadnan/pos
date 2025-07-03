@@ -1,283 +1,319 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Activity Log')
+@section('menu-title', 'Activity Log')
+
+@push('addon-style')
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+@endpush
+
+@include('includes.datatable-pagination')
 
 @section('content')
-<div class="card">
-    <div class="pt-6 border-0 card-header">
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
         <div class="card-title">
-            <h3 class="card-title align-items-start flex-column">
-                <span class="mb-1 card-label fw-bold fs-3">Activity Log</span>
-                <span class="mt-1 text-muted fw-semibold fs-7">Track user activities and system changes</span>
-            </h3>
-        </div>
-        <div class="card-toolbar">
-            <div class="d-flex justify-content-end" data-kt-user-table-toolbar="base">
-                <button type="button" class="btn btn-light-primary me-3" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-filter fs-2">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                    </i>Filter
-                </button>
-                <div class="menu menu-sub menu-sub-dropdown w-300px w-md-325px" data-kt-menu="true">
-                    <div class="px-7 py-5">
-                        <div class="fs-5 text-dark fw-bold">Filter Options</div>
-                    </div>
-                    <div class="border-gray-200 separator"></div>
-                    <div class="px-7 py-5">
-                        <div class="mb-5">
-                            <label class="form-label fw-semibold">Log Category:</label>
-                            <select class="form-select" id="filter_log_name">
-                                <option value="">All Categories</option>
-                            </select>
-                        </div>
-                        <div class="mb-5">
-                            <label class="form-label fw-semibold">User:</label>
-                            <select class="form-select" id="filter_user">
-                                <option value="">All Users</option>
-                                @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-5">
-                            <label class="form-label fw-semibold">Model Type:</label>
-                            <select class="form-select" id="filter_subject_type">
-                                <option value="">All Types</option>
-                            </select>
-                        </div>
-                        <div class="mb-5">
-                            <label class="form-label fw-semibold">Date Range:</label>
-                            <input class="form-control" placeholder="Pick date range" id="filter_date_range" />
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="reset" class="px-6 btn btn-light btn-active-light-primary fw-semibold me-2"
-                                id="reset_filter">Reset</button>
-                            <button type="submit" class="px-6 btn btn-primary fw-semibold"
-                                id="apply_filter">Apply</button>
-                        </div>
-                    </div>
-                </div>
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i>
+                <input type="text" data-kt-filter="search" class="form-control form-control-solid w-250px ps-14"
+                    placeholder="Search activity log">
+            </div>
+            <!--end::Search-->
+
+            <div class="ms-2">
+                <select id="logNameFilter" class="form-select" data-control="select2"
+                    data-placeholder="Select Category">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+
+            <div class="ms-2">
+                <select id="userFilter" class="form-select" data-control="select2" data-placeholder="Select User">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="ms-2">
+                <select id="subjectTypeFilter" class="form-select" data-control="select2"
+                    data-placeholder="Select Type">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                    data-kt-filter="date" placeholder="From Date">
+                <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2" data-kt-filter="date"
+                    placeholder="To Date">
             </div>
         </div>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                data-kt-menu-placement="bottom-end">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </button>
+            <!--begin::Menu-->
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
     </div>
-    <div class="py-4 card-body">
-        <table class="table align-middle table-row-dashed fs-6 gy-5" id="activity_log_table">
-            <thead>
-                <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
-                    <th class="min-w-125px">Date & Time</th>
-                    <th class="min-w-125px">User</th>
-                    <th class="min-w-125px">Activity</th>
-                    <th class="min-w-125px">Subject</th>
-                    <th class="min-w-125px">Category</th>
-                    <th class="min-w-100px text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-600 fw-semibold">
-                <!-- Data will be loaded via AJAX -->
-            </tbody>
-        </table>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle border table-row-dashed fs-6 g-5" id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase">
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Subject Type</th>
+                            <th>Subject</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600 fw-semibold">
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
 
 @push('addon-script')
+<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
 <script>
     "use strict";
 
-    // Class definition
-    var KTActivityLogTable = function() {
-        // Shared variables
-        var table;
-        var datatable;
+var KTDatatablesExample = function() {
+    var table;
+    var datatable;
 
-        // Private functions
-        var initDatatable = function() {
-            datatable = $(table).DataTable({
-                processing: true,
-                serverSide: true,
-                order: [[0, 'desc']],
-                pageLength: 10,
-                ajax: {
-                    url: "{{ route('activity-log.data') }}",
-                    data: function(d) {
-                        d.log_name = $('#filter_log_name').val();
-                        d.causer_id = $('#filter_user').val();
-                        d.subject_type = $('#filter_subject_type').val();
-
-                        let dateRange = $('#filter_date_range').val();
-                        if (dateRange) {
-                            let dates = dateRange.split(' to ');
-                            d.from_date = dates[0];
-                            d.to_date = dates[1];
-                        }
-                    }
+    // Private functions
+    var initDatatable = function() {
+        datatable = $(table).DataTable({
+            processing: true,
+            serverSide: true,
+            order: [[0, 'desc']], // Order by date desc by default
+            pageLength: 10,
+            ajax: {
+                url: '{{ route('activity-log.data') }}',
+                type: 'GET',
+            },
+            columns: [
+                {
+                    data: 'formatted_date',
+                    name: 'created_at'
                 },
-                columns: [
-                    {
-                        data: 'formatted_date',
-                        name: 'created_at'
-                    },
-                    {
-                        data: 'causer_name',
-                        name: 'causer_id'
-                    },
-                    {
-                        data: 'description',
-                        name: 'description'
-                    },
-                    {
-                        data: 'subject_name',
-                        name: 'subject_id'
-                    },
-                    {
-                        data: 'log_name',
-                        name: 'log_name'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false
-                    }
-                ]
-            });
-        }
-
-        var initFilters = function() {
-            // Initialize date range picker
-            $("#filter_date_range").daterangepicker({
-                autoUpdateInput: false,
-                locale: {
-                    cancelLabel: 'Clear'
+                {
+                    data: 'causer_name',
+                    name: 'causer_name'
+                },
+                { data: 'log_name' },
+                { data: 'description' },
+                { data: 'subject_type' },
+                { data: 'subject_name' },
+                {
+                    data: 'action',
+                    orderable: false,
+                    searchable: false
                 }
+            ],
+            dom: '<"top"lp>rt<"bottom"lp><"clear">'
+        });
+
+        // Handle filter changes
+        $('#fromDateFilter, #toDateFilter, #logNameFilter, #userFilter, #subjectTypeFilter').on('change', function() {
+            var fromDate = $('#fromDateFilter').val();
+            var toDate = $('#toDateFilter').val();
+            var logName = $('#logNameFilter').val();
+            var userId = $('#userFilter').val();
+            var subjectType = $('#subjectTypeFilter').val();
+
+            var url = '{{ route('activity-log.data') }}';
+            var params = [];
+
+            if (fromDate) params.push('from_date=' + fromDate);
+            if (toDate) params.push('to_date=' + toDate);
+            if (logName) params.push('log_name=' + logName);
+            if (userId) params.push('causer_id=' + userId);
+            if (subjectType) params.push('subject_type=' + subjectType);
+
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+
+            datatable.ajax.url(url).load();
+        });
+
+        // Load log names for filter
+        $.get('{{ route('activity-log.log-names') }}', function(data) {
+            var select = $('#logNameFilter');
+            data.forEach(function(logName) {
+                select.append(new Option(logName, logName));
             });
+        });
 
-            $("#filter_date_range").on('apply.daterangepicker', function(ev, picker) {
-                $(this).val(picker.startDate.format('YYYY-MM-DD') + ' to ' + picker.endDate.format('YYYY-MM-DD'));
+        // Load subject types for filter
+        $.get('{{ route('activity-log.subject-types') }}', function(data) {
+            var select = $('#subjectTypeFilter');
+            data.forEach(function(type) {
+                select.append(new Option(type, type));
             });
+        });
+    }
 
-            $("#filter_date_range").on('cancel.daterangepicker', function(ev, picker) {
-                $(this).val('');
-            });
+    // Search Datatable
+    var handleSearchDatatable = function() {
+        const filterSearch = document.querySelector('[data-kt-filter="search"]');
+        filterSearch.addEventListener('keyup', function(e) {
+            datatable.search(e.target.value).draw();
+        });
+    }
 
-            // Load log names for filter
-            $.ajax({
-                url: "{{ route('activity-log.log-names') }}",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    let options = '<option value="">All Categories</option>';
-                    $.each(data, function(index, value) {
-                        options += '<option value="' + value + '">' + value + '</option>';
-                    });
-                    $('#filter_log_name').html(options);
-                }
-            });
+    // Export buttons
+    var exportButtons = function() {
+        const documentTitle = 'Activity Log Report';
+        var buttons = new $.fn.dataTable.Buttons(table, {
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    title: documentTitle,
+                    action: function(e, dt, button, config) {
+                        KTApp.showPageLoading();
 
-            // Load subject types for filter
-            $.ajax({
-                url: "{{ route('activity-log.subject-types') }}",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    let options = '<option value="">All Types</option>';
-                    $.each(data, function(index, value) {
-                        options += '<option value="' + value + '">' + value + '</option>';
-                    });
-                    $('#filter_subject_type').html(options);
-                }
-            });
+                        var searchValue = dt.search();
+                        var fromDate = $('#fromDateFilter').val();
+                        var toDate = $('#toDateFilter').val();
+                        var logName = $('#logNameFilter').val();
+                        var userId = $('#userFilter').val();
+                        var subjectType = $('#subjectTypeFilter').val();
 
-            // Apply filters
-            $('#apply_filter').on('click', function() {
-                datatable.ajax.reload();
-            });
+                        var filters = {
+                            export: 1,
+                            search: { value: searchValue },
+                            from_date: fromDate,
+                            to_date: toDate,
+                            log_name: logName,
+                            causer_id: userId,
+                            subject_type: subjectType
+                        };
 
-            // Reset filters
-            $('#reset_filter').on('click', function() {
-                $('#filter_log_name').val('');
-                $('#filter_user').val('');
-                $('#filter_subject_type').val('');
-                $('#filter_date_range').val('');
-                datatable.ajax.reload();
-            });
-        }
-
-        var handleDeleteRows = function() {
-            // Delete activity log
-            $(document).on('click', '.delete-activity', function() {
-                let id = $(this).data('id');
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You won't be able to revert this!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
                         $.ajax({
-                            url: '/activity-log/' + id,
-                            type: 'DELETE',
-                            data: {
-                                _token: '{{ csrf_token() }}'
-                            },
+                            url: '{{ route('activity-log.data') }}',
+                            type: 'GET',
+                            data: filters,
                             success: function(response) {
-                                if (response.success) {
-                                    Swal.fire(
-                                        'Deleted!',
-                                        response.message,
-                                        'success'
-                                    );
-                                    datatable.ajax.reload();
-                                } else {
-                                    Swal.fire(
-                                        'Error!',
-                                        response.message,
-                                        'error'
-                                    );
-                                }
-                            },
-                            error: function(xhr) {
-                                let errorMessage = 'Something went wrong.';
-                                if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    errorMessage = xhr.responseJSON.message;
-                                }
-                                Swal.fire(
-                                    'Error!',
-                                    errorMessage,
-                                    'error'
+                                var tempDiv = $('<div style="display:none;"></div>');
+                                var tempTable = $('<table></table>').appendTo(tempDiv);
+                                $('body').append(tempDiv);
+
+                                var tempDT = tempTable.DataTable({
+                                    data: response,
+                                    columns: [
+                                        { data: "formatted_date" },
+                                        { data: "causer_name" },
+                                        { data: "log_name" },
+                                        { data: "description" },
+                                        { data: "subject_type" },
+                                        { data: "subject_name" }
+                                    ],
+                                    destroy: true
+                                });
+
+                                $.fn.dataTable.ext.buttons.excelHtml5.action.call(
+                                    {processing: function(){}, exportOptions: config.exportOptions},
+                                    e, tempDT, button, config
                                 );
+
+                                tempDT.destroy();
+                                tempDiv.remove();
+                                KTApp.hidePageLoading();
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Export error:', error);
+                                KTApp.hidePageLoading();
+                                Swal.fire({
+                                    text: "Failed to export data: " + error,
+                                    icon: "error",
+                                    buttonsStyling: false,
+                                    confirmButtonText: "Ok, got it!",
+                                    customClass: {
+                                        confirmButton: "btn btn-primary"
+                                    }
+                                });
                             }
                         });
                     }
-                });
-            });
-        }
-
-        // Public methods
-        return {
-            init: function() {
-                table = document.querySelector('#activity_log_table');
-
-                if (!table) {
-                    return;
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: documentTitle,
+                    action: function(e, dt, button, config) {
+                        // Similar implementation as excel export
+                        // ... (implement PDF export similar to excel)
+                    }
                 }
+            ]
+        }).container().appendTo($('#kt_datatable_example_buttons'));
 
-                initDatatable();
-                initFilters();
-                handleDeleteRows();
+        // Hook dropdown menu click event to datatable export buttons
+        const exportButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
+        exportButtons.forEach(exportButton => {
+            exportButton.addEventListener('click', e => {
+                e.preventDefault();
+                const exportValue = e.target.getAttribute('data-kt-export');
+                const target = document.querySelector('.dt-buttons .buttons-' + exportValue);
+                target.click();
+            });
+        });
+    }
+
+    // Public methods
+    return {
+        init: function() {
+            table = document.querySelector('#kt_datatable_example');
+            if (!table) {
+                return;
             }
-        };
-    }();
 
-    // On document ready
-    KTUtil.onDOMContentLoaded(function() {
-        KTActivityLogTable.init();
-    });
+            initDatatable();
+            handleSearchDatatable();
+            exportButtons();
+        }
+    };
+}();
+
+// On document ready
+KTUtil.onDOMContentLoaded(function() {
+    KTDatatablesExample.init();
+});
 </script>
 @endpush

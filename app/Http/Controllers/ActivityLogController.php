@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 use App\Models\User;
 use Carbon\Carbon;
-use DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class ActivityLogController extends Controller
 {
@@ -26,6 +26,19 @@ class ActivityLogController extends Controller
     public function data(Request $request)
     {
         $query = Activity::with('causer', 'subject');
+
+        // Apply search if provided
+        if (!empty($request->search) && !empty($request->search['value'])) {
+            $searchValue = $request->search['value'];
+            $query->where(function ($q) use ($searchValue) {
+                $q->where('description', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('log_name', 'LIKE', "%{$searchValue}%")
+                    ->orWhereHas('causer', function ($q) use ($searchValue) {
+                        $q->where('name', 'LIKE', "%{$searchValue}%");
+                    })
+                    ->orWhere('subject_type', 'LIKE', "%{$searchValue}%");
+            });
+        }
 
         // Filter by log name (category)
         if ($request->has('log_name') && $request->log_name) {
@@ -51,6 +64,12 @@ class ActivityLogController extends Controller
             $query->where('subject_type', 'LIKE', '%' . $request->subject_type . '%');
         }
 
+        // If export parameter is set, return all data without pagination
+        if ($request->has('export') && $request->export) {
+            $activities = $query->get();
+            return response()->json($activities);
+        }
+
         return DataTables::of($query)
             ->addColumn('formatted_date', function ($activity) {
                 return Carbon::parse($activity->created_at)->format('d M Y H:i:s');
@@ -63,6 +82,14 @@ class ActivityLogController extends Controller
             })
             ->addColumn('action', function ($activity) {
                 return view('pages.activity-log.partials.action-buttons', compact('activity'))->render();
+            })
+            ->orderColumn('created_at', function ($query, $order) {
+                $query->orderBy('created_at', $order);
+            })
+            ->filterColumn('causer_name', function ($query, $keyword) {
+                $query->whereHas('causer', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
             })
             ->rawColumns(['action'])
             ->make(true);
