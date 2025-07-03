@@ -197,7 +197,7 @@ class IncomeStatementController extends Controller
                 ->join('products as p', 'sd.product_id', '=', 'p.id')
                 ->where('s.status', '!=', 'draft')
                 ->where('s.status', '!=', 'batal')
-                ->where('s.status', '!=', 'piutang')
+                ->whereIn('s.status', ['lunas', 'piutang'])
                 ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
             if ($warehouse_id && !$all_branches) {
@@ -258,7 +258,7 @@ class IncomeStatementController extends Controller
                 ->join('products as p', 'sd.product_id', '=', 'p.id')
                 ->where('s.status', '!=', 'draft')
                 ->where('s.status', '!=', 'batal')
-                ->where('s.status', '!=', 'piutang')
+                ->whereIn('s.status', ['lunas', 'piutang'])
                 ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
             if ($warehouse_id && !$all_branches) {
