@@ -37,7 +37,13 @@ class DashboardController extends Controller
                 return DB::table('sell_details')
                     ->select([
                         'products.name as product_name',
-                        DB::raw('SUM(sell_details.quantity) as total_sold')
+                        DB::raw('SUM(
+                            CASE
+                                WHEN sell_details.unit_id = products.unit_dus THEN CAST(sell_details.quantity AS DECIMAL(10,2)) * products.dus_to_eceran
+                                WHEN sell_details.unit_id = products.unit_pak THEN CAST(sell_details.quantity AS DECIMAL(10,2)) * products.pak_to_eceran
+                                ELSE CAST(sell_details.quantity AS DECIMAL(10,2))
+                            END
+                        ) as total_sold')
                     ])
                     ->join('sells', 'sell_details.sell_id', '=', 'sells.id')
                     ->join('products', 'sell_details.product_id', '=', 'products.id')
@@ -53,7 +59,13 @@ class DashboardController extends Controller
                     ->select([
                         'products.name as product_name',
                         DB::raw('GROUP_CONCAT(DISTINCT warehouses.name ORDER BY warehouses.name SEPARATOR ", ") as warehouse_name'),
-                        DB::raw('SUM(sell_details.quantity) as total_sold')
+                        DB::raw('SUM(
+                            CASE
+                                WHEN sell_details.unit_id = products.unit_dus THEN CAST(sell_details.quantity AS DECIMAL(10,2)) * products.dus_to_eceran
+                                WHEN sell_details.unit_id = products.unit_pak THEN CAST(sell_details.quantity AS DECIMAL(10,2)) * products.pak_to_eceran
+                                ELSE CAST(sell_details.quantity AS DECIMAL(10,2))
+                            END
+                        ) as total_sold')
                     ])
                     ->join('sells', 'sell_details.sell_id', '=', 'sells.id')
                     ->join('products', 'sell_details.product_id', '=', 'products.id')
