@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
     protected $fillable =
     [
         'group',
@@ -64,5 +66,15 @@ class Product extends Model
     public function getIsShowAttribute($value)
     {
         return (bool) $value;
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'price_dus', 'price_pak', 'price_eceran', 'price_sell_dus', 'price_sell_pak', 'price_sell_eceran', 'isShow', 'promo', 'hadiah', 'price_sell_dus_out_of_town', 'price_sell_pak_out_of_town', 'price_sell_eceran_out_of_town', 'promo_out_of_town', 'hadiah_out_of_town'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('product_management')
+            ->setDescriptionForEvent(fn(string $eventName) => "Product {$this->name} has been {$eventName}");
     }
 }

@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class CashAdvance extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'employee_id',
@@ -121,5 +123,15 @@ class CashAdvance extends Model
                 $cashAdvance->installment_amount = $cashAdvance->amount / $cashAdvance->installment_count;
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['employee_id', 'approved_by', 'amount', 'type', 'installment_count', 'status', 'paid_amount', 'remaining_amount', 'rejection_reason'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('cash_advance_management')
+            ->setDescriptionForEvent(fn(string $eventName) => "Cash Advance {$this->advance_number} has been {$eventName}");
     }
 }

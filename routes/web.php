@@ -32,6 +32,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\CashAdvanceController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -243,6 +244,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
     Route::get('/income-statement/data', [IncomeStatementController::class, 'data'])->name('income-statement.data');
     Route::post('/income-statement/clear-cache', [IncomeStatementController::class, 'clearCache'])->name('income-statement.clear-cache');
+
+    // Activity Log Routes
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::get('/activity-log/data', [ActivityLogController::class, 'data'])->name('activity-log.data');
+    Route::get('/activity-log/log-names', [ActivityLogController::class, 'getLogNames'])->name('activity-log.log-names');
+    Route::get('/activity-log/subject-types', [ActivityLogController::class, 'getSubjectTypes'])->name('activity-log.subject-types');
+    Route::get('/activity-log/{id}', [ActivityLogController::class, 'show'])->name('activity-log.show');
+    Route::delete('/activity-log/{id}', [ActivityLogController::class, 'destroy'])->name('activity-log.destroy');
 });
 
 require __DIR__ . '/auth.php';

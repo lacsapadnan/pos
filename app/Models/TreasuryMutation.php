@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class TreasuryMutation extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
     protected $fillable = [
         'from_warehouse',
         'to_warehouse',
@@ -38,5 +40,15 @@ class TreasuryMutation extends Model
     public function outputCashier()
     {
         return $this->belongsTo(User::class, 'output_cashier');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['from_warehouse', 'to_warehouse', 'from_treasury', 'to_treasury', 'amount', 'description'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('treasury_mutation')
+            ->setDescriptionForEvent(fn(string $eventName) => "Treasury mutation #{$this->id} has been {$eventName}");
     }
 }

@@ -132,5 +132,9 @@ class PermissionSeeder extends Seeder
         // Permission::create(['name' => 'simpan absensi']);
         // Permission::create(['name' => 'update absensi']);
         // Permission::create(['name' => 'hapus absensi']);
+
+        // Activity log permissions
+        Permission::create(['name' => 'baca activity log']);
+        Permission::create(['name' => 'hapus activity log']);
     }
 }
