@@ -13,7 +13,7 @@
             </div>
 
             <div class="modal-body">
-                <form id="kas-form" action="{{ route('kas.store') }}" method="post">
+                <form id="kas-form" action="{{ route('simpan-kas') }}" method="post">
                     @csrf
                     <input type="hidden" id="method-field" name="_method" value="">
                     <input type="hidden" id="kas-id" name="kas_id" value="">

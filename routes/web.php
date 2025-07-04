@@ -91,7 +91,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('pindah-stok-draft/{id}/add-item', [SendStockDraftController::class, 'addToExistingDraft'])->name('pindah-stok-draft.addItem');
     Route::resource('permission', PermissionController::class)->except(['show', 'create']);
     Route::resource('user', UserController::class)->except(['show', 'create']);
-    Route::resource('kas', KasController::class)->except(['show', 'create']);
+    Route::resource('kas', KasController::class)->except(['show', 'create', 'store']);
+    Route::post('simpan-kas', [KasController::class, 'store'])->name('simpan-kas');
     Route::resource('kas-income-item', KasIncomeItemController::class)->except(['show', 'create', 'edit']);
     Route::resource('kas-expense-item', KasExpenseItemController::class)->except(['show', 'create', 'edit']);
     Route::resource('mutasi-kas', TreasuryMutationController::class)->except(['show', 'create']);

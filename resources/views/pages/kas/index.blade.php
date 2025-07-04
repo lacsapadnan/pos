@@ -376,7 +376,7 @@
                     // Update modal title and form action
                     $('#modal-title').text('Edit data kas');
                     $('#kas-form').attr('action', `{{ url('kas') }}/${kasId}`);
-                    $('#method-field').val('PUT');
+                    $('#method-field').val('PUT').attr('name', '_method');
                     $('#kas-id').val(kasId);
 
                     // Populate form fields
@@ -411,14 +411,39 @@
                 });
             });
 
-            // Reset form when adding new data
+                        // Reset form when adding new data
             $('button[data-bs-target="#kt_modal_1"]').on('click', function() {
                 // Reset form for create mode
                 $('#modal-title').text('Tambah data kas');
-                $('#kas-form').attr('action', '{{ route('kas.store') }}');
-                $('#method-field').val('');
+                $('#kas-form').attr('action', '{{ route('simpan-kas') }}');
+                $('#method-field').val('').removeAttr('name');
                 $('#kas-id').val('');
                 $('#kas-form')[0].reset();
+
+                // Reset dropdowns and containers
+                $('#typeSelect').val('').trigger('change');
+                $('#incomeItemContainer').hide();
+                $('#expenseItemContainer').hide();
+                $('#kas_income_item_id').val('').trigger('change');
+                $('#kas_expense_item_id').val('').trigger('change');
+
+                // Reset warehouse dropdown if it exists
+                if ($('select[name="warehouse_id"]').length) {
+                    $('select[name="warehouse_id"]').val('').trigger('change');
+                }
+
+                console.log('Form reset for create mode');
+                console.log('Action URL:', $('#kas-form').attr('action'));
+                console.log('Method field value:', $('#method-field').val());
+            });
+
+            // Add form submission debugging
+            $('#kas-form').on('submit', function(e) {
+                console.log('Form submitted!');
+                console.log('Action URL:', $(this).attr('action'));
+                console.log('Method:', $(this).attr('method'));
+                console.log('_method field value:', $('#method-field').val());
+                console.log('Form data:', $(this).serialize());
             });
         });
 </script>

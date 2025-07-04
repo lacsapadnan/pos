@@ -224,8 +224,9 @@ class SellController extends Controller
             $customer = Customer::find($request->customer);
 
             if ($request->status == 'draft') {
+                $draftData = [];
                 foreach ($sellCart as $sc) {
-                    SellCartDraft::create([
+                    $draftData[] = [
                         'sell_id' => $sell->id,
                         'cashier_id' => auth()->id(),
                         'product_id' => $sc->product_id,
@@ -233,22 +234,32 @@ class SellController extends Controller
                         'quantity' => $sc->quantity,
                         'price' => $sc->price,
                         'diskon' => $sc->diskon,
-                    ]);
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
+                SellCartDraft::insert($draftData);
 
                 // Clear the cart after creating draft
                 SellCart::where('cashier_id', auth()->id())->delete();
             } else {
-                // Create sell details first
+                // Prepare bulk insert data for sell details and product reports
+                $sellDetailsData = [];
+                $productReportsData = [];
+                $now = now();
+
                 foreach ($sellCart as $sc) {
-                    $detail = SellDetail::create([
+                    // Prepare sell details data
+                    $sellDetailsData[] = [
                         'sell_id' => $sell->id,
                         'product_id' => $sc->product_id,
                         'unit_id' => $sc->unit_id,
                         'quantity' => $sc->quantity,
                         'price' => $sc->price,
                         'diskon' => $sc->diskon,
-                    ]);
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
 
                     // Use already loaded relationships from eager loading
                     $unit = $sc->unit;
@@ -262,7 +273,8 @@ class SellController extends Controller
                         $unitType = 'ECERAN';
                     }
 
-                    ProductReport::create([
+                    // Prepare product reports data
+                    $productReportsData[] = [
                         'product_id' => $sc->product_id,
                         'warehouse_id' => auth()->user()->warehouse_id,
                         'user_id' => auth()->id(),
@@ -270,12 +282,20 @@ class SellController extends Controller
                         'unit' => $unit->name,
                         'unit_type' => $unitType,
                         'qty' => $sc->quantity,
-                        'price' => $sc->price - $sc->diskon,
+                        'price' => ($sc->price * $sc->quantity) - $sc->diskon,
                         'for' => 'KELUAR',
                         'type' => 'PENJUALAN',
                         'description' => 'Penjualan ' . $sell->order_number,
-                    ]);
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
                 }
+
+                // Bulk insert sell details
+                SellDetail::insert($sellDetailsData);
+
+                // Bulk insert product reports
+                ProductReport::insert($productReportsData);
 
                 // Only create cashflow if there's actual payment
                 if ($pay > 0 && $request->payment_method) {
