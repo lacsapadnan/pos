@@ -34,7 +34,6 @@ class ReportController extends Controller
         $filters = $request->getFilters();
         $authorizedFilters = $this->authorizationService->getAuthorizedFilters($filters);
 
-        // Use cached data with version-based invalidation for better performance
         $report = $this->reportService->getCashflowReport($authorizedFilters);
 
         return response()->json($report);
