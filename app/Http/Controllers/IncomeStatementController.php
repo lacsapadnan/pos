@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Inventory;
 use App\Models\Kas;
 use App\Models\Product;
 use App\Models\ProductReport;
@@ -70,11 +71,12 @@ class IncomeStatementController extends Controller
         $warehouse_id = $request->input('warehouse');
 
         // Set default all_branches based on user role
-        $defaultAllBranches = auth()->user()->can('lihat semua laba rugi');
+        $user = auth()->user();
+        $defaultAllBranches = $user->can('lihat semua laba rugi');
         $all_branches = $request->boolean('all_branches', $defaultAllBranches);
 
         // If user doesn't have permission to see all income statements
-        if (!auth()->user()->can('lihat semua laba rugi')) {
+        if (!$user->can('lihat semua laba rugi')) {
             // Force use their own warehouse and user data
             $warehouse_id = auth()->user()->warehouse_id;
             $user_id = auth()->id();
@@ -118,6 +120,7 @@ class IncomeStatementController extends Controller
             $cogsData = $results['cogsData'];
             $operatingExpenses = $results['operatingExpenses'];
             $otherIncome = $results['otherIncome'];
+            $stockBurden = $results['stockBurden'];
 
             // Synchronize product lists and ensure consistent ordering
             $this->synchronizeProductData($salesData, $cogsData);
@@ -127,10 +130,11 @@ class IncomeStatementController extends Controller
             $totalCogs = floatval($cogsData['total_cogs'] ?? 0);
             $totalOtherIncome = floatval($otherIncome['total_other_income'] ?? 0);
             $totalOperatingExpenses = floatval($operatingExpenses['total_operating_expenses'] ?? 0);
+            $totalStockBurden = floatval($stockBurden['total_stock_burden'] ?? 0);
 
             // Fix: Properly calculate gross profit by subtracting COGS from revenue
             $grossProfit = $totalRevenue - abs($totalCogs);
-            $netIncome = $grossProfit - $totalOperatingExpenses + $totalOtherIncome;
+            $netIncome = $grossProfit - $totalStockBurden - $totalOperatingExpenses + $totalOtherIncome;
 
             $warehouseName = $warehouse ? $warehouse->name : ($all_branches ? 'Semua Cabang' : 'Semua Gudang');
 
@@ -141,6 +145,7 @@ class IncomeStatementController extends Controller
                     'cogs_by_product' => $cogsData['cogs_by_product'],
                     'is_out_of_town' => $cogsData['is_out_of_town'] ?? false
                 ],
+                'stock_burden' => $stockBurden,
                 'operating_expenses' => $operatingExpenses,
                 'other_income' => $otherIncome,
                 'gross_profit' => $grossProfit,
@@ -176,12 +181,14 @@ class IncomeStatementController extends Controller
             // Optimize by running calculations in sequence but with optimized queries
             $salesData = $this->calculateSalesRevenueOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
             $cogsData = $this->calculateCostOfGoodsSoldOptimized($fromDate, $endDate, $warehouse_id, $user_id, $warehouse, $all_branches);
+            $stockBurden = $this->calculateStockBurden($warehouse_id, $user_id, $warehouse, $all_branches);
             $operatingExpenses = $this->calculateOperatingExpensesOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
             $otherIncome = $this->calculateOtherIncomeOptimized($fromDate, $endDate, $warehouse_id, $user_id, $all_branches);
 
             return [
                 'salesData' => $salesData,
                 'cogsData' => $cogsData,
+                'stockBurden' => $stockBurden,
                 'operatingExpenses' => $operatingExpenses,
                 'otherIncome' => $otherIncome
             ];
@@ -729,5 +736,88 @@ class IncomeStatementController extends Controller
         // All units use the same base cost price per unit
         // since lastest_price_eceran is the reference cost price
         return $baseCostPrice;
+    }
+
+    /**
+     * Calculate stock burden - inventory quantity * latest price (eceran)
+     * This represents the value of unsold inventory that affects profitability
+     * Not affected by date filters, only by warehouse and user filters
+     */
+    private function calculateStockBurden($warehouse_id, $user_id, $warehouse, $all_branches = false)
+    {
+        try {
+            $query = DB::table('inventories as i')
+                ->join('products as p', 'i.product_id', '=', 'p.id')
+                ->join('warehouses as w', 'i.warehouse_id', '=', 'w.id')
+                ->where('i.quantity', '>', 0)
+                ->where('p.isShow', true) // Only include active products
+                ->select(
+                    'i.product_id',
+                    'p.name as product_name',
+                    'i.quantity',
+                    'p.lastest_price_eceran',
+                    'p.lastest_price_eceran_out_of_town',
+                    'w.isOutOfTown',
+                    'i.warehouse_id'
+                );
+
+            // Apply warehouse filter
+            if ($warehouse_id && !$all_branches) {
+                $query->where('i.warehouse_id', $warehouse_id);
+            }
+
+            $inventoryData = $query->get();
+
+            $totalStockBurden = 0;
+            $stockBurdenByProduct = [];
+
+            foreach ($inventoryData as $item) {
+                // Determine if warehouse is out of town
+                $isOutOfTown = (bool) ($item->isOutOfTown ?? false);
+
+                // Get cost price based on location
+                $costPrice = $isOutOfTown ?
+                    floatval($item->lastest_price_eceran_out_of_town ?? $item->lastest_price_eceran ?? 0) :
+                    floatval($item->lastest_price_eceran ?? 0);
+
+                // Calculate burden for this product (quantity * cost price)
+                $productBurden = floatval($item->quantity) * $costPrice;
+                $totalStockBurden += $productBurden;
+
+                // Aggregate by product
+                if (!isset($stockBurdenByProduct[$item->product_id])) {
+                    $stockBurdenByProduct[$item->product_id] = [
+                        'product_name' => $item->product_name,
+                        'total_quantity' => 0,
+                        'cost_price' => $costPrice,
+                        'total_burden' => 0
+                    ];
+                }
+
+                $stockBurdenByProduct[$item->product_id]['total_quantity'] += floatval($item->quantity);
+                $stockBurdenByProduct[$item->product_id]['total_burden'] += $productBurden;
+
+                // Update average cost price (weighted by quantity)
+                if ($stockBurdenByProduct[$item->product_id]['total_quantity'] > 0) {
+                    $stockBurdenByProduct[$item->product_id]['cost_price'] =
+                        $stockBurdenByProduct[$item->product_id]['total_burden'] /
+                        $stockBurdenByProduct[$item->product_id]['total_quantity'];
+                }
+            }
+
+            // Sort by product name
+            $sortedStockBurden = array_values($stockBurdenByProduct);
+            usort($sortedStockBurden, function ($a, $b) {
+                return strcmp($a['product_name'], $b['product_name']);
+            });
+
+            return [
+                'total_stock_burden' => $totalStockBurden,
+                'stock_burden_by_product' => $sortedStockBurden
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error in calculateStockBurden: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }

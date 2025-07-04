@@ -228,6 +228,21 @@
             </div>
         </div>
 
+        <!-- Stock Burden Section -->
+        <div class="income-statement-section">
+            <div class="section-title">BEBAN STOK</div>
+            <div id="stockBurdenSection">
+                <div class="financial-item">
+                    <span>Nilai Stok di Inventory</span>
+                    <span class="currency" id="totalStockBurden">Rp 0</span>
+                </div>
+            </div>
+            <div class="financial-item total-line">
+                <span><strong>Total Beban Stok</strong></span>
+                <span class="currency" id="totalStockBurdenAmount"><strong>Rp 0</strong></span>
+            </div>
+        </div>
+
         <!-- Operating Expenses Section -->
         <div class="income-statement-section">
             <div class="section-title">BEBAN OPERASIONAL</div>
@@ -251,45 +266,73 @@
         </div>
 
         <!-- Detailed Tables -->
-        <div class="mt-5 detail-tables-container">
-            <div class="detail-table-card card">
-                <div class="card-header">
-                    <h5>Detail Penjualan per Produk</h5>
+        <div class="mt-5">
+            <!-- First Row: Sales and COGS -->
+            <div class="detail-tables-container">
+                <div class="detail-table-card card">
+                    <div class="card-header">
+                        <h5>Detail Penjualan per Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-row-bordered gy-5 gs-7" id="salesDetailTable">
+                                <thead>
+                                    <tr class="text-gray-800 fw-bold fs-6">
+                                        <th>No</th>
+                                        <th>Produk</th>
+                                        <th>Qty Terjual</th>
+                                        <th>Total Pendapatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-row-bordered gy-5 gs-7" id="salesDetailTable">
-                            <thead>
-                                <tr class="text-gray-800 fw-bold fs-6">
-                                    <th>No</th>
-                                    <th>Produk</th>
-                                    <th>Qty Terjual</th>
-                                    <th>Total Pendapatan</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                <div class="detail-table-card card">
+                    <div class="card-header">
+                        <h5>Detail HPP per Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-row-bordered gy-5 gs-7" id="cogsDetailTable">
+                                <thead>
+                                    <tr class="text-gray-800 fw-bold fs-6">
+                                        <th>No</th>
+                                        <th>Produk</th>
+                                        <th>Qty (Eceran)</th>
+                                        <th>Harga Modal</th>
+                                        <th>Total HPP</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="detail-table-card card">
-                <div class="card-header">
-                    <h5>Detail HPP per Produk</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-row-bordered gy-5 gs-7" id="cogsDetailTable">
-                            <thead>
-                                <tr class="text-gray-800 fw-bold fs-6">
-                                    <th>No</th>
-                                    <th>Produk</th>
-                                    <th>Qty (Eceran)</th>
-                                    <th>Harga Modal</th>
-                                    <th>Total HPP</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+
+            <!-- Second Row: Stock Burden -->
+            <div class="mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Detail Beban Stok per Produk</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-row-bordered gy-5 gs-7" id="stockBurdenDetailTable">
+                                <thead>
+                                    <tr class="text-gray-800 fw-bold fs-6">
+                                        <th>No</th>
+                                        <th>Produk</th>
+                                        <th>Qty Stok (Eceran)</th>
+                                        <th>Harga Modal</th>
+                                        <th>Total Beban Stok</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -424,6 +467,22 @@
 
             // Initialize COGS Detail Table
             $('#cogsDetailTable').DataTable({
+                "pageLength": 10,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": 0 }, // No column not sortable
+                    { "className": "text-center", "targets": [0, 2] },
+                    { "className": "text-end", "targets": [3, 4] }
+                ]
+            });
+
+            // Initialize Stock Burden Detail Table
+            $('#stockBurdenDetailTable').DataTable({
                 "pageLength": 10,
                 "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
                 "searching": true,
@@ -631,6 +690,10 @@
             const grossProfitClass = data.gross_profit >= 0 ? 'profit-positive' : 'profit-negative';
             $('#grossProfit').text(formatCurrency(data.gross_profit)).removeClass('profit-positive profit-negative').addClass(grossProfitClass);
 
+            // Update stock burden section
+            $('#totalStockBurden').text(formatCurrency(data.stock_burden.total_stock_burden));
+            $('#totalStockBurdenAmount').text(formatCurrency(data.stock_burden.total_stock_burden));
+
             // Update expenses section
             let expensesHtml = '';
             data.operating_expenses.expenses_by_category.forEach(expense => {
@@ -678,6 +741,21 @@
                 ]);
             });
             cogsTable.draw();
+
+            // Populate Stock Burden detail table with DataTables
+            const stockBurdenTable = $('#stockBurdenDetailTable').DataTable();
+            stockBurdenTable.clear();
+
+            data.stock_burden.stock_burden_by_product.forEach((product, index) => {
+                stockBurdenTable.row.add([
+                    index + 1,
+                    product.product_name,
+                    product.total_quantity,
+                    formatCurrency(product.cost_price),
+                    formatCurrency(product.total_burden)
+                ]);
+            });
+            stockBurdenTable.draw();
         }
 
         function exportToExcel() {
@@ -725,6 +803,10 @@
                 [''],
                 ['LABA KOTOR', formatCurrency(reportData.gross_profit)],
                 [''],
+                ['BEBAN STOK'],
+                ['Nilai Stok di Inventory', formatCurrency(reportData.stock_burden.total_stock_burden)],
+                ['Total Beban Stok', formatCurrency(reportData.stock_burden.total_stock_burden)],
+                [''],
                 ['BEBAN OPERASIONAL']
             ];
 
@@ -762,6 +844,18 @@
 
             const ws3 = XLSX.utils.aoa_to_sheet(cogsData);
             XLSX.utils.book_append_sheet(wb, ws3, 'Detail HPP');
+
+            // Stock Burden Detail Sheet
+            const stockBurdenData = [
+                ['Detail Beban Stok per Produk'],
+                ['No', 'Produk', 'Qty Stok (Eceran)', 'Harga Modal', 'Total Beban Stok']
+            ];
+            reportData.stock_burden.stock_burden_by_product.forEach((product, index) => {
+                stockBurdenData.push([index + 1, product.product_name, product.total_quantity, formatCurrency(product.cost_price), formatCurrency(product.total_burden)]);
+            });
+
+            const ws4 = XLSX.utils.aoa_to_sheet(stockBurdenData);
+            XLSX.utils.book_append_sheet(wb, ws4, 'Detail Beban Stok');
 
             // Export
             const filename = `Laporan_Laba_Rugi_${$('#fromDateFilter').val()}_${$('#toDateFilter').val()}.xlsx`;
