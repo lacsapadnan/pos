@@ -195,9 +195,7 @@ class IncomeStatementController extends Controller
             $baseQuery = DB::table('sells as s')
                 ->join('sell_details as sd', 's.id', '=', 'sd.sell_id')
                 ->join('products as p', 'sd.product_id', '=', 'p.id')
-                ->where('s.status', '!=', 'draft')
-                ->where('s.status', '!=', 'batal')
-                ->whereIn('s.status', ['lunas', 'piutang'])
+                ->where('s.status', 'lunas')  // Only include paid transactions
                 ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
             if ($warehouse_id && !$all_branches) {
@@ -256,9 +254,7 @@ class IncomeStatementController extends Controller
             $baseQuery = DB::table('sells as s')
                 ->join('sell_details as sd', 's.id', '=', 'sd.sell_id')
                 ->join('products as p', 'sd.product_id', '=', 'p.id')
-                ->where('s.status', '!=', 'draft')
-                ->where('s.status', '!=', 'batal')
-                ->whereIn('s.status', ['lunas', 'piutang'])
+                ->where('s.status', 'lunas')  // Only include paid transactions
                 ->whereBetween('s.created_at', [$fromDate, $endDate]);
 
             if ($warehouse_id && !$all_branches) {
