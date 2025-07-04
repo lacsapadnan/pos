@@ -60,7 +60,9 @@ class SellController extends Controller
             'warehouse',
             'customer',
             'cashier',
-            'details.product',
+            'details.product.unit_dus',
+            'details.product.unit_pak',
+            'details.product.unit_eceran',
             'details.unit'
         ])
             ->where('status', '!=', 'draft')
@@ -119,12 +121,15 @@ class SellController extends Controller
     public function create()
     {
         $inventories = Inventory::with(['product' => function ($query) {
-            $query->where('isShow', true);
-        }, 'product.units'])
+            $query->where('isShow', true)
+                ->with(['unit_dus', 'unit_pak', 'unit_eceran']);
+        }])
             ->where('warehouse_id', auth()->user()->warehouse_id)
             ->get();
 
-        $products = Product::with('units')->where('isShow', true)->get();
+        $products = Product::with(['unit_dus', 'unit_pak', 'unit_eceran'])
+            ->where('isShow', true)
+            ->get();
         $customers = Customer::all();
         $today = date('Ymd');
         $year = substr($today, 2, 2);
@@ -416,7 +421,9 @@ class SellController extends Controller
     public function show(string $id)
     {
         $sellDetail = SellDetail::with([
-            'product.units',
+            'product.unit_dus',
+            'product.unit_pak',
+            'product.unit_eceran',
             'unit',
             'sell.warehouse',
             'sell.customer'
@@ -642,7 +649,9 @@ class SellController extends Controller
             'warehouse',
             'customer',
             'cashier',
-            'details.product',
+            'details.product.unit_dus',
+            'details.product.unit_pak',
+            'details.product.unit_eceran',
             'details.unit'
         ])->where('status', 'piutang');
 
