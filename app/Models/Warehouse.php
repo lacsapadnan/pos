@@ -21,4 +21,9 @@ class Warehouse extends Model
             ->withPivot('quantity')
             ->withTimestamps();
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }
