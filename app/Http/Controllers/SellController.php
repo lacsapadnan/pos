@@ -163,7 +163,7 @@ class SellController extends Controller
      */
     public function store(Request $request)
     {
-        $sellCart = SellCart::where('cashier_id', auth()->id())->get();
+        $sellCart = SellCart::with(['product', 'unit'])->where('cashier_id', auth()->id())->get();
 
         // Validate cart has items if not a draft
         if ($sellCart->isEmpty() && $request->status !== 'draft') {
@@ -240,9 +240,9 @@ class SellController extends Controller
                         'diskon' => $sc->diskon,
                     ]);
 
-
-                    $unit = Unit::find($sc->unit_id);
-                    $product = Product::find($sc->product_id);
+                    // Use already loaded relationships from eager loading
+                    $unit = $sc->unit;
+                    $product = $sc->product;
 
                     if ($sc->unit_id == $product->unit_dus) {
                         $unitType = 'DUS';
