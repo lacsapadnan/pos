@@ -138,7 +138,8 @@
                     pageLength: 10,
                     ajax: {
                         url: '{{ route('api.kas') }}',
-                        type: 'GET'
+                        type: 'GET',
+                        cache: false
                     },
                     "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     "columns": [{
@@ -329,24 +330,19 @@
                 const incomeSelect = $('#kas_income_item_id');
                 const expenseSelect = $('#kas_expense_item_id');
 
-                console.log('Type selected:', selectedType);
-
                 if (selectedType === 'Kas Masuk') {
                     incomeContainer.show();
                     expenseContainer.hide();
                     expenseSelect.val('').trigger('change');
-                    console.log('Showing income container');
                 } else if (selectedType === 'Kas Keluar') {
                     incomeContainer.hide();
                     expenseContainer.show();
                     incomeSelect.val('').trigger('change');
-                    console.log('Showing expense container');
                 } else {
                     incomeContainer.hide();
                     expenseContainer.hide();
                     incomeSelect.val('').trigger('change');
                     expenseSelect.val('').trigger('change');
-                    console.log('Hiding both containers');
                 }
             });
 
@@ -355,14 +351,12 @@
                 $('#typeSelect').val('').trigger('change');
                 $('#incomeItemContainer').hide();
                 $('#expenseItemContainer').hide();
-                console.log('Modal closed - reset form');
             });
 
             // Initialize containers as hidden when modal opens
             $('#kt_modal_1').on('shown.bs.modal', function() {
                 $('#incomeItemContainer').hide();
                 $('#expenseItemContainer').hide();
-                console.log('Modal opened - hiding containers');
             });
 
                         // Handle edit button click
@@ -431,19 +425,6 @@
                 if ($('select[name="warehouse_id"]').length) {
                     $('select[name="warehouse_id"]').val('').trigger('change');
                 }
-
-                console.log('Form reset for create mode');
-                console.log('Action URL:', $('#kas-form').attr('action'));
-                console.log('Method field value:', $('#method-field').val());
-            });
-
-            // Add form submission debugging
-            $('#kas-form').on('submit', function(e) {
-                console.log('Form submitted!');
-                console.log('Action URL:', $(this).attr('action'));
-                console.log('Method:', $(this).attr('method'));
-                console.log('_method field value:', $('#method-field').val());
-                console.log('Form data:', $(this).serialize());
             });
         });
 </script>
