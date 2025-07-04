@@ -421,13 +421,15 @@ class SellController extends Controller
     public function show(string $id)
     {
         $sellDetail = SellDetail::with([
-            'product.unit_dus',
-            'product.unit_pak',
-            'product.unit_eceran',
+            'product' => function ($query) {
+                $query->with(['unit_dus', 'unit_pak', 'unit_eceran']);
+            },
             'unit',
-            'sell.warehouse',
-            'sell.customer'
+            'sell' => function ($query) {
+                $query->with(['warehouse', 'customer']);
+            }
         ])->where('sell_id', $id)->get();
+
         return response()->json($sellDetail);
     }
 
