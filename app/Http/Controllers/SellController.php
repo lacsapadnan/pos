@@ -56,7 +56,13 @@ class SellController extends Controller
         $export = $request->input('export');
         $search = $request->input('search');
 
-        $query = Sell::with(['warehouse', 'customer', 'cashier'])
+        $query = Sell::with([
+            'warehouse',
+            'customer',
+            'cashier',
+            'details.product',
+            'details.unit'
+        ])
             ->where('status', '!=', 'draft')
             ->orderBy('id', 'desc');
 
@@ -112,14 +118,13 @@ class SellController extends Controller
      */
     public function create()
     {
-        $inventories = Inventory::with('product')
+        $inventories = Inventory::with(['product' => function ($query) {
+            $query->where('isShow', true);
+        }, 'product.units'])
             ->where('warehouse_id', auth()->user()->warehouse_id)
-            ->whereHas('product', function ($query) {
-                $query->where('isShow', true);
-            })
             ->get();
 
-        $products = Product::where('isShow', true)->get();
+        $products = Product::with('units')->where('isShow', true)->get();
         $customers = Customer::all();
         $today = date('Ymd');
         $year = substr($today, 2, 2);
@@ -410,7 +415,12 @@ class SellController extends Controller
      */
     public function show(string $id)
     {
-        $sellDetail = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
+        $sellDetail = SellDetail::with([
+            'product.units',
+            'unit',
+            'sell.warehouse',
+            'sell.customer'
+        ])->where('sell_id', $id)->get();
         return response()->json($sellDetail);
     }
 
@@ -615,8 +625,8 @@ class SellController extends Controller
 
     public function credit()
     {
-        $warehouses = Warehouse::all();
-        $users = User::all();
+        $warehouses = Warehouse::with('users')->get();
+        $users = User::with('roles', 'warehouse')->get();
         return view('pages.sell.credit', compact('warehouses', 'users'));
     }
 
@@ -628,33 +638,33 @@ class SellController extends Controller
         $toDate = $request->input('to_date');
         $warehouse = $request->input('warehouse');
 
-        if ($userRoles[0] == 'master') {
-            $sell = Sell::with('warehouse', 'customer', 'cashier')
-                ->where('status', 'piutang');
-        } else {
-            $sell = Sell::with('warehouse', 'customer', 'cashier')
-                ->where('status', 'piutang')
-                ->where('warehouse_id', auth()->user()->warehouse_id);
+        $query = Sell::with([
+            'warehouse',
+            'customer',
+            'cashier',
+            'details.product',
+            'details.unit'
+        ])->where('status', 'piutang');
+
+        if ($userRoles[0] != 'master') {
+            $query->where('warehouse_id', auth()->user()->warehouse_id);
         }
 
         if ($warehouse) {
-            $sell->where('warehouse_id', $warehouse);
+            $query->where('warehouse_id', $warehouse);
         }
 
         if ($user_id) {
-            $sell->where('cashier_id', $user_id);
+            $query->where('cashier_id', $user_id);
         }
 
         if ($fromDate && $toDate) {
             $endDate = Carbon::parse($toDate)->endOfDay();
-
-            $sell->whereDate('created_at', '>=', $fromDate)
+            $query->whereDate('created_at', '>=', $fromDate)
                 ->whereDate('created_at', '<=', $endDate);
         }
 
-        $sell = $sell->get();
-
-        return response()->json($sell);
+        return response()->json($query->get());
     }
 
     public function payCredit(Request $request)
