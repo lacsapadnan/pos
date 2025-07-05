@@ -480,16 +480,10 @@ class SellController extends Controller
             return redirect()->back()->with('error', 'Data penjualan tidak ditemukan');
         }
 
-        // Delete associated cashflows first
-        $deletedCashflows = $this->cashflowService->deleteAllSaleCashflows($sell->order_number);
-
         // Then delete the sell record
         $sell->delete();
 
         $message = "Data penjualan berhasil dihapus";
-        if ($deletedCashflows > 0) {
-            $message .= " beserta {$deletedCashflows} record cashflow terkait";
-        }
 
         return redirect()->back()->with('success', $message);
     }
