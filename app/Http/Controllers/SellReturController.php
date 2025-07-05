@@ -13,6 +13,7 @@ use App\Models\SellReturDetail;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CashflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -22,6 +23,12 @@ use Illuminate\Support\Facades\DB;
 
 class SellReturController extends Controller
 {
+    protected $cashflowService;
+
+    public function __construct(CashflowService $cashflowService)
+    {
+        $this->cashflowService = $cashflowService;
+    }
 
 
     /**
@@ -360,6 +367,18 @@ class SellReturController extends Controller
             $sell->update();
         }
 
+        // Create cashflow if the sell status is 'lunas'
+        if ($sell->status === 'lunas') {
+            $this->cashflowService->handleReturnTransaction(
+                warehouseId: auth()->user()->warehouse_id,
+                orderNumber: $sell->order_number,
+                customerName: $sell->customer->name ?? 'Unknown',
+                totalReturnAmount: $totalReturnPrice,
+                sellStatus: $sell->status,
+                paidAmount: $sell->pay
+            );
+        }
+
         // delete the cart
         SellReturCart::where('user_id', auth()->id())->delete();
 
@@ -486,6 +505,18 @@ class SellReturController extends Controller
             DB::table('sell_returs')
                 ->where('id', $selectedId)
                 ->update(['remark' => 'verify']);
+        }
+
+        // Create cashflow if the sell status is 'lunas'
+        if ($sell->status === 'lunas') {
+            $this->cashflowService->handleReturnTransaction(
+                warehouseId: auth()->user()->warehouse_id,
+                orderNumber: $sell->order_number,
+                customerName: $sell->customer->name ?? 'Unknown',
+                totalReturnAmount: $totalReturnPrice,
+                sellStatus: $sell->status,
+                paidAmount: $sell->pay
+            );
         }
 
         return response()->json(['message' => 'Return confirmed successfully']);
