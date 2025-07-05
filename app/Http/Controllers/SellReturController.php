@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cashflow;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductReport;
@@ -14,7 +13,6 @@ use App\Models\SellReturDetail;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Services\CashflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,12 +22,7 @@ use Illuminate\Support\Facades\DB;
 
 class SellReturController extends Controller
 {
-    protected $cashflowService;
 
-    public function __construct(CashflowService $cashflowService)
-    {
-        $this->cashflowService = $cashflowService;
-    }
 
     /**
      * Display a listing of the resource.
@@ -347,17 +340,6 @@ class SellReturController extends Controller
             $inventory->update();
         }
 
-        // Create cashflow entry using CashflowService
-        $this->cashflowService->handleReturnTransaction(
-            warehouseId: auth()->user()->warehouse_id,
-            orderNumber: $sell->order_number,
-            customerName: $sell->customer->name,
-            totalReturnAmount: $totalPrice,
-            sellStatus: $sell->status,
-            paidAmount: $sell->pay,
-            isPartialPayment: $sell->status === 'piutang' && $sell->pay > 0
-        );
-
         $allReturned = true;
 
         // Query all SellDetail items for the sell_id
@@ -506,17 +488,6 @@ class SellReturController extends Controller
                 ->update(['remark' => 'verify']);
         }
 
-        // Create cashflow entry using CashflowService (moved outside the loop)
-        $this->cashflowService->handleReturnTransaction(
-            warehouseId: auth()->user()->warehouse_id,
-            orderNumber: $sell->order_number,
-            customerName: $sell->customer->name,
-            totalReturnAmount: $totalPrice,
-            sellStatus: $sell->status,
-            paidAmount: $sell->pay,
-            isPartialPayment: $sell->status === 'piutang' && $sell->pay > 0
-        );
-
         return response()->json(['message' => 'Return confirmed successfully']);
     }
 
@@ -657,11 +628,6 @@ class SellReturController extends Controller
                         $sellRetur->sell->save();
                     }
                 }
-
-                // Delete cashflow if it was a paid return
-                if ($sellRetur->sell->order_number) {
-                    $this->cashflowService->deleteReturnCashflows($sellRetur->sell->order_number);
-                }
             } else {
                 // Force deletion process when sell record doesn't exist
                 foreach ($sellReturDetails as $returnDetail) {
@@ -693,15 +659,6 @@ class SellReturController extends Controller
                         ->where('price', $returnDetail->price)
                         ->first()?->delete();
                 }
-
-                // Try to delete any orphaned cashflow records using service
-                // For force delete when sell record doesn't exist, we'll use a more specific deletion
-                Cashflow::where('for', 'Retur penjualan')
-                    ->where('user_id', $sellRetur->user_id)
-                    ->where('warehouse_id', $sellRetur->warehouse_id)
-                    ->where('created_at', '>=', $sellRetur->created_at->subMinutes(5))
-                    ->where('created_at', '<=', $sellRetur->created_at->addMinutes(5))
-                    ->delete();
             }
 
             // Delete return details and the return record
