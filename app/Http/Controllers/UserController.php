@@ -104,9 +104,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UserUpdateRequest $request, string $id)
+    public function update(Request $request, string $id)
     {
-        $validated = $request->validated();
+        $validated = $request->all();
 
         $role = Role::where('id', $validated['role'])->first();
         $user = User::where('id', $id)->first();
