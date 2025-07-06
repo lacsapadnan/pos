@@ -214,15 +214,28 @@ class CashflowService
     ): void {
         $description = "Bayar hutang {$orderNumber} Supplier {$supplierName}";
 
-        // Create cash flow for payment - debt payment is always money going out
-        $this->createCashflow([
-            'warehouse_id' => $warehouseId,
-            'for' => 'Bayar hutang',
-            'description' => $description,
-            'in' => $paymentMethod === 'transfer' ? $bayarHutang : 0,
-            'out' => $paymentMethod === 'transfer' ? 0 : $bayarHutang,
-            'payment_method' => $paymentMethod,
-        ]);
+        // Handle payment based on method
+        switch ($paymentMethod) {
+            case 'transfer':
+                if ($bayarHutang > 0) {
+                    $this->createTransferPaymentFlow($warehouseId, $description, $bayarHutang, 'Bayar hutang');
+                }
+                break;
+
+            default:
+                // For cash, kas kecil, kas besar, etc.
+                if ($bayarHutang > 0) {
+                    $this->createCashflow([
+                        'warehouse_id' => $warehouseId,
+                        'for' => 'Bayar hutang',
+                        'description' => $description,
+                        'in' => 0,
+                        'out' => $bayarHutang,
+                        'payment_method' => $paymentMethod,
+                    ]);
+                }
+                break;
+        }
 
         // Create cash flow for potongan if applicable - discount is money saved (in)
         if ($potongan > 0) {
