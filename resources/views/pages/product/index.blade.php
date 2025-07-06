@@ -93,6 +93,7 @@
                             <th>Harga Jual Dus</th>
                             <th>Harga Jual Pak</th>
                             <th>Harga Jual Eceran</th>
+                            <th>Harga Eceran Terakhir Luar Kota</th>
                             <th>Harga Jual Dus Luar Kota</th>
                             <th>Harga Jual Pak Luar Kota</th>
                             <th>Harga Jual Eceran Luar Kota</th>
@@ -222,6 +223,17 @@
                         },
                         {
                             data: 'price_sell_eceran',
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            data: 'price_sell_eceran_out_of_town',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
