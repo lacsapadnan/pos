@@ -190,9 +190,7 @@
                     </a>
                     <!--end:Menu link-->
                 </div>
-                @if (auth()->user()->hasAnyDirectPermission(['baca supplier', 'baca cabang', 'baca customer', 'baca
-                karyawan']))
-                <!--begin:Menu item-->
+                @canany(['baca supplier', 'baca cabang', 'baca customer', 'baca karyawan'])
                 <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
                     class="menu-item menu-lg-down-accordion menu-sub-lg-down-indention me-0 me-lg-2">
                     <!--begin:Menu link-->
@@ -250,8 +248,7 @@
                     </div>
                     <!--end:Menu sub-->
                 </div>
-                <!--end:Menu item-->
-                @endif
+                @endcanany
                 @can('baca produk')
                 <!--begin:Menu item-->
                 <div class="menu-item me-0 me-lg-2 {{ request()->routeIs('produk.*') ? ' here' : '' }}">
