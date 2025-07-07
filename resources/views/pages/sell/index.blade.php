@@ -213,8 +213,10 @@
                             "render": function(data, type, row) {
                                 if (data == 'piutang') {
                                     return `<span class="badge badge-light-danger">Piutang</span>`;
-                                } else {
+                                } else if (data == 'lunas') {
                                     return `<span class="badge badge-light-primary">Lunas</span>`;
+                                } else {
+                                    return `<span class="badge badge-light-warning">Batal</span>`;
                                 }
                             }
                         },
