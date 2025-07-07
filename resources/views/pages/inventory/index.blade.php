@@ -156,6 +156,7 @@
                     processing: true,     // <-- Tambah ini untuk spinner
                     order: [],
                     pageLength: 10,
+                    "dom": '<"top"lp>rt<"bottom"lp><"clear">',
                     ajax: {
                         url: '{{ route('api.inventori') }}',
                         type: 'GET',
