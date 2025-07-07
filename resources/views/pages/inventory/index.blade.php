@@ -4,7 +4,9 @@
 @section('menu-title', 'Inventori')
 
 @push('addon-style')
-<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
 <style>
     ::-webkit-scrollbar-thumb {
         -webkit-border-radius: 10px;
