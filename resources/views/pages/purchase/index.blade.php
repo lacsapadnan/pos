@@ -119,7 +119,7 @@
     <div class="card-body">
         <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
             <div class="table-responsive">
-                <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
                     id="kt_datatable_example">
                     <thead>
                         <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
@@ -331,7 +331,7 @@
 
             // Hook export buttons
             var exportButtons = () => {
-                const documentTitle = 'Laporan Pembelian';
+                const documentTitle = 'Purchase Data Report';
                 var buttons = new $.fn.dataTable.Buttons(table, {
                     buttons: [{
                             extend: 'copyHtml5',

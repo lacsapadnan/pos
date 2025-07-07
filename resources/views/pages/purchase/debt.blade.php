@@ -4,169 +4,169 @@
 @section('menu-title', 'Hutang')
 
 @push('addon-style')
-    <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
-    <style>
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 10px;
-            border-radius: 10px;
-            background: rgba(192, 192, 192, 0.3);
-            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-            background-color: #818B99;
-        }
-    </style>
+<link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
+</style>
 @endpush
 
 @include('includes.datatable-pagination')
 
 @section('content')
-    @include('components.alert')
-    <div class="mt-5 border-0 card card-p-0 card-flush">
-        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
-            <div class="card-title">
-                <!--begin::Search-->
-                <div class="my-1 d-flex align-items-center position-relative">
-                    <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
-                            class="path2"></span></i> <input type="text" data-kt-filter="search"
-                        class="form-control form-control-solid w-250px ps-14" placeholder="Cari data pembelian">
-                </div>
-                <!--end::Search-->
-                @role('master')
-                    <div class="ms-2">
-                        <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
-                            <option value="">All Cabang</option>
-                            @foreach ($warehouses as $warehouse)
-                                <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ms-3">
-                        <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
-                            <option value="">All Users</option>
-                            @foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="my-1 d-flex align-items-center position-relative">
-                        <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
-                        <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
-                            data-kt-filter="date" placeholder="Dari Tanggal">
-                        <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2"
-                            data-kt-filter="date" placeholder="Ke Tanggal">
-                    </div>
-                @endrole
+@include('components.alert')
+<div class="mt-5 border-0 card card-p-0 card-flush">
+    <div class="gap-2 py-5 card-header align-items-center gap-md-5">
+        <div class="card-title">
+            <!--begin::Search-->
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-4"><span class="path1"></span><span
+                        class="path2"></span></i> <input type="text" data-kt-filter="search"
+                    class="form-control form-control-solid w-250px ps-14" placeholder="Cari data pembelian">
             </div>
-            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
-                <!--begin::Export dropdown-->
-                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
-                    data-kt-menu-placement="bottom-end">
-                    <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    Export Data
-                </button>
-                <!--begin::Menu-->
-                <div id="kt_datatable_example_export_menu"
-                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
-                    data-kt-menu="true">
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
-                            Copy to clipboard
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
-                            Export as Excel
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
-                            Export as CSV
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                    <!--begin::Menu item-->
-                    <div class="px-3 menu-item">
-                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
-                            Export as PDF
-                        </a>
-                    </div>
-                    <!--end::Menu item-->
-                </div>
-                <div id="kt_datatable_example_buttons" class="d-none"></div>
+            <!--end::Search-->
+            @role('master')
+            <div class="ms-2">
+                <select id="warehouseFilter" class="form-select" aria-label="Warehouse filter" data-control="select2">
+                    <option value="">All Cabang</option>
+                    @foreach ($warehouses as $warehouse)
+                    <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                    @endforeach
+                </select>
             </div>
+            <div class="ms-3">
+                <select id="userFilter" class="form-select" aria-label="User filter" data-control="select2">
+                    <option value="">All Users</option>
+                    @foreach ($users as $user)
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="my-1 d-flex align-items-center position-relative">
+                <i class="ki-duotone ki-calendar fs-1 position-absolute ms-4"></i>
+                <input type="date" id="fromDateFilter" class="form-control form-control-solid ms-2"
+                    data-kt-filter="date" placeholder="Dari Tanggal">
+                <input type="date" id="toDateFilter" class="form-control form-control-solid ms-2" data-kt-filter="date"
+                    placeholder="Ke Tanggal">
+            </div>
+            @endrole
         </div>
-        <div class="card-body">
-            <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
-                <div class="table-responsive">
-                    <table class="table align-middle border rounded table-row-dashed fs-6 g-5 dataTable no-footer"
-                        id="kt_datatable_example">
-                        <thead>
-                            <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
-                                <th>Faktur Supplier</th>
-                                <th>No. Order</th>
-                                <th>tanggal Terima</th>
-                                <th>Supplier</th>
-                                <th>Cabang</th>
-                                <th>Grand Total</th>
-                                <th>Terbayar</th>
-                                <th>Sisa</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-900 fw-semibold">
-                        </tbody>
-                    </table>
+        <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+            <!--begin::Export dropdown-->
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                data-kt-menu-placement="bottom-end">
+                <i class="ki-duotone ki-exit-down fs-2"><span class="path1"></span><span class="path2"></span></i>
+                Export Data
+            </button>
+            <!--begin::Menu-->
+            <div id="kt_datatable_example_export_menu"
+                class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                data-kt-menu="true">
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
                 </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+                <!--end::Menu item-->
+                <!--begin::Menu item-->
+                <div class="px-3 menu-item">
+                    <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
+                <!--end::Menu item-->
+            </div>
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="kt_datatable_example_wrapper dt-bootstrap4 no-footer" class="datatables_wrapper">
+            <div class="table-responsive">
+                <table class="table align-middle rounded border table-row-dashed fs-6 g-5 dataTable no-footer"
+                    id="kt_datatable_example">
+                    <thead>
+                        <tr class="text-gray-400 text-start fw-bold fs-7 text-uppercase">
+                            <th>Faktur Supplier</th>
+                            <th>No. Order</th>
+                            <th>tanggal Terima</th>
+                            <th>Supplier</th>
+                            <th>Cabang</th>
+                            <th>Grand Total</th>
+                            <th>Terbayar</th>
+                            <th>Sisa</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 fw-semibold">
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    <!-- Modal Pembayaran Hutang -->
-    <div class="modal fade" id="payDebtModal" tabindex="-1" role="dialog" aria-labelledby="payDebtModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="payDebtModalLabel">Bayar Hutang</h5>
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
-                        aria-label="Close">
-                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+</div>
+<!-- Modal Pembayaran Hutang -->
+<div class="modal fade" id="payDebtModal" tabindex="-1" role="dialog" aria-labelledby="payDebtModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="payDebtModalLabel">Bayar Hutang</h5>
+                <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal"
+                    aria-label="Close">
+                    <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+                </div>
+            </div>
+            <div class="modal-body">
+                <form id="payDebtForm">
+                    <div class="form-group">
+                        <label class="form-label" for="payDebtAmount">Jumlah Pembayaran</label>
+                        <input type="text" class="form-control" id="payDebtAmount" name="pay_debt"
+                            oninput="formatNumber(this);" />
                     </div>
-                </div>
-                <div class="modal-body">
-                    <form id="payDebtForm">
-                        <div class="form-group">
-                            <label class="form-label" for="payDebtAmount">Jumlah Pembayaran</label>
-                            <input type="text" class="form-control" id="payDebtAmount" name="pay_debt"
-                                oninput="formatNumber(this);" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="paymentMethod">Metode Pembayaran</label>
-                            <select class="form-select" id="paymentMethod" name="payment">
-                                <option value="transfer">Transfer</option>
-                                <option value="cash">Cash</option>
-                            </select>
-                        </div>
-                        <input type="hidden" id="purchaseId" name="purchase_id">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="submitPayment">Submit Pembayaran</button>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label" for="paymentMethod">Metode Pembayaran</label>
+                        <select class="form-select" id="paymentMethod" name="payment">
+                            <option value="transfer">Transfer</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="purchaseId" name="purchase_id">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="submitPayment">Submit Pembayaran</button>
             </div>
         </div>
     </div>
-    @includeIf('pages.purchase.modal')
+</div>
+@includeIf('pages.purchase.modal')
 @endsection
 
 @push('addon-script')
-    <script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
-    <script>
-        function formatNumber(input) {
+<script src="assets/plugins/custom/datatables/datatables.bundle.js"></script>
+<script>
+    function formatNumber(input) {
             // Hapus semua karakter non-digit
             let value = input.value.replace(/\D/g, '');
 
@@ -340,7 +340,7 @@
 
             // Hook export buttons
             var exportButtons = () => {
-                const documentTitle = 'Customer Orders Report';
+                const documentTitle = 'Piutang Data Report';
                 var buttons = new $.fn.dataTable.Buttons(table, {
                     buttons: [{
                             extend: 'copyHtml5',
@@ -407,5 +407,5 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
-    </script>
+</script>
 @endpush

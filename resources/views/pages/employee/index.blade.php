@@ -207,19 +207,19 @@
                 var buttons = new $.fn.dataTable.Buttons(table, {
                     buttons: [{
                             extend: 'copyHtml5',
-                            title: 'Customer Orders Report'
+                            title: 'Karyawan Data Report'
                         },
                         {
                             extend: 'excelHtml5',
-                            title: 'Customer Orders Report'
+                            title: 'Karyawan Data Report'
                         },
                         {
                             extend: 'csvHtml5',
-                            title: 'Customer Orders Report'
+                            title: 'Karyawan Data Report'
                         },
                         {
                             extend: 'pdfHtml5',
-                            title: 'Customer Orders Report'
+                            title: 'Karyawan Data Report'
                         }
                     ]
                 }).container().appendTo($('#kt_datatable_example_buttons'));
