@@ -293,8 +293,9 @@ class SellReturController extends Controller
                     $deductInOriginalUnit = $this->convertFromEceran($deductEceran, $sellDetail->unit_id, $product);
 
                     // Update grand total (proportional to deduction)
-                    $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
-                    $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $pricePerUnit);
+                    // Calculate net price per unit: (total price - total discount) / quantity
+                    $netPricePerUnit = (($sellDetail->price * $sellDetail->quantity) - $sellDetail->diskon) / $sellDetail->quantity;
+                    $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $netPricePerUnit);
 
                     // Update the sell detail quantity
                     $sellDetail->quantity -= $deductInOriginalUnit;
@@ -453,8 +454,9 @@ class SellReturController extends Controller
                         $deductInOriginalUnit = $this->convertFromEceran($deductEceran, $sellDetail->unit_id, $product);
 
                         // Update grand total (proportional to deduction)
-                        $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
-                        $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $pricePerUnit);
+                        // Calculate net price per unit: (total price - total discount) / quantity
+                        $netPricePerUnit = (($sellDetail->price * $sellDetail->quantity) - $sellDetail->diskon) / $sellDetail->quantity;
+                        $sell->grand_total = $sell->grand_total - ($deductInOriginalUnit * $netPricePerUnit);
 
                         // Update the sell detail quantity
                         $sellDetail->quantity -= $deductInOriginalUnit;
@@ -617,8 +619,9 @@ class SellReturController extends Controller
                         $sellDetail->save();
 
                         // Update grand total (proportional to restoration)
-                        $pricePerUnit = ($sellDetail->price - $sellDetail->diskon);
-                        $sellRetur->sell->grand_total += ($restoreInOriginalUnit * $pricePerUnit);
+                        // Calculate net price per unit: (total price - total discount) / quantity
+                        $netPricePerUnit = (($sellDetail->price * $sellDetail->quantity) - $sellDetail->diskon) / $sellDetail->quantity;
+                        $sellRetur->sell->grand_total += ($restoreInOriginalUnit * $netPricePerUnit);
 
                         $remainingToRestore -= $restoreEceran;
                     }
@@ -752,13 +755,14 @@ class SellReturController extends Controller
             ->first();
 
         if ($sellDetail) {
-            // Return the net price per unit (price - discount per unit)
-            $pricePerUnit = $sellDetail->price;
+            // Calculate the net total price (total price - total discount)
+            $totalPrice = ($sellDetail->price * $sellDetail->quantity) - $sellDetail->diskon;
+
+            // Return the net price per unit
             if ($sellDetail->quantity > 0) {
-                $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
-                $pricePerUnit -= $discountPerUnit;
+                return $totalPrice / $sellDetail->quantity;
             }
-            return $pricePerUnit;
+            return 0;
         }
 
         // If no exact match, calculate price based on unit conversion from available sell details
@@ -779,18 +783,11 @@ class SellReturController extends Controller
 
             foreach ($sellDetails as $sellDetail) {
                 if ($sellDetail->quantity > 0) {
-                    // Calculate net price per unit (after discount)
-                    $netPricePerUnit = $sellDetail->price;
-                    if ($sellDetail->quantity > 0) {
-                        $discountPerUnit = $sellDetail->diskon / $sellDetail->quantity;
-                        $netPricePerUnit -= $discountPerUnit;
-                    }
+                    // Calculate total price for this detail (total price - total discount)
+                    $totalPriceForThisDetail = ($sellDetail->price * $sellDetail->quantity) - $sellDetail->diskon;
 
                     // Convert quantity to eceran
                     $quantityInEceran = $this->convertToEceran($sellDetail->quantity, $sellDetail->unit_id, $product);
-
-                    // Calculate total price for this quantity in eceran
-                    $totalPriceForThisDetail = $netPricePerUnit * $sellDetail->quantity;
 
                     $totalPriceInEceran += $totalPriceForThisDetail;
                     $totalQuantityInEceran += $quantityInEceran;

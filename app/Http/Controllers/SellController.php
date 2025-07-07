@@ -356,14 +356,14 @@ class SellController extends Controller
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
 
         // Get return data for this sale
-        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+        $sellReturs = SellRetur::with(['sellReturDetails.product', 'sellReturDetails.unit'])
             ->where('sell_id', $id)
             ->get();
 
         // Create a collection of returned items with their quantities
         $returnedItems = collect();
         foreach ($sellReturs as $sellRetur) {
-            foreach ($sellRetur->detail as $returDetail) {
+            foreach ($sellRetur->sellReturDetails as $returDetail) {
                 $key = $returDetail->product_id . '_' . $returDetail->unit_id;
                 if ($returnedItems->has($key)) {
                     $returnedItems[$key]['qty'] += $returDetail->qty;
@@ -610,14 +610,14 @@ class SellController extends Controller
         $details = SellDetail::with('product', 'unit')->where('sell_id', $id)->get();
 
         // Get return data for this sale
-        $sellReturs = SellRetur::with(['detail.product', 'detail.unit'])
+        $sellReturs = SellRetur::with(['sellReturDetails.product', 'sellReturDetails.unit'])
             ->where('sell_id', $id)
             ->get();
 
         // Create a collection of returned items with their quantities
         $returnedItems = collect();
         foreach ($sellReturs as $sellRetur) {
-            foreach ($sellRetur->detail as $returDetail) {
+            foreach ($sellRetur->sellReturDetails as $returDetail) {
                 $key = $returDetail->product_id . '_' . $returDetail->unit_id;
                 if ($returnedItems->has($key)) {
                     $returnedItems[$key]['qty'] += $returDetail->qty;

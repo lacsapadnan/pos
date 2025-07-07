@@ -652,7 +652,8 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                var total = data.quantity * data.price - data.diskon;
+                                // Handle case where quantity is 0 (fully returned items)
+                                var total = data.quantity > 0 ? (data.quantity * data.price - data.diskon) : 0;
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
@@ -666,7 +667,9 @@
 
                 // Calculate grand total
                 var grandTotal = response.reduce((acc, item) => {
-                    return acc + (item.quantity * item.price - item.diskon);
+                    // Handle case where quantity is 0 (fully returned items)
+                    var itemTotal = item.quantity > 0 ? (item.quantity * item.price - item.diskon) : 0;
+                    return acc + itemTotal;
                 }, 0);
                 var formattedGrandTotal = new Intl.NumberFormat('id-ID', {
                     style: 'currency',

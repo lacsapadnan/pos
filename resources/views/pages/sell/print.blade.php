@@ -136,9 +136,10 @@
                 <td width="20%" style="text-align:right">
                     @if ($sell->status == 'batal')
                     <p>0</p>
-                    @else
-                    <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
-                    @endif
+                    @elseif ($detail->quantity <= 0) <p>0</p>
+                        @else
+                        <p>{{ number_format($detail->price * $detail->quantity - $detail->diskon) }}</p>
+                        @endif
                 </td>
             </tr>
             @endforeach
