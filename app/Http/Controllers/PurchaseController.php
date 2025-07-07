@@ -432,17 +432,31 @@ class PurchaseController extends Controller
      */
     public function destroy(string $id)
     {
-        $purchase = Purchase::find($id);
+        DB::beginTransaction();
+        try {
+            $purchase = Purchase::with(['details.product', 'details.unit'])->find($id);
 
-        if (!$purchase) {
-            return redirect()->route('pembelian.index')->with('error', 'Data pembelian tidak ditemukan');
+            if (!$purchase) {
+                return redirect()->route('pembelian.index')->with('error', 'Data pembelian tidak ditemukan');
+            }
+
+            // Decrease stock for each purchase detail
+            foreach ($purchase->details as $detail) {
+                $this->reverseInventoryChange($detail, $purchase->warehouse_id, true);
+            }
+
+            // Delete the purchase (this will also cascade delete the details)
+            $purchase->delete();
+
+            DB::commit();
+            $message = "Pembelian berhasil dihapus";
+
+            return redirect()->route('pembelian.index')->with('success', $message);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Purchase deletion failed: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Gagal menghapus pembelian: ' . $e->getMessage()]);
         }
-
-        $purchase->delete();
-
-        $message = "Pembelian berhasil dihapus";
-
-        return redirect()->route('pembelian.index')->with('success', $message);
     }
 
     public function addCart(Request $request)
@@ -689,7 +703,7 @@ class PurchaseController extends Controller
         return 'ECERAN';
     }
 
-    private function reverseInventoryChange($detail, $warehouseId)
+    private function reverseInventoryChange($detail, $warehouseId, $isDeletion = false)
     {
         // Convert quantity to base unit (eceran)
         $baseQuantity = $this->convertToBaseUnit($detail->quantity, $detail->unit_id, $detail->product);
@@ -704,7 +718,12 @@ class PurchaseController extends Controller
             $inventory->save();
         }
 
-        // Create reversal product report
+        // Create reversal product report with appropriate type based on context
+        $type = $isDeletion ? 'PEMBELIAN_HAPUS' : 'PEMBELIAN_EDIT_REVERSAL';
+        $description = $isDeletion ?
+            'Hapus Pembelian ' . $detail->purchase->order_number :
+            'Reversal Pembelian Edit ' . $detail->purchase->order_number;
+
         ProductReport::create([
             'product_id' => $detail->product_id,
             'warehouse_id' => $warehouseId,
@@ -714,8 +733,8 @@ class PurchaseController extends Controller
             'qty' => -$detail->quantity, // Negative to indicate reversal
             'price' => $detail->price_unit,
             'for' => 'KELUAR',
-            'type' => 'PEMBELIAN_EDIT_REVERSAL',
-            'description' => 'Reversal Pembelian Edit ' . $detail->purchase->order_number
+            'type' => $type,
+            'description' => $description
         ]);
     }
 
