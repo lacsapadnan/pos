@@ -5,6 +5,27 @@
 
 @push('addon-style')
 <link href="assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
+<style>
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(192, 192, 192, 0.3);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        background-color: #818B99;
+    }
+
+    .dataTables_scrollBody {
+        transform: rotateX(180deg);
+    }
+
+    .dataTables_scrollBody::-webkit-scrollbar {
+        height: 16px;
+    }
+
+    .dataTables_scrollBody table {
+        transform: rotateX(180deg);
+    }
+</style>
 @endpush
 
 @include('includes.datatable-pagination')
