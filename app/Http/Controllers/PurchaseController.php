@@ -212,7 +212,6 @@ class PurchaseController extends Controller
 
                 if ($cart->unit_id == $product->unit_dus) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_dus_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_dus_out_of_town / $product->dus_to_eceran;
                     } else {
                         $product->price_dus = $cart->price_unit;
@@ -220,7 +219,6 @@ class PurchaseController extends Controller
                     }
                 } elseif ($cart->unit_id == $product->unit_pak) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_pak_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_pak_out_of_town / $product->pak_to_eceran;
                     } else {
                         $product->price_pak = $cart->price_unit;
@@ -228,7 +226,6 @@ class PurchaseController extends Controller
                     }
                 } elseif ($cart->unit_id == $product->unit_eceran) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_eceran_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_eceran_out_of_town;
                     } else {
                         $product->price_eceran = $cart->price_unit;
