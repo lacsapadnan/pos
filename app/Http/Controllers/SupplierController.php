@@ -65,7 +65,7 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::findOrFail($id);
         $supplier->update($request->all());
-        return redirect()->back()->with('success', 'Data supplier berhasil diubah');
+        return redirect()->route('supplier.index')->with('success', 'Data supplier berhasil diubah');
     }
 
     /**
