@@ -81,6 +81,7 @@
                             <th class="min-w-100px">Kelompok</th>
                             <th class="min-w-150px">Nama Barang</th>
                             <th>Promo</th>
+                            <th>Promo Luar Kota</th>
                             <th>Barcode Dus</th>
                             <th>Barcode Pak</th>
                             <th>Barcode Ecer</th>
@@ -98,6 +99,7 @@
                             <th>Harga Jual Pak Luar Kota</th>
                             <th>Harga Jual Eceran Luar Kota</th>
                             <th>Hadiah</th>
+                            <th>Hadiah Luar Kota</th>
                             <th class="min-w-200px">Aksi</th>
                         </tr>
                     </thead>
@@ -157,6 +159,9 @@
                         },
                         {
                             data: 'promo'
+                        },
+                        {
+                            data: 'promo_out_of_town'
                         },
                         {
                             data: 'barcode_dus',
@@ -278,6 +283,10 @@
                         },
                         {
                             data: 'hadiah',
+                            defaultContent: '-'
+                        },
+                        {
+                            data: 'hadiah_out_of_town',
                             defaultContent: '-'
                         },
                         {
