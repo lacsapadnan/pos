@@ -211,27 +211,27 @@ class PurchaseController extends Controller
                 $warehouse = auth()->user()->warehouse;
 
                 if ($cart->unit_id == $product->unit_dus) {
-                    $product->price_dus = $cart->price_unit;
-                    $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
-
-                    // Update out of town latest price if warehouse is out of town
                     if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->price_dus_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_dus_out_of_town / $product->dus_to_eceran;
+                    } else {
+                        $product->price_dus = $cart->price_unit;
+                        $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
                     }
                 } elseif ($cart->unit_id == $product->unit_pak) {
-                    $product->price_pak = $cart->price_unit;
-                    $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
-
-                    // Update out of town latest price if warehouse is out of town
                     if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->price_pak_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_pak_out_of_town / $product->pak_to_eceran;
+                    } else {
+                        $product->price_pak = $cart->price_unit;
+                        $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
                     }
                 } elseif ($cart->unit_id == $product->unit_eceran) {
-                    $product->price_eceran = $cart->price_unit;
-
-                    // Update out of town latest price if warehouse is out of town
                     if ($warehouse && $warehouse->isOutOfTown) {
+                        $product->price_eceran_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $product->price_sell_eceran_out_of_town;
+                    } else {
+                        $product->price_eceran = $cart->price_unit;
                     }
                 }
                 $product->update();
