@@ -360,13 +360,6 @@ class SellReturController extends Controller
             }
         }
 
-        // Update status to "batal" if all items are returned
-        $sell = Sell::where('id', $request->sell_id)->first();
-        if ($allReturned) {
-            $sell->status = 'batal';
-            $sell->update();
-        }
-
         // Create cashflow if the sell status is 'lunas'
         if ($sell->status === 'lunas') {
             $this->cashflowService->handleReturnTransaction(
@@ -377,6 +370,13 @@ class SellReturController extends Controller
                 sellStatus: $sell->status,
                 paidAmount: $sell->pay
             );
+        }
+
+        // Update status to "batal" if all items are returned
+        $sell = Sell::where('id', $request->sell_id)->first();
+        if ($allReturned) {
+            $sell->status = 'batal';
+            $sell->update();
         }
 
         // delete the cart
