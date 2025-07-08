@@ -3,12 +3,53 @@
 @section('title', 'Rekap Absensi')
 @section('menu-title', 'Rekap Absensi')
 
+@push('addon-style')
+<link href="{{ URL::asset('assets/plugins/custom/datatables/datatables.bundle.css') }}" rel="stylesheet"
+    type="text/css" />
+@endpush
+
 @section('content')
 <div class="col-lg-12">
     <div class="card">
-        <div class="card-header">
+        <div class="gap-2 py-5 card-header align-items-center gap-md-5">
             <div class="card-title">
-                <h3>Rekap Absensi</h3>
+                <h3 class="m-0">Rekap Absensi</h3>
+            </div>
+            <div class="gap-5 card-toolbar flex-row-fluid justify-content-end">
+                <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click"
+                    data-kt-menu-placement="bottom-end">
+                    <i class="ki-duotone ki-exit-down fs-2">
+                        <span class="path1"></span>
+                        <span class="path2"></span>
+                    </i>
+                    Export Data
+                </button>
+                <!--begin::Menu-->
+                <div id="kt_datatable_example_export_menu"
+                    class="py-4 menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px"
+                    data-kt-menu="true">
+                    <div class="px-3 menu-item">
+                        <a href="#" class="px-3 menu-link" data-kt-export="copy">
+                            Copy to clipboard
+                        </a>
+                    </div>
+                    <div class="px-3 menu-item">
+                        <a href="#" class="px-3 menu-link" data-kt-export="excel">
+                            Export as Excel
+                        </a>
+                    </div>
+                    <div class="px-3 menu-item">
+                        <a href="#" class="px-3 menu-link" data-kt-export="csv">
+                            Export as CSV
+                        </a>
+                    </div>
+                    <div class="px-3 menu-item">
+                        <a href="#" class="px-3 menu-link" data-kt-export="pdf">
+                            Export as PDF
+                        </a>
+                    </div>
+                </div>
+                <div id="kt_datatable_example_buttons" class="d-none"></div>
             </div>
         </div>
         <div class="card-body">
@@ -219,6 +260,40 @@
     // Load initial data
     loadAttendanceData();
 
+    function initExportButtons() {
+        const buttonsInstance = new $.fn.dataTable.Buttons(table, {
+            buttons: [
+                {
+                    extend: 'copyHtml5',
+                    title: 'Rekap Absensi'
+                },
+                {
+                    extend: 'excelHtml5',
+                    title: 'Rekap Absensi'
+                },
+                {
+                    extend: 'csvHtml5',
+                    title: 'Rekap Absensi'
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: 'Rekap Absensi'
+                }
+            ]
+        }).container().appendTo($('#kt_datatable_example_buttons'));
+
+        // Hook export menu clicks
+        const exportMenuButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
+        exportMenuButtons.forEach(exportButton => {
+            exportButton.addEventListener('click', e => {
+                e.preventDefault();
+                const exportValue = e.target.getAttribute('data-kt-export');
+                const target = document.querySelector('.dt-buttons .buttons-' + exportValue);
+                target.click();
+            });
+        });
+    }
+
     $('#filter-btn').click(function() {
         loadAttendanceData();
     });
@@ -241,6 +316,8 @@
         table = $('#attendance-table').DataTable({
             responsive: true,
             processing: true,
+            dom: 'Bfrtip',
+            buttons: [], // Initialize empty buttons array
             language: {
                 processing: '<span class="fa-stack fa-lg">\n\
                     <i class="fa fa-spinner fa-spin fa-stack-2x fa-fw"></i>\n\
@@ -263,7 +340,7 @@
             columns: [
                 { data: null, orderable: false, searchable: false },
                 { data: 'check_in' },
-                { data: 'user.name' },
+                { data: 'employee.name' },
                 @if(auth()->user()->hasRole('master'))
                 { data: 'warehouse.name' },
                 @endif
@@ -355,7 +432,6 @@
                                         <span class="path1"></span>
                                         <span class="path2"></span>
                                     </i>
-                                    Edit
                                 </button>
                                 <button type="button" class="btn btn-sm btn-danger btn-delete" data-id="${row.id}">
                                     <i class="ki-duotone ki-trash fs-5">
@@ -365,7 +441,6 @@
                                         <span class="path4"></span>
                                         <span class="path5"></span>
                                     </i>
-                                    Hapus
                                 </button>
                             </div>
                         `;
@@ -373,6 +448,9 @@
                 }
             ]
         });
+
+        // Initialize export buttons after table is created
+        initExportButtons();
 
         // Handle edit button click
         $(document).on('click', '.btn-edit', function() {
