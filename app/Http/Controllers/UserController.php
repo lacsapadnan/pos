@@ -110,12 +110,19 @@ class UserController extends Controller
 
         $role = Role::where('id', $validated['role'])->first();
         $user = User::where('id', $id)->first();
-        $user->update([
+
+        $updateData = [
             'name' => $validated['name'] ?? $user->name,
             'email' => $validated['email'] ?? $user->email,
-            'password' => $request->password ? Hash::make($request->password) : $user->password,
             'warehouse_id' => $validated['warehouse_id'] ?? $user->warehouse_id,
-        ]);
+        ];
+
+        // Only update password if provided
+        if ($request->password && !empty($request->password)) {
+            $updateData['password'] = Hash::make($request->password);
+        }
+
+        $user->update($updateData);
 
         // Update the user roles or used current roles
         $user->roles()->sync($role);
