@@ -61,7 +61,8 @@
                     </div>
 
                     <div id="incomeItemContainer" class="mb-4" style="display: none;">
-                        <label class="form-label" for="kas_income_item_id">Item Pendapatan</label>
+                        <label class="form-label" for="kas_income_item_id">Item Pendapatan <span
+                                class="text-danger">*</span></label>
                         <select id="kas_income_item_id" name="kas_income_item_id" class="form-select form-select-solid"
                             data-control="select2" data-dropdown-parent="#kt_modal_1">
                             <option value="">Pilih Item Pendapatan</option>
@@ -72,7 +73,8 @@
                     </div>
 
                     <div id="expenseItemContainer" class="mb-4" style="display: none;">
-                        <label class="form-label" for="kas_expense_item_id">Item Pengeluaran</label>
+                        <label class="form-label" for="kas_expense_item_id">Item Pengeluaran <span
+                                class="text-danger">*</span></label>
                         <select id="kas_expense_item_id" name="kas_expense_item_id"
                             class="form-select form-select-solid" data-control="select2"
                             data-dropdown-parent="#kt_modal_1">

@@ -334,15 +334,58 @@
                     incomeContainer.show();
                     expenseContainer.hide();
                     expenseSelect.val('').trigger('change');
+                    // Make income item required and remove required from expense item
+                    incomeSelect.attr('required', true);
+                    expenseSelect.removeAttr('required');
                 } else if (selectedType === 'Kas Keluar') {
                     incomeContainer.hide();
                     expenseContainer.show();
                     incomeSelect.val('').trigger('change');
+                    // Make expense item required and remove required from income item
+                    expenseSelect.attr('required', true);
+                    incomeSelect.removeAttr('required');
                 } else {
                     incomeContainer.hide();
                     expenseContainer.hide();
                     incomeSelect.val('').trigger('change');
                     expenseSelect.val('').trigger('change');
+                    // Remove required from both when no type is selected
+                    incomeSelect.removeAttr('required');
+                    expenseSelect.removeAttr('required');
+                }
+            });
+
+            // Form validation on submit
+            $('#kas-form').on('submit', function(e) {
+                const selectedType = $('#typeSelect').val();
+                const incomeItem = $('#kas_income_item_id').val();
+                const expenseItem = $('#kas_expense_item_id').val();
+
+                // Validate based on selected type
+                if (selectedType === 'Kas Masuk' && !incomeItem) {
+                    e.preventDefault();
+                    Swal.fire({
+                        text: "Silakan pilih Item Pendapatan terlebih dahulu!",
+                        icon: "warning",
+                        buttonsStyling: false,
+                        confirmButtonText: "OK",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
+                    return false;
+                } else if (selectedType === 'Kas Keluar' && !expenseItem) {
+                    e.preventDefault();
+                    Swal.fire({
+                        text: "Silakan pilih Item Pengeluaran terlebih dahulu!",
+                        icon: "warning",
+                        buttonsStyling: false,
+                        confirmButtonText: "OK",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
+                    return false;
                 }
             });
 
@@ -351,6 +394,9 @@
                 $('#typeSelect').val('').trigger('change');
                 $('#incomeItemContainer').hide();
                 $('#expenseItemContainer').hide();
+                // Remove required attributes when modal is closed
+                $('#kas_income_item_id').removeAttr('required');
+                $('#kas_expense_item_id').removeAttr('required');
             });
 
             // Initialize containers as hidden when modal opens
@@ -393,11 +439,17 @@
                         $('#expenseItemContainer').hide();
                         $('#kas_income_item_id').val(kas.kas_income_item_id).trigger('change');
                         $('#kas_expense_item_id').val('').trigger('change');
+                        // Set required attributes for edit mode
+                        $('#kas_income_item_id').attr('required', true);
+                        $('#kas_expense_item_id').removeAttr('required');
                     } else if (kas.type === 'Kas Keluar') {
                         $('#incomeItemContainer').hide();
                         $('#expenseItemContainer').show();
                         $('#kas_expense_item_id').val(kas.kas_expense_item_id).trigger('change');
                         $('#kas_income_item_id').val('').trigger('change');
+                        // Set required attributes for edit mode
+                        $('#kas_expense_item_id').attr('required', true);
+                        $('#kas_income_item_id').removeAttr('required');
                     }
 
                     // Show modal
@@ -420,6 +472,10 @@
                 $('#expenseItemContainer').hide();
                 $('#kas_income_item_id').val('').trigger('change');
                 $('#kas_expense_item_id').val('').trigger('change');
+
+                // Remove required attributes when creating new data
+                $('#kas_income_item_id').removeAttr('required');
+                $('#kas_expense_item_id').removeAttr('required');
 
                 // Reset warehouse dropdown if it exists
                 if ($('select[name="warehouse_id"]').length) {
