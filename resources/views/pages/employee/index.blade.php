@@ -83,6 +83,7 @@
                             <th>KTP</th>
                             <th>No. Telp</th>
                             <th>Cabang</th>
+                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -175,6 +176,20 @@
                         },
                         {
                             data: 'warehouse.name',
+                        },
+                        {
+                            data: 'isActive',
+                            render: function(data, type, row) {
+                                const status = data ? 'checked' : '';
+                                const label = data ? 'Aktif' : 'Non-aktif';
+                                return `
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" ${status}
+                                            onchange="toggleActive(${row.id}, this.checked)"
+                                            id="activeSwitch_${row.id}">
+                                        <label class="form-check-label" for="activeSwitch_${row.id}">${label}</label>
+                                    </div>`;
+                            }
                         },
                         {
                             data: "id",
@@ -287,5 +302,34 @@
             var modal = new bootstrap.Modal(document.getElementById('kt_modal_view_ktp'));
             modal.show();
         }
+</script>
+<script>
+    function toggleActive(id, status) {
+        $.ajax({
+            url: `/karyawan/${id}/toggle-active`,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                isActive: status
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                    // Update the label immediately
+                    const label = response.isActive ? 'Aktif' : 'Non-aktif';
+                    $(`#activeSwitch_${id}`).next('label').text(label);
+                } else {
+                    toastr.error(response.message);
+                    // Revert the toggle if failed
+                    $(`#activeSwitch_${id}`).prop('checked', !status);
+                }
+            },
+            error: function(xhr) {
+                toastr.error('Terjadi kesalahan saat mengubah status');
+                // Revert the toggle if failed
+                $(`#activeSwitch_${id}`).prop('checked', !status);
+            }
+        });
+    }
 </script>
 @endpush

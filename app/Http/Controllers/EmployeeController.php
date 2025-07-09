@@ -100,6 +100,7 @@ class EmployeeController extends Controller
             'nickname' => 'nullable|string|max:255',
             'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'warehouse_id' => 'required|exists:warehouses,id',
+            'isActive' => 'boolean',
         ]);
 
         try {
@@ -123,6 +124,7 @@ class EmployeeController extends Controller
                 'nickname' => $request->nickname,
                 'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
+                'isActive' => $request->has('isActive'),
             ]);
 
             DB::commit();
@@ -131,6 +133,43 @@ class EmployeeController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             return redirect()->back()->withErrors($th->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Toggle employee active status
+     */
+    public function toggleActive(string $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $employee = Employee::findOrFail($id);
+            $isActive = request('isActive');
+
+            // Convert to proper boolean
+            if ($isActive === 'true' || $isActive === '1' || $isActive === 1 || $isActive === true) {
+                $isActive = true;
+            } else {
+                $isActive = false;
+            }
+
+            $employee->isActive = $isActive;
+            $employee->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status karyawan berhasil diperbarui',
+                'isActive' => $employee->isActive
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage()
+            ], 500);
         }
     }
 

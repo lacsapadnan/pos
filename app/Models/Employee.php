@@ -13,12 +13,23 @@ class Employee extends Model
     use HasFactory;
 
     protected $fillable = [
-        'warehouse_id',
         'name',
         'phone',
         'nickname',
         'ktp',
+        'warehouse_id',
+        'isActive'
     ];
+
+    protected $casts = [
+        'isActive' => 'boolean',
+    ];
+
+    // Add scope for active employees
+    public function scopeActive($query)
+    {
+        return $query->where('isActive', true);
+    }
 
     public function warehouse(): BelongsTo
     {

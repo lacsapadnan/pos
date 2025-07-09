@@ -77,6 +77,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('pembelian', PurchaseController::class);
     Route::resource('role-permission', RolePermissionController::class)->except(['show', 'create']);
     Route::resource('karyawan', EmployeeController::class)->except(['show', 'create']);
+    Route::post('karyawan/{id}/toggle-active', [EmployeeController::class, 'toggleActive'])->name('karyawan.toggle-active');
     // ramdan
     Route::resource('pembelian-retur', PurchaseReturController::class);
     Route::post('konfirmReturnPembelian', [PurchaseReturController::class, 'konfirmReturnPembelian'])->name('konfirmReturnPembelian');

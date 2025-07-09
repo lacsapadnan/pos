@@ -83,10 +83,9 @@ class SalaryController extends Controller
      */
     public function create()
     {
-        // Get employees who have salary settings
-        $employees = Employee::whereHas('salarySetting')->get();
-        $warehouses = Warehouse::all();
-        return view('pages.salary.payment.form', compact('employees', 'warehouses'));
+        $employees = Employee::active()->with('user')->orderBy('name')->get();
+        $warehouses = Warehouse::orderBy('name')->get();
+        return view('pages.salary.create', compact('employees', 'warehouses'));
     }
 
     /**

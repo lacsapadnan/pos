@@ -50,6 +50,16 @@
             @endforelse
         </select>
     </div>
+    <div class="mb-4">
+        <label class="form-label">Status Karyawan</label>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="isActive" value="1" {{ $employee->isActive ? 'checked'
+            : '' }} id="activeSwitch">
+            <label class="form-check-label" for="activeSwitch">
+                {{ $employee->isActive ? 'Aktif' : 'Non-aktif' }}
+            </label>
+        </div>
+    </div>
     <button type="submit" class="btn btn-success">Update karyawan</button>
 </form>
 @endsection
