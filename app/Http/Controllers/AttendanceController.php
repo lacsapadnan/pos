@@ -38,7 +38,7 @@ class AttendanceController extends Controller
     private function adminIndex()
     {
         $warehouses = Warehouse::all();
-        $employees = Employee::all();
+        $employees = Employee::active()->with('warehouse')->orderBy('name')->get();
         $today = now()->format('Y-m-d');
 
         return view('pages.attendance.admin', compact('warehouses', 'employees', 'today'));

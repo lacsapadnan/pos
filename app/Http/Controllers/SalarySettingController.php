@@ -47,7 +47,9 @@ class SalarySettingController extends Controller
             $query->select(DB::raw(1))
                 ->from('salary_settings')
                 ->whereColumn('salary_settings.employee_id', 'employees.id');
-        })->get();
+        })
+            ->active()
+            ->get();
 
         $warehouses = Warehouse::all();
         return view('pages.salary.settings.form', compact('employees', 'warehouses'));
