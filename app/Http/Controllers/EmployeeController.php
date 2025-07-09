@@ -44,6 +44,7 @@ class EmployeeController extends Controller
             'nickname' => 'nullable|string|max:255',
             'ktp' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'warehouse_id' => 'required|exists:warehouses,id',
+            'isActive' => 'boolean',
         ]);
 
         try {
@@ -60,6 +61,7 @@ class EmployeeController extends Controller
                 'nickname' => $request->nickname,
                 'ktp' => $ktpPath,
                 'warehouse_id' => $request->warehouse_id,
+                'isActive' => $request->has('isActive') ? true : true, // Default to true if not specified
             ]);
 
             DB::commit();

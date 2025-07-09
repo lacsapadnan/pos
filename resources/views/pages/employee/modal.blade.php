@@ -44,6 +44,16 @@
                             @endforelse
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status Karyawan</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="isActive" value="1" checked
+                                id="activeSwitch">
+                            <label class="form-check-label" for="activeSwitch">
+                                Aktif
+                            </label>
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-success">Simpan</button>
                 </form>
             </div>
