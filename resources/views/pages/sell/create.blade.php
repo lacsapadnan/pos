@@ -506,7 +506,48 @@
         // Don't call calculateTotal here since handleSplitPaymentInput will call it
     });
 
+    function validateAndSetPaymentMethod() {
+        const paymentMethodSelect = document.getElementsByName('payment_method')[0];
+        const cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // If payment method is not selected but we have payment amounts, set it automatically
+        if (!paymentMethodSelect.value) {
+            if (cash > 0 && transfer > 0) {
+                paymentMethodSelect.value = 'split';
+            } else if (cash > 0) {
+                paymentMethodSelect.value = 'cash';
+            } else if (transfer > 0) {
+                paymentMethodSelect.value = 'transfer';
+            } else if (bayar > 0) {
+                // If using the general bayar field, we need to determine from visible fields
+                const transferDiv = document.getElementById('transferDiv');
+                const cashDiv = document.getElementById('cashDiv');
+
+                if (transferDiv.style.display !== 'none') {
+                    paymentMethodSelect.value = 'transfer';
+                } else if (cashDiv.style.display !== 'none') {
+                    paymentMethodSelect.value = 'cash';
+                }
+            }
+        }
+
+        // Debug log
+        console.log('Payment method validation:', {
+            selected: paymentMethodSelect.value,
+            cash: cash,
+            transfer: transfer,
+            bayar: bayar
+        });
+
+        return true;
+    }
+
     function submitForms() {
+        // Validate and set payment method before submission
+        validateAndSetPaymentMethod();
+
         // Copy values from form1 to form2 hidden inputs
         document.getElementById('transaction_date_form2').value = document.getElementById(
             'kt_td_picker_date_only_input').value;
@@ -606,6 +647,9 @@
 
     // function draft forms add value status is draft
     function draftForms() {
+        // Validate and set payment method before submission (for drafts too)
+        validateAndSetPaymentMethod();
+
         // Copy values from form1 to form2 hidden inputs
         document.getElementById('transaction_date_form2').value = document.getElementById(
             'kt_td_picker_date_only_input').value;
