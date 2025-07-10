@@ -582,6 +582,10 @@
         $('#kt_datatable_detail tbody').empty();
         $('#kt_datatable_retur tbody').empty();
 
+        // Remove any existing total displays
+        $('#kt_datatable_detail').siblings('h2').remove();
+        $('#kt_datatable_retur').siblings('h2').remove();
+
         // Check if DataTable instances exist and destroy them
         if ($.fn.DataTable.isDataTable('#kt_datatable_detail')) {
             datatable.destroy();
@@ -733,6 +737,19 @@
                                 }
                             ]
                         });
+
+                        // Calculate total retur
+                        var totalRetur = returResponse.reduce((acc, item) => {
+                            var itemTotal = item.qty * item.price;
+                            return acc + itemTotal;
+                        }, 0);
+                        var formattedTotalRetur = new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR'
+                        }).format(totalRetur).replace(",00", "");
+
+                        // Display total retur below the retur table
+                        $('#kt_datatable_retur').after(`<h2>Total Retur: ${formattedTotalRetur}</h2>`);
                     },
                     error: function(xhr, status, error) {
                         console.error('Error fetching return data:', error);
