@@ -80,19 +80,24 @@ class PurchaseReturController extends Controller
         return response()->json($retur);
     }
 
-    public function dataByPurchaseId($id)
+    public function dataByPurchaseId($purchaseId)
     {
         $userRoles = auth()->user()->getRoleNames();
-        $query = PurchaseRetur::with('purchase.supplier', 'warehouse', 'details', 'user');
+        $query = PurchaseReturDetail::with(['product', 'unit', 'purchaseRetur']);
+        $query->whereHas('purchaseRetur', function ($q) use ($purchaseId) {
+            $q->where('purchase_id', $purchaseId);
+        });
         if ($userRoles[0] != 'master') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
+            $query->whereHas('purchaseRetur', function ($q) {
+                $q->where('warehouse_id', auth()->user()->warehouse_id);
+            });
         }
-        $retur = $query
-            ->select('purchase_returs.*', 'purchase_returs.remark') // Include the 'remark' column directly
-            ->where('purchase_id', $id)
-            ->orderBy('purchase_returs.id', 'asc')
-            ->get();
-        return response()->json($retur);
+        $returDetails = $query->get();
+        $returDetails->each(function ($detail) {
+            $detail->created_at = $detail->purchaseRetur->created_at;
+            $detail->id = $detail->purchaseRetur->id;
+        });
+        return response()->json($returDetails);
     }
 
     public function  dataDetail($id)
