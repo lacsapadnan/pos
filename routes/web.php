@@ -219,6 +219,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('pindah-stok/cart/hapus/{id}', [SendStockController::class, 'destroyCart'])->name('pindah-stok.destroyCart');
     Route::delete('pindah-stok-draft/cart/hapus/{id}', [SendStockDraftController::class, 'destroyCart'])->name('pindah-stok-draft.destroyCart');
     Route::delete('penjualan-draft/cart/hapus/{id}', [SellDraftController::class, 'destroyCart'])->name('penjualan-draft.destroyCart');
+    Route::get('purchase-retur/available-qty/{purchaseId}/{productId}', [PurchaseReturController::class, 'getAvailableReturnQuantities'])->name('purchase-retur.available-qty');
 
     // Print
     Route::get('penjualan/print/{id}', [SellController::class, 'print'])->name('penjualan.print');
