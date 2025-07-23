@@ -19,7 +19,6 @@ use App\Services\CashflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
@@ -49,15 +48,6 @@ class PurchaseController extends Controller
         $toDate = $request->input('to_date');
         $warehouse = $request->input('warehouse');
         $isExport = $request->input('export', false);
-
-        // Log filter parameters for debugging
-        Log::info('Purchase data request filters:', [
-            'user_id' => $user_id,
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-            'warehouse' => $warehouse,
-            'export' => $isExport,
-        ]);
 
         $defaultDate = now()->format('Y-m-d');
 
@@ -95,9 +85,6 @@ class PurchaseController extends Controller
         }
 
         $purchases = $purchases->get();
-
-        // Log the result count
-        Log::info('Purchase data result count: ' . $purchases->count());
 
         return response()->json($purchases);
     }
@@ -212,26 +199,20 @@ class PurchaseController extends Controller
 
                 if ($cart->unit_id == $product->unit_dus) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_sell_dus_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->dus_to_eceran;
                     } else {
-                        $product->price_dus = $cart->price_unit;
                         $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
                     }
                 } elseif ($cart->unit_id == $product->unit_pak) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_sell_pak_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->pak_to_eceran;
                     } else {
-                        $product->price_pak = $cart->price_unit;
                         $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
                     }
                 } elseif ($cart->unit_id == $product->unit_eceran) {
                     if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->price_sell_eceran_out_of_town = $cart->price_unit;
                         $product->lastest_price_eceran_out_of_town = $cart->price_unit;
                     } else {
-                        $product->price_eceran = $cart->price_unit;
                         $product->lastest_price_eceran = $cart->price_unit;
                     }
                 }
@@ -422,7 +403,6 @@ class PurchaseController extends Controller
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil diupdate');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Purchase update failed: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Gagal mengupdate pembelian: ' . $e->getMessage()]);
         }
     }
@@ -454,7 +434,6 @@ class PurchaseController extends Controller
             return redirect()->route('pembelian.index')->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Purchase deletion failed: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Gagal menghapus pembelian: ' . $e->getMessage()]);
         }
     }
