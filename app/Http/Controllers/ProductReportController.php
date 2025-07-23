@@ -33,7 +33,7 @@ class ProductReportController extends Controller
         $product = $request->input('product');
 
         $query = ProductReport::with(['user:id,name', 'supplier:id,name', 'customer:id,name', 'product:id,name'])
-            ->select('id', 'product_id', 'unit_type', 'user_id', 'type', 'for', 'description', 'supplier_id', 'customer_id', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(qty * price) as total_value'))
+            ->select('id', 'product_id', 'unit_type', 'user_id', 'type', 'for', 'description', 'supplier_id', 'customer_id', DB::raw('SUM(qty) as total_qty'), DB::raw('SUM(price) as total_value'), DB::raw('SUM(price / qty) as price'))
             ->whereDate('created_at', '>=', $fromDate)
             ->whereDate('created_at', '<=', $toDate)
             ->groupBy('id', 'product_id', 'unit_type', 'user_id', 'supplier_id', 'customer_id', 'type', 'description');

@@ -188,7 +188,7 @@
                         {
                             data: null,
                             render: function(data, type, row) {
-                                var calculatedData = row.total_value / row.total_qty;
+                                var calculatedData = row.price;
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR'
