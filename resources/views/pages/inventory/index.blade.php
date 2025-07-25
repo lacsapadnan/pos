@@ -206,27 +206,8 @@
             // Hook export buttons
             var exportButtons = () => {
                 const documentTitle = 'Inventory Data Report';
-                var buttons = new $.fn.dataTable.Buttons(table, {
-                    buttons: [{
-                            extend: 'copyHtml5',
-                            title: documentTitle
-                        },
-                        {
-                            extend: 'excelHtml5',
-                            title: documentTitle
-                        },
-                        {
-                            extend: 'csvHtml5',
-                            title: documentTitle
-                        },
-                        {
-                            extend: 'pdfHtml5',
-                            title: documentTitle
-                        }
-                    ]
-                }).container().appendTo($('#kt_datatable_example_buttons'));
 
-                // Hook dropdown menu click event to datatable export buttons
+                // Hook dropdown menu click event to custom export functions
                 const exportButtons = document.querySelectorAll(
                     '#kt_datatable_example_export_menu [data-kt-export]');
                 exportButtons.forEach(exportButton => {
@@ -235,13 +216,169 @@
 
                         // Get clicked export value
                         const exportValue = e.target.getAttribute('data-kt-export');
-                        const target = document.querySelector('.dt-buttons .buttons-' +
-                            exportValue);
 
-                        // Trigger click event on hidden datatable export buttons
-                        target.click();
+                        // Get current filter values
+                        const category = $('#categoryFilter').val();
+                        const warehouseId = $('#warehouseFilter').val();
+
+                        // Call custom export function with all data
+                        exportAllData(exportValue, category, warehouseId, documentTitle);
                     });
                 });
+            }
+
+                        // Function to export all data
+            var exportAllData = (exportType, category, warehouseId, title) => {
+                // Build URL with current filters
+                let url = '{{ route('api.inventori.export') }}';
+                const params = new URLSearchParams();
+                if (category) params.append('category', category);
+                if (warehouseId) params.append('warehouse_id', warehouseId);
+                if (params.toString()) url += '?' + params.toString();
+
+                // Fetch all data
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    success: function(response) {
+                        if (exportType === 'copy') {
+                            copyToClipboard(response.data, title);
+                        } else if (exportType === 'excel') {
+                            exportToExcel(response.data, title);
+                        } else if (exportType === 'csv') {
+                            exportToCSV(response.data, title);
+                        } else if (exportType === 'pdf') {
+                            exportToPDF(response.data, title);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Export failed:', error);
+                        alert('Export failed. Please try again.');
+                    }
+                });
+            }
+
+            // Copy to clipboard function
+            var copyToClipboard = (data, title) => {
+                let text = 'Cabang\tKelompok\tNama Barang\tJml Per Dus\tJml Per Pak\tStok\n';
+                data.forEach(function(row) {
+                    text += `${row.warehouse}\t${row.category}\t${row.product_name}\t${row.dus_to_eceran}\t${row.pak_to_eceran}\t${row.quantity}\n`;
+                });
+
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('Data copied to clipboard!');
+                }, function(err) {
+                    console.error('Could not copy text: ', err);
+                    alert('Failed to copy to clipboard.');
+                });
+            }
+
+            // Export to Excel function
+            var exportToExcel = (data, title) => {
+                const headers = ['Cabang', 'Kelompok', 'Nama Barang', 'Jml Per Dus', 'Jml Per Pak', 'Stok'];
+                const csvContent = [
+                    headers.join(','),
+                    ...data.map(row => [
+                        `"${row.warehouse}"`,
+                        `"${row.category}"`,
+                        `"${row.product_name}"`,
+                        `"${row.dus_to_eceran}"`,
+                        `"${row.pak_to_eceran}"`,
+                        `"${row.quantity}"`
+                    ].join(','))
+                ].join('\n');
+
+                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = title.replace(/ /g, '_').toLowerCase() + '.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            // Export to CSV function
+            var exportToCSV = (data, title) => {
+                const headers = ['Cabang', 'Kelompok', 'Nama Barang', 'Jml Per Dus', 'Jml Per Pak', 'Stok'];
+                const csvContent = [
+                    headers.join(','),
+                    ...data.map(row => [
+                        `"${row.warehouse}"`,
+                        `"${row.category}"`,
+                        `"${row.product_name}"`,
+                        `"${row.dus_to_eceran}"`,
+                        `"${row.pak_to_eceran}"`,
+                        `"${row.quantity}"`
+                    ].join(','))
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = title.replace(/ /g, '_').toLowerCase() + '.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            // Export to PDF function (simple table format)
+            var exportToPDF = (data, title) => {
+                // Create a simple HTML table for PDF export
+                let htmlContent = `
+                    <html>
+                    <head>
+                        <title>${title}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            h1 { text-align: center; margin-bottom: 30px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; font-weight: bold; }
+                            tr:nth-child(even) { background-color: #f9f9f9; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>${title}</h1>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Cabang</th>
+                                    <th>Kelompok</th>
+                                    <th>Nama Barang</th>
+                                    <th>Jml Per Dus</th>
+                                    <th>Jml Per Pak</th>
+                                    <th>Stok</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.forEach(function(row) {
+                    htmlContent += `
+                        <tr>
+                            <td>${row.warehouse}</td>
+                            <td>${row.category}</td>
+                            <td>${row.product_name}</td>
+                            <td>${row.dus_to_eceran}</td>
+                            <td>${row.pak_to_eceran}</td>
+                            <td>${row.quantity}</td>
+                        </tr>
+                    `;
+                });
+
+                htmlContent += `
+                            </tbody>
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                // Open in new window for printing/saving as PDF
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
             }
 
             // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()

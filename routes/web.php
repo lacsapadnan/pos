@@ -150,6 +150,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('customer/api/data', [CustomerController::class, 'data'])->name('api.customer');
     Route::get('pembelian/api/data', [PurchaseController::class, 'data'])->name('api.pembelian');
     Route::get('inventory/api/data', [InventoryController::class, 'data'])->name('api.inventori');
+    Route::get('inventory/api/export', [InventoryController::class, 'exportData'])->name('api.inventori.export');
     Route::get('penjualan-retur/api/data', [SellReturController::class, 'data'])->name('api.retur');
     Route::get('/api/penjualan', [SellController::class, 'data'])->name('api.penjualan');
     // ramdan
