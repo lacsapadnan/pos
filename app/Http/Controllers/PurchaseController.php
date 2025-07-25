@@ -146,13 +146,47 @@ class PurchaseController extends Controller
     public function store(Request $request)
     {
         try {
+
             $existingCart = PurchaseCart::where('user_id', auth()->id())->get();
 
             $subtotal = (int)str_replace([',', '.'], '', $request->subtotal ?? 0);
             $remaint = (int)str_replace([',', '.'], '', $request->remaint ?? 0);
             $potongan = (int)str_replace([',', '.'], '', $request->potongan ?? 0);
             $grandTotal = (int) str_replace([',', '.'], '', $request->grand_total);
-            $pay = (int) str_replace([',', '.'], '', $request->pay);
+
+            // Get payment method first
+            $paymentMethod = $request->payment_method;
+            $cash = (int)str_replace([',', '.'], '', $request->cash ?? 0);
+            $transfer = (int)str_replace([',', '.'], '', $request->transfer ?? 0);
+            $bayar = (int)str_replace([',', '.'], '', $request->pay ?? 0);
+
+            // Calculate actual payment amount based on payment method
+            $pay = 0;
+            if ($paymentMethod === 'cash' && $cash > 0) {
+                $pay = $cash;
+            } elseif ($paymentMethod === 'transfer' && $transfer > 0) {
+                $pay = $transfer;
+            } elseif ($paymentMethod === 'split' && ($cash > 0 || $transfer > 0)) {
+                $pay = $cash + $transfer;
+            } elseif ($bayar > 0) {
+                $pay = $bayar;
+            }
+
+            // Auto-detect payment method if not set
+            if (empty($paymentMethod)) {
+                if ($cash > 0 && $transfer > 0) {
+                    $paymentMethod = 'split';
+                    $pay = $cash + $transfer;
+                } elseif ($cash > 0) {
+                    $paymentMethod = 'cash';
+                    $pay = $cash;
+                } elseif ($transfer > 0) {
+                    $paymentMethod = 'transfer';
+                    $pay = $transfer;
+                } elseif ($bayar > 0) {
+                    $pay = $bayar;
+                }
+            }
 
             if ($pay < $grandTotal) {
                 $status = 'hutang';
@@ -175,6 +209,9 @@ class PurchaseController extends Controller
                 'description' => $request->description,
                 'tax' => $request->tax,
                 'status' => $status,
+                'payment_method' => $paymentMethod,
+                'cash' => $cash,
+                'transfer' => $transfer,
             ]);
 
             $supplier = Supplier::find($request->supplier_id);
@@ -272,15 +309,27 @@ class PurchaseController extends Controller
             // clear the cart
             PurchaseCart::where('user_id', auth()->id())->delete();
 
-            // Handle cashflow using service
-            $this->cashflowService->handlePurchasePayment(
-                warehouseId: auth()->user()->warehouse_id,
-                orderNumber: $request->order_number,
-                supplierName: $supplier->name,
-                payment: $pay,
-                paymentMethod: $request->treasury_id ?? 1, // Default to 1 (kas kecil) if not provided
-                remaint: $remaint
-            );
+            // Fix: Check if we have any payment amount, not just the generic pay field
+
+
+            if ($pay > 0) {
+
+
+                if ($paymentMethod) {
+                    // Change back to using handlePurchasePayment
+                    $this->cashflowService->handlePurchasePayment(
+                        warehouseId: auth()->user()->warehouse_id,
+                        orderNumber: $request->order_number,
+                        supplierName: $supplier->name,
+                        paymentMethod: $paymentMethod,
+                        cash: $cash,
+                        transfer: $transfer,
+                        grandTotal: $grandTotal  // Pass grand total
+                    );
+                } else {
+                }
+            } else {
+            }
 
             return redirect()->route('pembelian.index')->with('success', 'Pembelian berhasil ditambahkan');
         } catch (\Exception $e) {

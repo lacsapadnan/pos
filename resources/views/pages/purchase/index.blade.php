@@ -128,8 +128,11 @@
                             <th>Tanggal Terima</th>
                             <th>Kasir</th>
                             <th>Supplier</th>
-                            <th>Kas</th>
                             <th>Cabang</th>
+                            <th>Kas</th>
+                            <th>Metode Bayar</th>
+                            <th>Cash</th>
+                            <th>Transfer</th>
                             <th>Subtotal</th>
                             <th>PPN</th>
                             <th>Potongan</th>
@@ -197,10 +200,38 @@
                             "data": "supplier.name"
                         },
                         {
-                            "data": "treasury.name"
+                            "data": "warehouse.name",
+                            defaultContent: '-'
                         },
                         {
-                            "data": "warehouse.name"
+                            "data": "treasury.name",
+                            defaultContent: '-'
+                        },
+                        {
+                            "data": "payment_method",
+                            defaultContent: '-'
+                        },
+                        {
+                            "data": "cash",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(  data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
+                        },
+                        {
+                            "data": "transfer",
+                            render: function(data, type, row) {
+                                var formattedPrice = new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(data);
+                                formattedPrice = formattedPrice.replace(",00", "");
+                                return formattedPrice;
+                            }
                         },
                         {
                             "data": "subtotal",

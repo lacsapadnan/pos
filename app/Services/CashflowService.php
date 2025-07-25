@@ -184,21 +184,101 @@ class CashflowService
         int $warehouseId,
         string $orderNumber,
         string $supplierName,
-        float $payment,
-        int $paymentMethod,
-        float $remaint = 0
+        string $paymentMethod,
+        float $cash = 0,
+        float $transfer = 0,
+        float $grandTotal = 0
     ): void {
-        $description = "Pembelian {$orderNumber} Supplier {$supplierName}";
-        $paymentMethodName = $paymentMethod == 2 ? 'kas besar' : 'kas kecil';
 
-        $this->createCashflow([
-            'warehouse_id' => $warehouseId,
-            'for' => 'Pembelian',
-            'description' => $description,
-            'in' => 0,
-            'out' => $payment - $remaint,
-            'payment_method' => $paymentMethodName,
-        ]);
+
+        $description = "Pembelian {$orderNumber} Supplier {$supplierName}";
+
+        switch ($paymentMethod) {
+            case 'transfer':
+                if ($grandTotal > 0) {
+                    // Use grand total for transfer, create two entries (out and in)
+                    $this->createTransferPaymentFlow($warehouseId, $description, $grandTotal, 'Pembelian');
+                }
+                break;
+
+            case 'cash':
+                if ($grandTotal > 0) {
+                    // Use grand total for cash payment
+                    $this->createCashflow([
+                        'warehouse_id' => $warehouseId,
+                        'for' => 'Pembelian',
+                        'description' => $description,
+                        'in' => 0,
+                        'out' => $grandTotal,
+                        'payment_method' => 'cash',
+                    ]);
+                }
+                break;
+
+            case 'split':
+                if ($cash > 0 || $transfer > 0) {
+                    $this->handlePurchaseSplitPayment($warehouseId, $orderNumber, $supplierName, $cash, $transfer, $grandTotal);
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Handle split payment for purchases (creates 3 entries like sales)
+     */
+    private function handlePurchaseSplitPayment(
+        int $warehouseId,
+        string $orderNumber,
+        string $supplierName,
+        float $cash,
+        float $transfer,
+        float $grandTotal
+    ): void {
+        $transferFormat = number_format($transfer, 0, ',', '.');
+        $cashFormat = number_format($cash, 0, ',', '.');
+
+        $description = "Pembelian {$orderNumber} transfer sebesar {$transferFormat} dan tunai sebesar {$cashFormat} Supplier {$supplierName}";
+
+        // For purchases with split payment, create 3 entries to match sales pattern:
+
+        // 1. Transfer out (money going out to transfer account)
+        if ($transfer > 0) {
+            $this->createCashflow([
+                'warehouse_id' => $warehouseId,
+                'for' => 'Pembelian',
+                'description' => $description,
+                'in' => 0,
+                'out' => $transfer,
+                'payment_method' => 'split payment',
+            ]);
+        }
+
+        // 2. Transfer in (money coming back from transfer account)
+        if ($transfer > 0) {
+            $this->createCashflow([
+                'warehouse_id' => $warehouseId,
+                'for' => 'Pembelian',
+                'description' => $description,
+                'in' => $transfer,
+                'out' => 0,
+                'payment_method' => 'split payment',
+            ]);
+        }
+
+        // 3. Cash out (money going out as cash payment)
+        if ($cash > 0) {
+            $this->createCashflow([
+                'warehouse_id' => $warehouseId,
+                'for' => 'Pembelian',
+                'description' => $description,
+                'in' => 0,
+                'out' => $cash,
+                'payment_method' => 'split payment',
+            ]);
+        }
     }
 
     /**
@@ -511,5 +591,36 @@ class CashflowService
         return Cashflow::where('description', 'like', "%Retur Penjualan {$orderNumber}%")
             ->where('for', 'Retur penjualan')
             ->delete();
+    }
+
+    /**
+     * Record purchase expense in cashflow
+     */
+    public function recordPurchaseExpense(
+        int $warehouseId,
+        string $orderNumber,
+        string $supplierName,
+        string $paymentMethod,
+        float $amount
+    ): void {
+
+        $description = "Pembelian {$orderNumber} Supplier {$supplierName}";
+
+        // Handle transfer payments differently - they need two entries (out and in)
+        if ($paymentMethod === 'transfer') {
+            $this->createTransferPaymentFlow($warehouseId, $description, $amount, 'Pembelian');
+        } else {
+            // For other payment methods (cash, split), create single entry
+            $cashflowData = [
+                'warehouse_id' => $warehouseId,
+                'for' => 'Pembelian',
+                'description' => $description,
+                'in' => 0,
+                'out' => $amount, // Grand total as expense
+                'payment_method' => $paymentMethod,
+            ];
+
+            $cashflow = $this->createCashflow($cashflowData);
+        }
     }
 }

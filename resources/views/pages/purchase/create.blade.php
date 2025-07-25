@@ -205,15 +205,30 @@
                         </div>
                     </div>
                 </div>
-                <div class="mb-5">
-                    <div class="col">
-                        <div class="mb-1">
-                            <label for="bayar" class="col-form-label">Bayar</label>
-                            <input type="text" name="pay" class="form-control" id="bayar"
-                                oninput="formatNumber(this); calculateTotal()" value="0" />
-                        </div>
-                    </div>
+
+                <!-- Enhanced payment method section -->
+                <div class="mb-1" id="bayarDiv">
+                    <label for="bayar" class="col-form-label">Bayar</label>
+                    <input type="text" name="pay" class="form-control" id="bayar"
+                        oninput="formatNumber(this); calculateTotal()" value="0" />
                 </div>
+
+                <div class="mb-1" style="display: none;" id="transferDiv">
+                    <label for="transfer" class="col-form-label">Transfer</label>
+                    <input type="text" name="transfer" class="form-control" id="transfer"
+                        oninput="formatNumber(this); handleSplitPaymentInput(this, 'transfer');"
+                        placeholder="Masukkan jumlah transfer" />
+                    <small class="form-text text-muted">Sistem akan otomatis menghitung sisa untuk cash</small>
+                </div>
+
+                <div class="mb-1" style="display: none;" id="cashDiv">
+                    <label for="cash" class="col-form-label">Cash</label>
+                    <input type="text" name="cash" class="form-control" id="cash"
+                        oninput="formatNumber(this); handleSplitPaymentInput(this, 'cash');"
+                        placeholder="Masukkan jumlah cash" />
+                    <small class="form-text text-muted">Sistem akan otomatis menghitung sisa untuk transfer</small>
+                </div>
+
                 <div class="row">
                     <div class="col">
                         <div class="mb-1">
@@ -223,21 +238,26 @@
                     </div>
                     <div class="col">
                         <div class="mb-1">
-                            <label for="sisa" class="col-form-label">Sisa</label>
-                            <input type="text" name="remaint" class="form-control" id="sisa" readonly />
+                            <label for="kembali" class="col-form-label">Kembali</label>
+                            <input type="text" name="change" class="form-control" id="kembali" readonly />
                         </div>
                     </div>
+                </div>
+
+                <div class="mb-1" id="sisaDiv" style="display: none;">
+                    <label for="sisa" class="col-form-label">Sisa</label>
+                    <input type="text" name="remaint" class="form-control" id="sisa" readonly />
                 </div>
 
                 <div class="mt-5 row">
                     <div class="mb-1">
                         <label for="inputEmail3" class="col-form-label">Metode Bayar</label>
-                        <select name="treasury_id" class="form-select" aria-label="Select example">
-                            @forelse ($treasuries as $treasury)
-                            <option value="{{ $treasury->id }}">{{ $treasury->name }}</option>
-                            @empty
-                            <option value="">Tidak ada metode bayar</option>
-                            @endforelse
+                        <select name="payment_method" class="form-select" aria-label="Select example"
+                            onchange="togglePaymentFields()">
+                            <option value="">Pilih Pembayaran</option>
+                            <option value="transfer">Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="split">Split Payment</option>
                         </select>
                     </div>
                     <div class="mb-1">
@@ -263,60 +283,219 @@
 {{-- calculated form --}}
 <script>
     function formatNumber(input) {
-            // Hapus semua karakter non-digit
-            let value = input.value.replace(/\D/g, '');
+        // Hapus semua karakter non-digit
+        let value = input.value.replace(/\D/g, '');
 
-            // Tambahkan separator ribuan
-            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        // Tambahkan separator ribuan
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-            // Set nilai input dengan format yang baru
-            input.value = value;
+        // Set nilai input dengan format yang baru
+        input.value = value;
+    }
+
+    function calculateTotal() {
+        var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var potongan = parseFloat(document.getElementById('potongan').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        var paymentMethod = document.getElementsByName('payment_method')[0].value;
+        var transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // If tax, bayar, and potongan are not provided, set them to 0
+        tax = isNaN(tax) ? 0 : tax;
+        bayar = isNaN(bayar) ? 0 : bayar;
+        potongan = isNaN(potongan) ? 0 : potongan;
+
+        var grandTotal = subtotal + (subtotal * (tax / 100)) - potongan;
+
+        var kembali = calculateKembali(paymentMethod, grandTotal, transfer, cash, bayar);
+        var sisa = calculateSisa(paymentMethod, grandTotal, transfer, cash, bayar);
+
+        document.getElementById('ppn').value = tax.toFixed(0);
+        document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
+        document.getElementById('kembali').value = new Intl.NumberFormat('id-ID').format(kembali);
+        document.getElementById('potongan').value = potongan.toFixed(0);
+
+        // Show/hide and update sisa field
+        var sisaDiv = document.getElementById('sisaDiv');
+        if (sisa > 0) {
+            sisaDiv.style.display = 'block';
+            document.getElementById('sisa').value = new Intl.NumberFormat('id-ID').format(sisa);
+        } else {
+            sisaDiv.style.display = 'none';
         }
+    }
 
-        function calculateSisa(grandTotal, bayar) {
+    function calculateKembali(paymentMethod, grandTotal, transfer, cash, bayar) {
+        if (paymentMethod === 'transfer') {
+            return Math.max(transfer - grandTotal, 0);
+        } else if (paymentMethod === 'cash') {
+            return Math.max(cash - grandTotal, 0);
+        } else if (paymentMethod === 'split') {
+            return Math.max(transfer + cash - grandTotal, 0);
+        } else {
             return Math.max(bayar - grandTotal, 0);
         }
+    }
 
-        function calculateTotal() {
-            var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
-            var potongan = parseFloat(document.getElementById('potongan').value.replace(/[^0-9.-]+/g, '')) || 0;
+    function calculateSisa(paymentMethod, grandTotal, transfer, cash, bayar) {
+        var totalPayment = 0;
 
-            // If tax and bayar are not provided, set them to 0
-            tax = isNaN(tax) ? 0 : tax;
-            bayar = isNaN(bayar) ? 0 : bayar;
-            potongan = isNaN(potongan) ? 0 : potongan;
-
-            var grandTotal = subtotal + (subtotal * (tax / 100)) - potongan;
-
-            var sisa = calculateSisa(grandTotal, bayar);
-
-            document.getElementById('ppn').value = tax.toFixed(0);
-            document.getElementById('bayar').value = new Intl.NumberFormat('id-ID').format(bayar);
-            document.getElementById('grandTotal').value = new Intl.NumberFormat('id-ID').format(grandTotal);
-            document.getElementById('sisa').value = new Intl.NumberFormat('id-ID').format(sisa);
-            document.getElementById('potongan').value = potongan.toFixed(0);
+        if (paymentMethod === 'transfer') {
+            totalPayment = transfer;
+        } else if (paymentMethod === 'cash') {
+            totalPayment = cash;
+        } else if (paymentMethod === 'split') {
+            totalPayment = transfer + cash;
+        } else {
+            totalPayment = bayar;
         }
 
+        return Math.max(grandTotal - totalPayment, 0);
+    }
+
+    function togglePaymentFields() {
+        const paymentMethod = document.getElementsByName('payment_method')[0].value;
+        const bayarDiv = document.getElementById('bayarDiv');
+        const transferDiv = document.getElementById('transferDiv');
+        const cashDiv = document.getElementById('cashDiv');
+
+        bayarDiv.style.display = 'none';
+        transferDiv.style.display = 'none';
+        cashDiv.style.display = 'none';
+
+        if (paymentMethod === 'transfer') {
+            transferDiv.style.display = 'block';
+        } else if (paymentMethod === 'cash') {
+            cashDiv.style.display = 'block';
+        } else if (paymentMethod === 'split') {
+            transferDiv.style.display = 'block';
+            cashDiv.style.display = 'block';
+            // Clear both fields when switching to split payment
+            document.getElementById('transfer').value = '';
+            document.getElementById('cash').value = '';
+        } else {
+            // Show default bayar field if no specific payment method is selected
+            bayarDiv.style.display = 'block';
+        }
+
+        // Recalculate total when payment method changes
         calculateTotal();
+    }
 
-        function submitForms() {
-            // Get the values from form1
-            var recieptDate = $('#kt_td_picker_date_only_input').val();
-            var invoice = $('#invoice').val();
-            var supplierId = $('#supplier_id').val();
-
-            // Assign the values to the hidden input fields in form2
-            $('#reciept_date_form2').val(recieptDate);
-            $('#invoice_form2').val(invoice);
-            $('#supplier_id_form2').val(supplierId);
-            document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
-
-            // Submit both forms
-            document.getElementById('form1').submit();
-            document.getElementById('form2').submit();
+    function handleSplitPaymentInput(inputElement, inputType) {
+        // Only handle auto-calculation for split payment
+        const paymentMethod = document.getElementsByName('payment_method')[0].value;
+        if (paymentMethod !== 'split') {
+            calculateTotal(); // Still calculate for non-split payments
+            return;
         }
+
+        // Get the grand total (including tax and discount)
+        var subtotal = parseFloat(document.getElementById('subtotal').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var tax = parseFloat(document.getElementById('ppn').value.replace(/[^0-9.-]+/g, '')) || 0;
+        var potongan = parseFloat(document.getElementById('potongan').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const grandTotal = subtotal + (subtotal * (tax / 100)) - potongan;
+
+        const inputValue = parseFloat(inputElement.value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // Calculate remaining amount needed
+        const remainingAmount = Math.max(0, grandTotal - inputValue);
+
+        if (inputValue > 0) {
+            if (inputType === 'transfer') {
+                // User entered transfer amount, calculate remaining for cash
+                const cashInput = document.getElementById('cash');
+
+                // Auto-fill cash with remaining amount
+                if (remainingAmount > 0) {
+                    let formattedValue = remainingAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    cashInput.value = formattedValue;
+                } else if (inputValue >= grandTotal) {
+                    // If transfer covers the full amount, clear cash
+                    cashInput.value = '';
+                }
+            } else if (inputType === 'cash') {
+                // User entered cash amount, calculate remaining for transfer
+                const transferInput = document.getElementById('transfer');
+
+                // Auto-fill transfer with remaining amount
+                if (remainingAmount > 0) {
+                    let formattedValue = remainingAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    transferInput.value = formattedValue;
+                } else if (inputValue >= grandTotal) {
+                    // If cash covers the full amount, clear transfer
+                    transferInput.value = '';
+                }
+            }
+        }
+
+        // Always recalculate totals after auto-fill
+        calculateTotal();
+    }
+
+    // Call the function initially to handle the default state of the form
+    togglePaymentFields();
+
+    // Calculate initial total
+    calculateTotal();
+
+    // Attach event listeners to the input fields to trigger the calculation
+    document.getElementById('bayar').addEventListener('input', function() {
+        formatNumber(this);
+        calculateTotal();
+    });
+
+    function validateAndSetPaymentMethod() {
+        const paymentMethodSelect = document.getElementsByName('payment_method')[0];
+        const cash = parseFloat(document.getElementById('cash').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const transfer = parseFloat(document.getElementById('transfer').value.replace(/[^0-9.-]+/g, '')) || 0;
+        const bayar = parseFloat(document.getElementById('bayar').value.replace(/[^0-9.-]+/g, '')) || 0;
+
+        // If payment method is not selected but we have payment amounts, set it automatically
+        if (!paymentMethodSelect.value) {
+            if (cash > 0 && transfer > 0) {
+                paymentMethodSelect.value = 'split';
+            } else if (cash > 0) {
+                paymentMethodSelect.value = 'cash';
+            } else if (transfer > 0) {
+                paymentMethodSelect.value = 'transfer';
+            } else if (bayar > 0) {
+                // If using the general bayar field, we need to determine from visible fields
+                const transferDiv = document.getElementById('transferDiv');
+                const cashDiv = document.getElementById('cashDiv');
+
+                if (transferDiv.style.display !== 'none') {
+                    paymentMethodSelect.value = 'transfer';
+                } else if (cashDiv.style.display !== 'none') {
+                    paymentMethodSelect.value = 'cash';
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function submitForms() {
+        // Validate and set payment method before submission
+        validateAndSetPaymentMethod();
+
+        // Get the values from form1
+        var recieptDate = $('#kt_td_picker_date_only_input').val();
+        var invoice = $('#invoice').val();
+        var supplierId = $('#supplier_id').val();
+
+        // Assign the values to the hidden input fields in form2
+        $('#reciept_date_form2').val(recieptDate);
+        $('#invoice_form2').val(invoice);
+        $('#supplier_id_form2').val(supplierId);
+        document.getElementById('order_number_form2').value = document.getElementById('order_number').value;
+
+        // Only submit form2, not both forms
+        document.getElementById('form2').submit();
+    }
 </script>
 
 {{-- Datepicker --}}
@@ -582,8 +761,6 @@
                         inputRequests.push(inputRequest);
                     });
 
-                    console.log(inputRequests);
-
                     // Send AJAX request
                     $.ajax({
                         url: '{{ route('pembelian.addCart') }}',
@@ -600,7 +777,6 @@
                         error: function(xhr, status, error) {
                             // Handle error response
                             console.log(xhr.responseText);
-                            console.log('Request data:', inputRequests);
                         }
                     });
                 });

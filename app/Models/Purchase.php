@@ -28,6 +28,9 @@ class Purchase extends Model
         'tax',
         'status',
         'potongan',
+        'payment_method',
+        'cash',
+        'transfer',
     ];
 
     public function user()
