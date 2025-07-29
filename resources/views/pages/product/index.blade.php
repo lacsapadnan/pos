@@ -238,7 +238,7 @@
                             }
                         },
                         {
-                            data: 'price_sell_eceran_out_of_town',
+                            data: 'lastest_price_eceran_out_of_town',
                             render: function(data, type, row) {
                                 var formattedPrice = new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
