@@ -273,25 +273,73 @@
                 });
             }
 
-            // Export to Excel function
+                        // Export to Excel function
             var exportToExcel = (data, title) => {
+                // Create workbook and worksheet
                 const headers = ['Cabang', 'Kelompok', 'Nama Barang', 'Jml Per Dus', 'Jml Per Pak', 'Stok'];
-                const csvContent = [
-                    headers.join(','),
-                    ...data.map(row => [
-                        `"${row.warehouse}"`,
-                        `"${row.category}"`,
-                        `"${row.product_name}"`,
-                        `"${row.dus_to_eceran}"`,
-                        `"${row.pak_to_eceran}"`,
-                        `"${row.quantity}"`
-                    ].join(','))
-                ].join('\n');
 
-                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                // Create HTML table for Excel
+                let htmlTable = '<table border="1">';
+
+                // Add header row
+                htmlTable += '<thead><tr>';
+                headers.forEach(header => {
+                    htmlTable += `<th style="background-color: #f2f2f2; font-weight: bold;">${header}</th>`;
+                });
+                htmlTable += '</tr></thead>';
+
+                // Add data rows
+                htmlTable += '<tbody>';
+                data.forEach(row => {
+                    htmlTable += '<tr>';
+                    htmlTable += `<td>${row.warehouse || ''}</td>`;
+                    htmlTable += `<td>${row.category || ''}</td>`;
+                    htmlTable += `<td>${row.product_name || ''}</td>`;
+                    htmlTable += `<td>${row.dus_to_eceran || ''}</td>`;
+                    htmlTable += `<td>${row.pak_to_eceran || ''}</td>`;
+                    htmlTable += `<td>${row.quantity || 0}</td>`;
+                    htmlTable += '</tr>';
+                });
+                htmlTable += '</tbody></table>';
+
+                // Create Excel file using HTML table format
+                const excelContent = `
+                    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                          xmlns:x="urn:schemas-microsoft-com:office:excel"
+                          xmlns="http://www.w3.org/TR/REC-html40">
+                    <head>
+                        <meta charset="utf-8">
+                        <!--[if gte mso 9]>
+                        <xml>
+                            <x:ExcelWorkbook>
+                                <x:ExcelWorksheets>
+                                    <x:ExcelWorksheet>
+                                        <x:Name>${title}</x:Name>
+                                        <x:WorksheetOptions>
+                                            <x:DisplayGridlines/>
+                                        </x:WorksheetOptions>
+                                    </x:ExcelWorksheet>
+                                </x:ExcelWorksheets>
+                            </x:ExcelWorkbook>
+                        </xml>
+                        <![endif]-->
+                        <style>
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>${htmlTable}</body>
+                    </html>
+                `;
+
+                const blob = new Blob([excelContent], {
+                    type: 'application/vnd.ms-excel;charset=utf-8;'
+                });
+
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = title.replace(/ /g, '_').toLowerCase() + '.csv';
+                link.download = title.replace(/ /g, '_').toLowerCase() + '.xls';
                 link.click();
                 URL.revokeObjectURL(link.href);
             }
