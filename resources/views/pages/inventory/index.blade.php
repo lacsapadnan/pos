@@ -273,7 +273,7 @@
                 });
             }
 
-                        // Export to Excel function
+            // Export to Excel function
             var exportToExcel = (data, title) => {
                 // Create workbook and worksheet
                 const headers = ['Cabang', 'Kelompok', 'Nama Barang', 'Jml Per Dus', 'Jml Per Pak', 'Stok'];
@@ -302,27 +302,11 @@
                 });
                 htmlTable += '</tbody></table>';
 
-                // Create Excel file using HTML table format
+                // Create Excel file using a simpler approach without problematic XML
                 const excelContent = `
-                    <html xmlns:o="urn:schemas-microsoft-com:office:office"
-                          xmlns:x="urn:schemas-microsoft-com:office:excel"
-                          xmlns="http://www.w3.org/TR/REC-html40">
+                    <html>
                     <head>
                         <meta charset="utf-8">
-                        <!--[if gte mso 9]>
-                        <xml>
-                            <x:ExcelWorkbook>
-                                <x:ExcelWorksheets>
-                                    <x:ExcelWorksheet>
-                                        <x:Name>${title}</x:Name>
-                                        <x:WorksheetOptions>
-                                            <x:DisplayGridlines/>
-                                        </x:WorksheetOptions>
-                                    </x:ExcelWorksheet>
-                                </x:ExcelWorksheets>
-                            </x:ExcelWorkbook>
-                        </xml>
-                        <![endif]-->
                         <style>
                             table { border-collapse: collapse; width: 100%; }
                             th, td { border: 1px solid #000; padding: 8px; text-align: left; }
