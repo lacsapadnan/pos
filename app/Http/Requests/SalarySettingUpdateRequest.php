@@ -21,8 +21,10 @@ class SalarySettingUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $salarySettingId = $this->route('salary_setting')?->id;
+
         return [
-            'employee_id' => 'required|exists:employees,id|unique:salary_settings,employee_id,' . $this->route('salarySetting')->id,
+            'employee_id' => 'required|exists:employees,id|unique:salary_settings,employee_id,' . $salarySettingId,
             'warehouse_id' => 'required|exists:warehouses,id',
             'daily_salary' => 'required|numeric|min:0',
             'monthly_salary' => 'required|numeric|min:0',
