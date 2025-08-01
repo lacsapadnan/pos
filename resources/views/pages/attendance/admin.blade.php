@@ -400,7 +400,7 @@
     $(document).on('click', '.edit-btn', function() {
         let id = $(this).data('id');
 
-        $.get(`/absensi/edit/${id}`)
+        $.get(`/absensi/${id}/edit`)
             .done(function(attendance) {
                 $('#edit_user_name').val(attendance.employee.name);
                 $('#edit_warehouse_name').val(attendance.warehouse ? attendance.warehouse.name : '-');
