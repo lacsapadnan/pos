@@ -435,7 +435,7 @@
         e.preventDefault();
         let id = $(this).data('id');
 
-        $.post(`/absensi/update/${id}`, {
+        $.post(`/absensi/${id}`, {
             _token: '{{ csrf_token() }}',
             _method: 'PUT',
             ...Object.fromEntries(new FormData(this))
