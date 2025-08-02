@@ -346,17 +346,48 @@
                                         KTApp.hidePageLoading();
                                     },
                                     error: function(xhr, status, error) {
-                                        console.error('Export error:', xhr.responseText || error);
+                                        console.error('Export error details:', {
+                                            status: status,
+                                            error: error,
+                                            responseText: xhr.responseText,
+                                            responseJSON: xhr.responseJSON,
+                                            statusCode: xhr.status,
+                                            statusText: xhr.statusText
+                                        });
                                         KTApp.hidePageLoading();
-                                        var errorMessage = "Failed to export data";
-                                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                                            errorMessage += ": " + xhr.responseJSON.message;
-                                        } else if (xhr.responseText) {
-                                            errorMessage += ": " + xhr.responseText;
-                                        } else if (error) {
-                                            errorMessage += ": " + error;
+
+                                        var errorMessage = "Export failed";
+                                        var errorDetails = [];
+
+                                        if (xhr.status) {
+                                            errorDetails.push("Status: " + xhr.status + " " + xhr.statusText);
                                         }
+
+                                        if (xhr.responseJSON) {
+                                            if (xhr.responseJSON.message) {
+                                                errorDetails.push("Message: " + xhr.responseJSON.message);
+                                            }
+                                            if (xhr.responseJSON.errors) {
+                                                errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
+                                            }
+                                        } else if (xhr.responseText) {
+                                            errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                                        }
+
+                                        if (error) {
+                                            errorDetails.push("Error: " + error);
+                                        }
+
+                                        if (status) {
+                                            errorDetails.push("Status Type: " + status);
+                                        }
+
+                                        if (errorDetails.length > 0) {
+                                            errorMessage += "\\n\\n" + errorDetails.join("\\n");
+                                        }
+
                                         Swal.fire({
+                                            title: "Export Error",
                                             text: errorMessage,
                                             icon: "error",
                                             buttonsStyling: false,
