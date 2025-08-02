@@ -345,15 +345,9 @@
                                         tempDiv.remove();
                                         KTApp.hidePageLoading();
                                     },
+                                    // Excel export error handler
                                     error: function(xhr, status, error) {
-                                        console.error('Export error details:', {
-                                            status: status,
-                                            error: error,
-                                            responseText: xhr.responseText,
-                                            responseJSON: xhr.responseJSON,
-                                            statusCode: xhr.status,
-                                            statusText: xhr.statusText
-                                        });
+                                        debugAjaxError(xhr, status, error, 'Export Excel');
                                         KTApp.hidePageLoading();
 
                                         var errorMessage = "Export failed";
@@ -495,15 +489,9 @@
                                         tempDiv.remove();
                                         KTApp.hidePageLoading();
                                     },
+                                    // PDF export error handler
                                     error: function(xhr, status, error) {
-                                        console.error('Export error details:', {
-                                            status: status,
-                                            error: error,
-                                            responseText: xhr.responseText,
-                                            responseJSON: xhr.responseJSON,
-                                            statusCode: xhr.status,
-                                            statusText: xhr.statusText
-                                        });
+                                        debugAjaxError(xhr, status, error, 'Export PDF');
                                         KTApp.hidePageLoading();
 
                                         var errorMessage = "Export failed";
@@ -629,6 +617,23 @@
         KTUtil.onDOMContentLoaded(function() {
             KTDatatablesExample.init();
         });
+
+        // Add debugging function
+        function debugAjaxError(xhr, status, error, context) {
+            console.error('AJAX Error Debug:', {
+                context: context,
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                responseJSON: xhr.responseJSON,
+                statusCode: xhr.status,
+                statusText: xhr.statusText,
+                readyState: xhr.readyState,
+                responseType: xhr.responseType,
+                responseURL: xhr.responseURL,
+                getAllResponseHeaders: xhr.getAllResponseHeaders()
+            });
+        }
 </script>
 <script>
     function confirmDelete(id) {

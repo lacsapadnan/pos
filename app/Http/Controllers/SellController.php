@@ -49,6 +49,13 @@ class SellController extends Controller
     public function data(Request $request)
     {
         try {
+            // Add some debugging
+            \Log::info('SellController data method called', [
+                'request_data' => $request->all(),
+                'user_id' => auth()->id(),
+                'user_roles' => auth()->user()->getRoleNames()
+            ]);
+
             $role = auth()->user()->getRoleNames();
             $user_id = $request->input('user_id');
             $fromDate = $request->input('from_date') ?? date('Y-m-d');
@@ -64,6 +71,9 @@ class SellController extends Controller
                 'details.product.unit_dus',
                 'details.product.unit_pak',
                 'details.product.unit_eceran',
+                'details' => function ($query) {
+                    $query->whereNotNull('unit_id');
+                },
                 'details.unit'
             ])
                 ->where('status', '!=', 'draft')
@@ -108,17 +118,54 @@ class SellController extends Controller
 
             // If export parameter is set, return all data without pagination
             if ($export) {
-                $sells = $query->get();
-                return response()->json($sells);
+                try {
+                    $sells = $query->get();
+
+                    // Transform the data to handle null relationships gracefully
+                    $sells = $sells->map(function ($sell) {
+                        return [
+                            'id' => $sell->id,
+                            'order_number' => $sell->order_number,
+                            'cashier' => $sell->cashier ? [
+                                'id' => $sell->cashier->id,
+                                'name' => $sell->cashier->name
+                            ] : null,
+                            'customer' => $sell->customer ? [
+                                'id' => $sell->customer->id,
+                                'name' => $sell->customer->name
+                            ] : null,
+                            'warehouse' => $sell->warehouse ? [
+                                'id' => $sell->warehouse->id,
+                                'name' => $sell->warehouse->name
+                            ] : null,
+                            'payment_method' => $sell->payment_method,
+                            'cash' => $sell->cash ?? 0,
+                            'transfer' => $sell->transfer ?? 0,
+                            'grand_total' => $sell->grand_total ?? 0,
+                            'status' => $sell->status,
+                            'created_at' => $sell->created_at,
+                            'updated_at' => $sell->updated_at
+                        ];
+                    });
+
+                    return response()->json($sells);
+                } catch (\Exception $e) {
+                    \Log::error('Error processing export data: ' . $e->getMessage(), [
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ]);
+                    throw $e;
+                }
             }
 
             return DataTables::of($query)
                 ->make(true);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('SellController data method error: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
             ]);
 
             return response()->json([
