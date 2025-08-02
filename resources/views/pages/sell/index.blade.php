@@ -346,10 +346,18 @@
                                         KTApp.hidePageLoading();
                                     },
                                     error: function(xhr, status, error) {
-                                        console.error('Export error:', error);
+                                        console.error('Export error:', xhr.responseText || error);
                                         KTApp.hidePageLoading();
+                                        var errorMessage = "Failed to export data";
+                                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                                            errorMessage += ": " + xhr.responseJSON.message;
+                                        } else if (xhr.responseText) {
+                                            errorMessage += ": " + xhr.responseText;
+                                        } else if (error) {
+                                            errorMessage += ": " + error;
+                                        }
                                         Swal.fire({
-                                            text: "Failed to export data: " + error,
+                                            text: errorMessage,
                                             icon: "error",
                                             buttonsStyling: false,
                                             confirmButtonText: "Ok, got it!",
