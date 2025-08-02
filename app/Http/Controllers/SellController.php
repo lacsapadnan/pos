@@ -48,71 +48,85 @@ class SellController extends Controller
 
     public function data(Request $request)
     {
-        $role = auth()->user()->getRoleNames();
-        $user_id = $request->input('user_id');
-        $fromDate = $request->input('from_date') ?? date('Y-m-d');
-        $toDate = $request->input('to_date') ?? date('Y-m-d');
-        $warehouse = $request->input('warehouse');
-        $export = $request->input('export');
-        $search = $request->input('search');
+        try {
+            $role = auth()->user()->getRoleNames();
+            $user_id = $request->input('user_id');
+            $fromDate = $request->input('from_date') ?? date('Y-m-d');
+            $toDate = $request->input('to_date') ?? date('Y-m-d');
+            $warehouse = $request->input('warehouse');
+            $export = $request->input('export');
+            $search = $request->input('search');
 
-        $query = Sell::with([
-            'warehouse',
-            'customer',
-            'cashier',
-            'details.product.unit_dus',
-            'details.product.unit_pak',
-            'details.product.unit_eceran',
-            'details.unit'
-        ])
-            ->where('status', '!=', 'draft')
-            ->orderBy('id', 'desc');
+            $query = Sell::with([
+                'warehouse',
+                'customer',
+                'cashier',
+                'details.product.unit_dus',
+                'details.product.unit_pak',
+                'details.product.unit_eceran',
+                'details.unit'
+            ])
+                ->where('status', '!=', 'draft')
+                ->orderBy('id', 'desc');
 
-        if ($role[0] !== 'master') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('cashier_id', auth()->id());
+            if ($role[0] !== 'master') {
+                $query->where('warehouse_id', auth()->user()->warehouse_id)
+                    ->where('cashier_id', auth()->id());
+            }
+
+            if ($warehouse) {
+                $query->where('warehouse_id', $warehouse);
+            }
+
+            if ($user_id) {
+                $query->where('cashier_id', $user_id);
+            }
+
+            if ($fromDate && $toDate) {
+                $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
+                $query->whereBetween('created_at', [$fromDate, $endDate]);
+            }
+
+            // Apply search if provided
+            if (!empty($search) && !empty($search['value'])) {
+                $searchValue = $search['value'];
+                $query->where(function ($q) use ($searchValue) {
+                    $q->where('order_number', 'like', "%{$searchValue}%")
+                        ->orWhereHas('customer', function ($q) use ($searchValue) {
+                            $q->where('name', 'like', "%{$searchValue}%");
+                        })
+                        ->orWhereHas('warehouse', function ($q) use ($searchValue) {
+                            $q->where('name', 'like', "%{$searchValue}%");
+                        })
+                        ->orWhereHas('cashier', function ($q) use ($searchValue) {
+                            $q->where('name', 'like', "%{$searchValue}%");
+                        })
+                        ->orWhere('payment_method', 'like', "%{$searchValue}%")
+                        ->orWhere('status', 'like', "%{$searchValue}%");
+                });
+            }
+
+            // If export parameter is set, return all data without pagination
+            if ($export) {
+                $sells = $query->get();
+                return response()->json($sells);
+            }
+
+            return DataTables::of($query)
+                ->make(true);
+        } catch (\Exception $e) {
+            \Log::error('SellController data method error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengambil data: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
-
-        if ($warehouse) {
-            $query->where('warehouse_id', $warehouse);
-        }
-
-        if ($user_id) {
-            $query->where('cashier_id', $user_id);
-        }
-
-        if ($fromDate && $toDate) {
-            $endDate = \Carbon\Carbon::parse($toDate)->endOfDay();
-            $query->whereBetween('created_at', [$fromDate, $endDate]);
-        }
-
-        // Apply search if provided
-        if (!empty($search) && !empty($search['value'])) {
-            $searchValue = $search['value'];
-            $query->where(function ($q) use ($searchValue) {
-                $q->where('order_number', 'like', "%{$searchValue}%")
-                    ->orWhereHas('customer', function ($q) use ($searchValue) {
-                        $q->where('name', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhereHas('warehouse', function ($q) use ($searchValue) {
-                        $q->where('name', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhereHas('cashier', function ($q) use ($searchValue) {
-                        $q->where('name', 'like', "%{$searchValue}%");
-                    })
-                    ->orWhere('payment_method', 'like', "%{$searchValue}%")
-                    ->orWhere('status', 'like', "%{$searchValue}%");
-            });
-        }
-
-        // If export parameter is set, return all data without pagination
-        if ($export) {
-            $sells = $query->get();
-            return response()->json($sells);
-        }
-
-        return DataTables::of($query)
-            ->make(true);
     }
 
     /**

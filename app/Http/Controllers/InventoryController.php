@@ -24,63 +24,91 @@ class InventoryController extends Controller
 
     public function data(Request $request)
     {
-        $userRoles = auth()->user()->roles->pluck('name');
-        $category = $request->input('category');
-        $warehouseId = $request->input('warehouse_id');
+        try {
+            $userRoles = auth()->user()->roles->pluck('name');
+            $category = $request->input('category');
+            $warehouseId = $request->input('warehouse_id');
 
-        $query = Inventory::with(['product', 'warehouse']);
+            $query = Inventory::with(['product', 'warehouse']);
 
-        if ($category) {
-            $query->whereHas('product', function ($q) use ($category) {
-                $q->where('group', 'LIKE', '%' . $category . '%');
-            });
+            if ($category) {
+                $query->whereHas('product', function ($q) use ($category) {
+                    $q->where('group', 'LIKE', '%' . $category . '%');
+                });
+            }
+
+            if ($userRoles[0] != 'master') {
+                $query->where('warehouse_id', auth()->user()->warehouse_id);
+            } elseif ($warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            }
+
+            return datatables()->eloquent($query)->toJson();
+        } catch (\Exception $e) {
+            \Log::error('InventoryController data method error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengambil data inventory: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
-
-        if ($userRoles[0] != 'master') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
-        } elseif ($warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        }
-
-        return datatables()->eloquent($query)->toJson();
     }
 
     public function exportData(Request $request)
     {
-        $userRoles = auth()->user()->roles->pluck('name');
-        $category = $request->input('category');
-        $warehouseId = $request->input('warehouse_id');
+        try {
+            $userRoles = auth()->user()->roles->pluck('name');
+            $category = $request->input('category');
+            $warehouseId = $request->input('warehouse_id');
 
-        $query = Inventory::with(['product', 'warehouse']);
+            $query = Inventory::with(['product', 'warehouse']);
 
-        if ($category) {
-            $query->whereHas('product', function ($q) use ($category) {
-                $q->where('group', 'LIKE', '%' . $category . '%');
+            if ($category) {
+                $query->whereHas('product', function ($q) use ($category) {
+                    $q->where('group', 'LIKE', '%' . $category . '%');
+                });
+            }
+
+            if ($userRoles[0] != 'master') {
+                $query->where('warehouse_id', auth()->user()->warehouse_id);
+            } elseif ($warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            }
+
+            $inventories = $query->get();
+
+            $data = $inventories->map(function ($inventory) {
+                return [
+                    'warehouse' => $inventory->warehouse->name ?? '',
+                    'category' => $inventory->product->group ?? '',
+                    'product_name' => $inventory->product->name ?? '',
+                    'dus_to_eceran' => $inventory->product->dus_to_eceran ?? '',
+                    'pak_to_eceran' => $inventory->product->pak_to_eceran ?? '',
+                    'quantity' => $inventory->quantity ?? 0
+                ];
             });
+
+            return response()->json([
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('InventoryController exportData method error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengekspor data inventory: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
-
-        if ($userRoles[0] != 'master') {
-            $query->where('warehouse_id', auth()->user()->warehouse_id);
-        } elseif ($warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        }
-
-        $inventories = $query->get();
-
-        $data = $inventories->map(function ($inventory) {
-            return [
-                'warehouse' => $inventory->warehouse->name ?? '',
-                'category' => $inventory->product->group ?? '',
-                'product_name' => $inventory->product->name ?? '',
-                'dus_to_eceran' => $inventory->product->dus_to_eceran ?? '',
-                'pak_to_eceran' => $inventory->product->pak_to_eceran ?? '',
-                'quantity' => $inventory->quantity ?? 0
-            ];
-        });
-
-        return response()->json([
-            'data' => $data
-        ]);
     }
 
     public function dataAll(Request $request)

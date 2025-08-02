@@ -359,11 +359,16 @@
                                         var errorMessage = "Export failed";
                                         var errorDetails = [];
 
-                                        if (xhr.status) {
-                                            errorDetails.push("Status: " + xhr.status + " " + xhr.statusText);
-                                        }
-
-                                        if (xhr.responseJSON) {
+                                        // Check if we have a proper JSON response with error details
+                                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                                            if (xhr.responseJSON.message) {
+                                                errorMessage = xhr.responseJSON.message;
+                                            }
+                                            if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
+                                                errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
+                                            }
+                                        } else if (xhr.responseJSON) {
+                                            // Handle other JSON responses
                                             if (xhr.responseJSON.message) {
                                                 errorDetails.push("Message: " + xhr.responseJSON.message);
                                             }
@@ -371,7 +376,31 @@
                                                 errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
                                             }
                                         } else if (xhr.responseText) {
-                                            errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                                            // Handle plain text responses
+                                            try {
+                                                var responseObj = JSON.parse(xhr.responseText);
+                                                if (responseObj.message) {
+                                                    errorDetails.push("Message: " + responseObj.message);
+                                                }
+                                            } catch (e) {
+                                                errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                                            }
+                                        }
+
+                                        // Add HTTP status information
+                                        if (xhr.status) {
+                                            var statusText = xhr.statusText || '';
+                                            if (xhr.status === 500) {
+                                                errorDetails.push("Server Error (500): Internal server error occurred");
+                                            } else if (xhr.status === 404) {
+                                                errorDetails.push("Not Found (404): The requested resource was not found");
+                                            } else if (xhr.status === 403) {
+                                                errorDetails.push("Forbidden (403): Access denied");
+                                            } else if (xhr.status === 401) {
+                                                errorDetails.push("Unauthorized (401): Authentication required");
+                                            } else {
+                                                errorDetails.push("Status: " + xhr.status + " " + statusText);
+                                            }
                                         }
 
                                         if (error) {
@@ -382,6 +411,7 @@
                                             errorDetails.push("Status Type: " + status);
                                         }
 
+                                        // If we have details, append them to the main message
                                         if (errorDetails.length > 0) {
                                             errorMessage += "\\n\\n" + errorDetails.join("\\n");
                                         }
@@ -466,10 +496,79 @@
                                         KTApp.hidePageLoading();
                                     },
                                     error: function(xhr, status, error) {
-                                        console.error('Export error:', error);
+                                        console.error('Export error details:', {
+                                            status: status,
+                                            error: error,
+                                            responseText: xhr.responseText,
+                                            responseJSON: xhr.responseJSON,
+                                            statusCode: xhr.status,
+                                            statusText: xhr.statusText
+                                        });
                                         KTApp.hidePageLoading();
+
+                                        var errorMessage = "Export failed";
+                                        var errorDetails = [];
+
+                                        // Check if we have a proper JSON response with error details
+                                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                                            if (xhr.responseJSON.message) {
+                                                errorMessage = xhr.responseJSON.message;
+                                            }
+                                            if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
+                                                errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
+                                            }
+                                        } else if (xhr.responseJSON) {
+                                            // Handle other JSON responses
+                                            if (xhr.responseJSON.message) {
+                                                errorDetails.push("Message: " + xhr.responseJSON.message);
+                                            }
+                                            if (xhr.responseJSON.errors) {
+                                                errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
+                                            }
+                                        } else if (xhr.responseText) {
+                                            // Handle plain text responses
+                                            try {
+                                                var responseObj = JSON.parse(xhr.responseText);
+                                                if (responseObj.message) {
+                                                    errorDetails.push("Message: " + responseObj.message);
+                                                }
+                                            } catch (e) {
+                                                errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                                            }
+                                        }
+
+                                        // Add HTTP status information
+                                        if (xhr.status) {
+                                            var statusText = xhr.statusText || '';
+                                            if (xhr.status === 500) {
+                                                errorDetails.push("Server Error (500): Internal server error occurred");
+                                            } else if (xhr.status === 404) {
+                                                errorDetails.push("Not Found (404): The requested resource was not found");
+                                            } else if (xhr.status === 403) {
+                                                errorDetails.push("Forbidden (403): Access denied");
+                                            } else if (xhr.status === 401) {
+                                                errorDetails.push("Unauthorized (401): Authentication required");
+                                            } else {
+                                                errorDetails.push("Status: " + xhr.status + " " + statusText);
+                                            }
+                                        }
+
+                                        if (error) {
+                                            errorDetails.push("Error: " + error);
+                                        }
+
+                                        if (status) {
+                                            errorDetails.push("Status Type: " + status);
+                                        }
+
+                                        // If we have details, append them to the main message
+                                        if (errorDetails.length > 0) {
+                                            errorMessage += "\\n\\n" + errorDetails.join("\\n");
+                                        }
+
                                         Swal.fire({
-                                            text: "Failed to export data: " + error,
+                                            title: "Export Error",
+                                            text: errorMessage,
                                             icon: "error",
                                             buttonsStyling: false,
                                             confirmButtonText: "Ok, got it!",
@@ -570,8 +669,85 @@
                     location.reload();
                 },
                 error: function(xhr, status, error) {
-                    // Handle error
-                    console.error(error);
+                    console.error('Delete error details:', {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText,
+                        responseJSON: xhr.responseJSON,
+                        statusCode: xhr.status,
+                        statusText: xhr.statusText
+                    });
+
+                    var errorMessage = "Failed to delete record";
+                    var errorDetails = [];
+
+                    // Check if we have a proper JSON response with error details
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        if (xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
+                            errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
+                        }
+                    } else if (xhr.responseJSON) {
+                        // Handle other JSON responses
+                        if (xhr.responseJSON.message) {
+                            errorDetails.push("Message: " + xhr.responseJSON.message);
+                        }
+                        if (xhr.responseJSON.errors) {
+                            errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
+                        }
+                    } else if (xhr.responseText) {
+                        // Handle plain text responses
+                        try {
+                            var responseObj = JSON.parse(xhr.responseText);
+                            if (responseObj.message) {
+                                errorDetails.push("Message: " + responseObj.message);
+                            }
+                        } catch (e) {
+                            errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                        }
+                    }
+
+                    // Add HTTP status information
+                    if (xhr.status) {
+                        var statusText = xhr.statusText || '';
+                        if (xhr.status === 500) {
+                            errorDetails.push("Server Error (500): Internal server error occurred");
+                        } else if (xhr.status === 404) {
+                            errorDetails.push("Not Found (404): The requested resource was not found");
+                        } else if (xhr.status === 403) {
+                            errorDetails.push("Forbidden (403): Access denied");
+                        } else if (xhr.status === 401) {
+                            errorDetails.push("Unauthorized (401): Authentication required");
+                        } else {
+                            errorDetails.push("Status: " + xhr.status + " " + statusText);
+                        }
+                    }
+
+                    if (error) {
+                        errorDetails.push("Error: " + error);
+                    }
+
+                    if (status) {
+                        errorDetails.push("Status Type: " + status);
+                    }
+
+                    // If we have details, append them to the main message
+                    if (errorDetails.length > 0) {
+                        errorMessage += "\\n\\n" + errorDetails.join("\\n");
+                    }
+
+                    Swal.fire({
+                        title: "Delete Error",
+                        text: errorMessage,
+                        icon: "error",
+                        buttonsStyling: false,
+                        confirmButtonText: "Ok, got it!",
+                        customClass: {
+                            confirmButton: "btn btn-primary"
+                        }
+                    });
                 }
             });
         }
@@ -791,7 +967,85 @@
                         $('#kt_datatable_retur').after(`<h2>Total Retur: ${formattedTotalRetur}</h2>`);
                     },
                     error: function(xhr, status, error) {
-                        console.error('Error fetching return data:', error);
+                        console.error('Error fetching return data:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            responseJSON: xhr.responseJSON,
+                            statusCode: xhr.status,
+                            statusText: xhr.statusText
+                        });
+
+                        var errorMessage = "Failed to fetch return data";
+                        var errorDetails = [];
+
+                        // Check if we have a proper JSON response with error details
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            if (xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
+                                errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
+                            }
+                        } else if (xhr.responseJSON) {
+                            // Handle other JSON responses
+                            if (xhr.responseJSON.message) {
+                                errorDetails.push("Message: " + xhr.responseJSON.message);
+                            }
+                            if (xhr.responseJSON.errors) {
+                                errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
+                            }
+                        } else if (xhr.responseText) {
+                            // Handle plain text responses
+                            try {
+                                var responseObj = JSON.parse(xhr.responseText);
+                                if (responseObj.message) {
+                                    errorDetails.push("Message: " + responseObj.message);
+                                }
+                            } catch (e) {
+                                errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                            }
+                        }
+
+                        // Add HTTP status information
+                        if (xhr.status) {
+                            var statusText = xhr.statusText || '';
+                            if (xhr.status === 500) {
+                                errorDetails.push("Server Error (500): Internal server error occurred");
+                            } else if (xhr.status === 404) {
+                                errorDetails.push("Not Found (404): The requested resource was not found");
+                            } else if (xhr.status === 403) {
+                                errorDetails.push("Forbidden (403): Access denied");
+                            } else if (xhr.status === 401) {
+                                errorDetails.push("Unauthorized (401): Authentication required");
+                            } else {
+                                errorDetails.push("Status: " + xhr.status + " " + statusText);
+                            }
+                        }
+
+                        if (error) {
+                            errorDetails.push("Error: " + error);
+                        }
+
+                        if (status) {
+                            errorDetails.push("Status Type: " + status);
+                        }
+
+                        // If we have details, append them to the main message
+                        if (errorDetails.length > 0) {
+                            errorMessage += "\\n\\n" + errorDetails.join("\\n");
+                        }
+
+                        Swal.fire({
+                            title: "Data Fetch Error",
+                            text: errorMessage,
+                            icon: "error",
+                            buttonsStyling: false,
+                            confirmButtonText: "Ok, got it!",
+                            customClass: {
+                                confirmButton: "btn btn-primary"
+                            }
+                        });
                     }
                 });
 
@@ -799,7 +1053,85 @@
                 $('#kt_modal_1').modal('show');
             },
             error: function(xhr, status, error) {
-                console.error('Error fetching sell details:', error);
+                console.error('Error fetching sell details:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON,
+                    statusCode: xhr.status,
+                    statusText: xhr.statusText
+                });
+
+                var errorMessage = "Failed to fetch sell details";
+                var errorDetails = [];
+
+                // Check if we have a proper JSON response with error details
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    if (xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
+                        errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
+                    }
+                } else if (xhr.responseJSON) {
+                    // Handle other JSON responses
+                    if (xhr.responseJSON.message) {
+                        errorDetails.push("Message: " + xhr.responseJSON.message);
+                    }
+                    if (xhr.responseJSON.errors) {
+                        errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
+                    }
+                } else if (xhr.responseText) {
+                    // Handle plain text responses
+                    try {
+                        var responseObj = JSON.parse(xhr.responseText);
+                        if (responseObj.message) {
+                            errorDetails.push("Message: " + responseObj.message);
+                        }
+                    } catch (e) {
+                        errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
+                    }
+                }
+
+                // Add HTTP status information
+                if (xhr.status) {
+                    var statusText = xhr.statusText || '';
+                    if (xhr.status === 500) {
+                        errorDetails.push("Server Error (500): Internal server error occurred");
+                    } else if (xhr.status === 404) {
+                        errorDetails.push("Not Found (404): The requested resource was not found");
+                    } else if (xhr.status === 403) {
+                        errorDetails.push("Forbidden (403): Access denied");
+                    } else if (xhr.status === 401) {
+                        errorDetails.push("Unauthorized (401): Authentication required");
+                    } else {
+                        errorDetails.push("Status: " + xhr.status + " " + statusText);
+                    }
+                }
+
+                if (error) {
+                    errorDetails.push("Error: " + error);
+                }
+
+                if (status) {
+                    errorDetails.push("Status Type: " + status);
+                }
+
+                // If we have details, append them to the main message
+                if (errorDetails.length > 0) {
+                    errorMessage += "\\n\\n" + errorDetails.join("\\n");
+                }
+
+                Swal.fire({
+                    title: "Data Fetch Error",
+                    text: errorMessage,
+                    icon: "error",
+                    buttonsStyling: false,
+                    confirmButtonText: "Ok, got it!",
+                    customClass: {
+                        confirmButton: "btn btn-primary"
+                    }
+                });
             }
         });
     }

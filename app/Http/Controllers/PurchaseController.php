@@ -42,51 +42,65 @@ class PurchaseController extends Controller
 
     public function data(Request $request)
     {
-        $role = auth()->user()->getRoleNames();
-        $user_id = $request->input('user_id');
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
-        $warehouse = $request->input('warehouse');
-        $isExport = $request->input('export', false);
+        try {
+            $role = auth()->user()->getRoleNames();
+            $user_id = $request->input('user_id');
+            $fromDate = $request->input('from_date');
+            $toDate = $request->input('to_date');
+            $warehouse = $request->input('warehouse');
+            $isExport = $request->input('export', false);
 
-        $defaultDate = now()->format('Y-m-d');
+            $defaultDate = now()->format('Y-m-d');
 
-        if (!$fromDate) {
-            $fromDate = $defaultDate;
+            if (!$fromDate) {
+                $fromDate = $defaultDate;
+            }
+
+            if (!$toDate) {
+                $toDate = $defaultDate;
+            }
+
+            if ($role->first() == 'master') {
+                $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
+                    ->orderBy('id', 'desc');
+            } else {
+                $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
+                    ->where('warehouse_id', auth()->user()->warehouse_id)
+                    ->where('user_id', auth()->id())
+                    ->orderBy('id', 'desc');
+            }
+
+            if ($warehouse) {
+                $purchases->where('warehouse_id', $warehouse);
+            }
+
+            if ($user_id) {
+                $purchases->where('user_id', $user_id);
+            }
+
+            if ($fromDate && $toDate) {
+                $endDate = Carbon::parse($toDate)->endOfDay();
+
+                $purchases->whereDate('created_at', '>=', $fromDate)
+                    ->whereDate('created_at', '<=', $endDate);
+            }
+
+            $purchases = $purchases->get();
+
+            return response()->json($purchases);
+        } catch (\Exception $e) {
+            \Log::error('PurchaseController data method error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Terjadi kesalahan saat mengambil data pembelian: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
         }
-
-        if (!$toDate) {
-            $toDate = $defaultDate;
-        }
-
-        if ($role->first() == 'master') {
-            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
-                ->orderBy('id', 'desc');
-        } else {
-            $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
-                ->where('warehouse_id', auth()->user()->warehouse_id)
-                ->where('user_id', auth()->id())
-                ->orderBy('id', 'desc');
-        }
-
-        if ($warehouse) {
-            $purchases->where('warehouse_id', $warehouse);
-        }
-
-        if ($user_id) {
-            $purchases->where('user_id', $user_id);
-        }
-
-        if ($fromDate && $toDate) {
-            $endDate = Carbon::parse($toDate)->endOfDay();
-
-            $purchases->whereDate('created_at', '>=', $fromDate)
-                ->whereDate('created_at', '<=', $endDate);
-        }
-
-        $purchases = $purchases->get();
-
-        return response()->json($purchases);
     }
 
     /**
