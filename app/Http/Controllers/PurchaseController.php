@@ -61,32 +61,10 @@ class PurchaseController extends Controller
             }
 
             if ($role->first() == 'master') {
-                $purchases = Purchase::with([
-                    'details' => function ($query) {
-                        $query->whereNotNull('unit_id');
-                    },
-                    'details.product.unit_dus',
-                    'details.product.unit_pak',
-                    'details.product.unit_eceran',
-                    'treasury',
-                    'supplier',
-                    'warehouse',
-                    'user'
-                ])
+                $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                     ->orderBy('id', 'desc');
             } else {
-                $purchases = Purchase::with([
-                    'details' => function ($query) {
-                        $query->whereNotNull('unit_id');
-                    },
-                    'details.product.unit_dus',
-                    'details.product.unit_pak',
-                    'details.product.unit_eceran',
-                    'treasury',
-                    'supplier',
-                    'warehouse',
-                    'user'
-                ])
+                $purchases = Purchase::with('details.product.unit_dus', 'details.product.unit_pak', 'details.product.unit_eceran', 'treasury', 'supplier', 'warehouse', 'user')
                     ->where('warehouse_id', auth()->user()->warehouse_id)
                     ->where('user_id', auth()->id())
                     ->orderBy('id', 'desc');
@@ -108,34 +86,6 @@ class PurchaseController extends Controller
             }
 
             $purchases = $purchases->get();
-
-            // Transform the data to handle null relationships gracefully
-            $purchases = $purchases->map(function ($purchase) {
-                return [
-                    'id' => $purchase->id,
-                    'order_number' => $purchase->order_number,
-                    'user' => $purchase->user ? [
-                        'id' => $purchase->user->id,
-                        'name' => $purchase->user->name
-                    ] : null,
-                    'supplier' => $purchase->supplier ? [
-                        'id' => $purchase->supplier->id,
-                        'name' => $purchase->supplier->name
-                    ] : null,
-                    'warehouse' => $purchase->warehouse ? [
-                        'id' => $purchase->warehouse->id,
-                        'name' => $purchase->warehouse->name
-                    ] : null,
-                    'treasury' => $purchase->treasury ? [
-                        'id' => $purchase->treasury->id,
-                        'name' => $purchase->treasury->name
-                    ] : null,
-                    'grand_total' => $purchase->grand_total ?? 0,
-                    'status' => $purchase->status,
-                    'created_at' => $purchase->created_at,
-                    'updated_at' => $purchase->updated_at
-                ];
-            });
 
             return response()->json($purchases);
         } catch (\Exception $e) {
