@@ -94,7 +94,7 @@ class PurchaseController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengambil data pembelian: ' . $e->getMessage(),

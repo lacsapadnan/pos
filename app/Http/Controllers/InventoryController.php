@@ -50,7 +50,7 @@ class InventoryController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengambil data inventory: ' . $e->getMessage(),
@@ -102,7 +102,7 @@ class InventoryController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengekspor data inventory: ' . $e->getMessage(),
