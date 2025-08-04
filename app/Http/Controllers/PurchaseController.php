@@ -19,6 +19,7 @@ use App\Services\CashflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseController extends Controller
 {
@@ -89,12 +90,6 @@ class PurchaseController extends Controller
 
             return response()->json($purchases);
         } catch (\Exception $e) {
-            \Log::error('PurchaseController data method error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'error' => true,
                 'message' => 'Terjadi kesalahan saat mengambil data pembelian: ' . $e->getMessage(),
@@ -248,24 +243,45 @@ class PurchaseController extends Controller
                 // Get the warehouse to check if it's out of town
                 $warehouse = auth()->user()->warehouse;
 
-                if ($cart->unit_id == $product->unit_dus) {
-                    if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->dus_to_eceran;
-                    } else {
-                        $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
+                try {
+                    if ($cart->unit_id == $product->unit_dus) {
+                        if ($warehouse && $warehouse->isOutOfTown) {
+                            if ($product->dus_to_eceran <= 0) {
+                                Log::error('DivisionByZeroError: Product ID ' . $product->id . ' has dus_to_eceran = ' . $product->dus_to_eceran . ' (Product: ' . $product->name . ')');
+                                throw new \DivisionByZeroError('Product ' . $product->name . ' (ID: ' . $product->id . ') has invalid dus_to_eceran value: ' . $product->dus_to_eceran);
+                            }
+                            $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->dus_to_eceran;
+                        } else {
+                            if ($product->dus_to_eceran <= 0) {
+                                Log::error('DivisionByZeroError: Product ID ' . $product->id . ' has dus_to_eceran = ' . $product->dus_to_eceran . ' (Product: ' . $product->name . ')');
+                                throw new \DivisionByZeroError('Product ' . $product->name . ' (ID: ' . $product->id . ') has invalid dus_to_eceran value: ' . $product->dus_to_eceran);
+                            }
+                            $product->lastest_price_eceran = $cart->price_unit / $product->dus_to_eceran;
+                        }
+                    } elseif ($cart->unit_id == $product->unit_pak) {
+                        if ($warehouse && $warehouse->isOutOfTown) {
+                            if ($product->pak_to_eceran <= 0) {
+                                Log::error('DivisionByZeroError: Product ID ' . $product->id . ' has pak_to_eceran = ' . $product->pak_to_eceran . ' (Product: ' . $product->name . ')');
+                                throw new \DivisionByZeroError('Product ' . $product->name . ' (ID: ' . $product->id . ') has invalid pak_to_eceran value: ' . $product->pak_to_eceran);
+                            }
+                            $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->pak_to_eceran;
+                        } else {
+                            if ($product->pak_to_eceran <= 0) {
+                                Log::error('DivisionByZeroError: Product ID ' . $product->id . ' has pak_to_eceran = ' . $product->pak_to_eceran . ' (Product: ' . $product->name . ')');
+                                throw new \DivisionByZeroError('Product ' . $product->name . ' (ID: ' . $product->id . ') has invalid pak_to_eceran value: ' . $product->pak_to_eceran);
+                            }
+                            $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
+                        }
+                    } elseif ($cart->unit_id == $product->unit_eceran) {
+                        if ($warehouse && $warehouse->isOutOfTown) {
+                            $product->lastest_price_eceran_out_of_town = $cart->price_unit;
+                        } else {
+                            $product->lastest_price_eceran = $cart->price_unit;
+                        }
                     }
-                } elseif ($cart->unit_id == $product->unit_pak) {
-                    if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->lastest_price_eceran_out_of_town = $cart->price_unit / $product->pak_to_eceran;
-                    } else {
-                        $product->lastest_price_eceran = $cart->price_unit / $product->pak_to_eceran;
-                    }
-                } elseif ($cart->unit_id == $product->unit_eceran) {
-                    if ($warehouse && $warehouse->isOutOfTown) {
-                        $product->lastest_price_eceran_out_of_town = $cart->price_unit;
-                    } else {
-                        $product->lastest_price_eceran = $cart->price_unit;
-                    }
+                } catch (\DivisionByZeroError $e) {
+                    Log::error('DivisionByZeroError in PurchaseController::store: ' . $e->getMessage());
+                    throw $e;
                 }
                 $product->update();
 
