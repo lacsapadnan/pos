@@ -120,9 +120,9 @@ class SendStockController extends Controller
 
                 // Convert quantity to eceran
                 $quantityEceran = match ($unit) {
-                    $product->unit_dus => $quantity * $product->dus_to_eceran,
-                    $product->unit_pak => $quantity * $product->pak_to_eceran,
-                    default => $quantity
+                    $product->unit_dus => (int)$quantity * (int)$product->dus_to_eceran,
+                    $product->unit_pak => (int)$quantity * (int)$product->pak_to_eceran,
+                    default => (int)$quantity
                 };
 
                 // Check available stock
