@@ -141,7 +141,7 @@
         var KTDatatablesExample = function() {
             // Shared variables
             var table;
-            var datatable;
+            window.datatable; // Make datatable globally accessible
 
             // Private functions
             var initDatatable = function() {
@@ -149,7 +149,7 @@
                 const tableRows = table.querySelectorAll('tbody tr');
 
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
-                datatable = $(table).DataTable({
+                window.datatable = $(table).DataTable({
                     "info": true,
                     'order': [],
                     'pageLength': 10,
@@ -181,10 +181,16 @@
                         {
                             "data": "id",
                             "render": function(data, type, row) {
-                                return `
+                                let buttons = `
                                 <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${data})">Detail</a>
                                 <a href="/pembelian-retur/print/${data}" target="_blank" class="btn btn-sm btn-success">Print</a>
                                 `;
+
+                                @can('hapus retur')
+                                buttons += `<button type="button" class="btn btn-sm btn-danger" onclick="deleteReturn(${data})">Hapus</button>`;
+                                @endcan
+
+                                return buttons;
                             }
                         },
                     ],
@@ -221,7 +227,7 @@
                     }
 
                     // Load data with updated URL
-                    datatable.ajax.url(url).load();
+                    window.datatable.ajax.url(url).load();
                 });
             }
 
@@ -355,6 +361,83 @@
                 },
                 error: function(xhr, status, error) {
                     console.error(error); // Handle the error appropriately
+                }
+            });
+        }
+
+        function deleteReturn(id) {
+            // Show confirmation dialog using SweetAlert
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: 'Apakah Anda yakin ingin menghapus retur ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Menghapus retur...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/pembelian-retur/' + id,
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            // Close loading dialog
+                            Swal.close();
+
+                            if (response.success) {
+                                // Show success message
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'OK'
+                                }).then(function() {
+                                    window.location.reload();
+                                });
+                            } else {
+                                // Show error message
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal!',
+                                    text: response.message || 'Terjadi kesalahan saat menghapus retur'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            // Close loading dialog
+                            Swal.close();
+
+                            let errorMessage = 'Terjadi kesalahan saat menghapus retur';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                text: errorMessage
+                            });
+                        }
+                    });
                 }
             });
         }

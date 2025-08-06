@@ -393,7 +393,125 @@ class PurchaseReturController extends Controller
      */
     public function destroy(string $id)
     {
-        abort(404);
+        try {
+            DB::beginTransaction();
+
+            // Find the purchase return record
+            $purchaseRetur = PurchaseRetur::with(['details.product', 'purchase'])->findOrFail($id);
+
+            // Check authorization - only creator or master can delete
+            $userRoles = auth()->user()->getRoleNames();
+            if ($userRoles[0] !== 'master' && $purchaseRetur->user_id !== auth()->id()) {
+                return response()->json([
+                    'error' => 'Unauthorized to delete this return'
+                ], 403);
+            }
+
+            // Process each return detail
+            foreach ($purchaseRetur->details as $detail) {
+                $product = $detail->product;
+
+                // Convert return quantity to eceran for inventory calculation
+                $returnQuantityInEceran = $this->convertToEceran($detail->qty, $detail->unit_id, $product);
+
+                // Update inventory - INCREASE stock (we're undoing the return)
+                $inventory = Inventory::where('product_id', $detail->product_id)
+                    ->where('warehouse_id', $purchaseRetur->warehouse_id)
+                    ->first();
+
+                if ($inventory) {
+                    $inventory->quantity += $returnQuantityInEceran;
+                    $inventory->update();
+                }
+
+                // Update purchase details - RESTORE original purchase quantities
+                $purchaseDetails = PurchaseDetail::where('purchase_id', $purchaseRetur->purchase_id)
+                    ->where('product_id', $detail->product_id)
+                    ->with('product')
+                    ->get();
+
+                $remainingToRestore = $returnQuantityInEceran;
+                foreach ($purchaseDetails as $purchaseDetail) {
+                    if ($remainingToRestore <= 0) break;
+
+                    $purchaseDetailEceran = $this->convertToEceran($purchaseDetail->quantity, $purchaseDetail->unit_id, $product);
+                    if ($purchaseDetailEceran > 0) {
+                        $restoreEceran = min($remainingToRestore, $purchaseDetailEceran);
+                        $restoreInOriginalUnit = $this->convertFromEceran($restoreEceran, $purchaseDetail->unit_id, $product);
+
+                        // Restore qty dan total_price
+                        $purchaseDetail->quantity += $restoreInOriginalUnit;
+                        $purchaseDetail->total_price += $restoreInOriginalUnit * $purchaseDetail->price_unit;
+                        $purchaseDetail->update();
+
+                        $remainingToRestore -= $restoreEceran;
+                    }
+                }
+
+                // Update purchase totals
+                $purchase = $purchaseRetur->purchase;
+                $totalRestoredPrice = $detail->qty * $detail->price;
+                $purchase->subtotal += $totalRestoredPrice;
+                $purchase->grand_total += $totalRestoredPrice;
+                $purchase->update();
+
+                // Create product report for the restoration
+                $unit = Unit::find($detail->unit_id);
+                if ($detail->unit_id == $product->unit_dus) {
+                    $unitType = 'DUS';
+                } elseif ($detail->unit_id == $product->unit_pak) {
+                    $unitType = 'PAK';
+                } elseif ($detail->unit_id == $product->unit_eceran) {
+                    $unitType = 'ECERAN';
+                } else {
+                    $unitType = $unit ? $unit->name : '-';
+                }
+
+                ProductReport::create([
+                    'product_id' => $detail->product_id,
+                    'warehouse_id' => $purchaseRetur->warehouse_id,
+                    'user_id' => auth()->id(),
+                    'supplier_id' => $purchase->supplier_id,
+                    'unit' => $unit ? $unit->name : '-',
+                    'unit_type' => $unitType,
+                    'qty' => $detail->qty,
+                    'price' => $detail->price,
+                    'for' => 'MASUK',
+                    'type' => 'HAPUS RETUR PEMBELIAN',
+                    'description' => 'Hapus Retur Pembelian ' . $purchase->order_number,
+                ]);
+            }
+
+            // Remove cashflow entries related to this return
+            Cashflow::where('description', 'LIKE', '%Retur Pembelian ' . $purchaseRetur->purchase->order_number . '%')
+                ->where('warehouse_id', $purchaseRetur->warehouse_id)
+                ->delete();
+
+            // Remove product reports related to this return
+            ProductReport::where('description', 'LIKE', '%Retur Pembelian ' . $purchaseRetur->purchase->order_number . '%')
+                ->where('warehouse_id', $purchaseRetur->warehouse_id)
+                ->delete();
+
+            // Delete return details
+            $purchaseRetur->details()->delete();
+
+            // Delete the main return record
+            $purchaseRetur->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Return berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Gagal menghapus return: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function addCart(Request $request)
