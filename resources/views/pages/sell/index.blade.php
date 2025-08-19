@@ -284,144 +284,22 @@
                             extend: 'excelHtml5',
                             title: documentTitle,
                             action: function (e, dt, button, config) {
-                                // Show loading indicator
-                                KTApp.showPageLoading();
-
-                                // Get current search value from DataTables
+                                // Build a simple querystring and navigate to download
                                 var searchValue = dt.search();
-
-                                // Get current filters from form fields
                                 var fromDate = $('#fromDateFilter').val();
                                 var toDate = $('#toDateFilter').val();
                                 var warehouse = $('#warehouseFilter').val();
                                 var user_id = $('#userFilter').val();
 
-                                // Prepare filter data
-                                var filters = {
-                                    export: 1,
-                                    search: { value: searchValue },
-                                    from_date: fromDate,
-                                    to_date: toDate,
-                                    warehouse: warehouse,
-                                    user_id: user_id
-                                };
+                                var params = [];
+                                if (fromDate) params.push('from_date=' + encodeURIComponent(fromDate));
+                                if (toDate) params.push('to_date=' + encodeURIComponent(toDate));
+                                if (warehouse) params.push('warehouse=' + encodeURIComponent(warehouse));
+                                if (user_id) params.push('user_id=' + encodeURIComponent(user_id));
+                                if (searchValue) params.push('search=' + encodeURIComponent(searchValue));
 
-                                // Make a direct request to get all filtered data
-                                $.ajax({
-                                    url: '{{ route('api.penjualan') }}',
-                                    type: 'GET',
-                                    data: filters,
-                                    success: function(response) {
-                                        // Create a hidden div to hold our temporary table
-                                        var tempDiv = $('<div style="display:none;"></div>');
-                                        var tempTable = $('<table></table>').appendTo(tempDiv);
-                                        $('body').append(tempDiv);
-
-                                        // Initialize the temp table with DataTables
-                                        var tempDT = tempTable.DataTable({
-                                            data: response,
-                                            columns: [
-                                                { data: "order_number" },
-                                                { data: "cashier.name" },
-                                                { data: "customer.name" },
-                                                { data: "warehouse.name" },
-                                                { data: "payment_method" },
-                                                { data: "cash" },
-                                                { data: "transfer" },
-                                                { data: "grand_total" },
-                                                { data: "status" }
-                                            ],
-                                            destroy: true
-                                        });
-
-                                        // Use the DataTables API to trigger the excel action
-                                        $.fn.dataTable.ext.buttons.excelHtml5.action.call(
-                                            {processing: function(){}, exportOptions: config.exportOptions},
-                                            e, tempDT, button, config
-                                        );
-
-                                        // Clean up
-                                        tempDT.destroy();
-                                        tempDiv.remove();
-                                        KTApp.hidePageLoading();
-                                    },
-                                    // Excel export error handler
-                                    error: function(xhr, status, error) {
-                                        debugAjaxError(xhr, status, error, 'Export Excel');
-                                        KTApp.hidePageLoading();
-
-                                        var errorMessage = "Export failed";
-                                        var errorDetails = [];
-
-                                        // Check if we have a proper JSON response with error details
-                                        if (xhr.responseJSON && xhr.responseJSON.error) {
-                                            if (xhr.responseJSON.message) {
-                                                errorMessage = xhr.responseJSON.message;
-                                            }
-                                            if (xhr.responseJSON.details && xhr.responseJSON.details.length > 0) {
-                                                errorDetails.push("Technical Details: " + xhr.responseJSON.details.substring(0, 300));
-                                            }
-                                        } else if (xhr.responseJSON) {
-                                            // Handle other JSON responses
-                                            if (xhr.responseJSON.message) {
-                                                errorDetails.push("Message: " + xhr.responseJSON.message);
-                                            }
-                                            if (xhr.responseJSON.errors) {
-                                                errorDetails.push("Errors: " + JSON.stringify(xhr.responseJSON.errors));
-                                            }
-                                        } else if (xhr.responseText) {
-                                            // Handle plain text responses
-                                            try {
-                                                var responseObj = JSON.parse(xhr.responseText);
-                                                if (responseObj.message) {
-                                                    errorDetails.push("Message: " + responseObj.message);
-                                                }
-                                            } catch (e) {
-                                                errorDetails.push("Response: " + xhr.responseText.substring(0, 200));
-                                            }
-                                        }
-
-                                        // Add HTTP status information
-                                        if (xhr.status) {
-                                            var statusText = xhr.statusText || '';
-                                            if (xhr.status === 500) {
-                                                errorDetails.push("Server Error (500): Internal server error occurred");
-                                            } else if (xhr.status === 404) {
-                                                errorDetails.push("Not Found (404): The requested resource was not found");
-                                            } else if (xhr.status === 403) {
-                                                errorDetails.push("Forbidden (403): Access denied");
-                                            } else if (xhr.status === 401) {
-                                                errorDetails.push("Unauthorized (401): Authentication required");
-                                            } else {
-                                                errorDetails.push("Status: " + xhr.status + " " + statusText);
-                                            }
-                                        }
-
-                                        if (error) {
-                                            errorDetails.push("Error: " + error);
-                                        }
-
-                                        if (status) {
-                                            errorDetails.push("Status Type: " + status);
-                                        }
-
-                                        // If we have details, append them to the main message
-                                        if (errorDetails.length > 0) {
-                                            errorMessage += "\\n\\n" + errorDetails.join("\\n");
-                                        }
-
-                                        Swal.fire({
-                                            title: "Export Error",
-                                            text: errorMessage,
-                                            icon: "error",
-                                            buttonsStyling: false,
-                                            confirmButtonText: "Ok, got it!",
-                                            customClass: {
-                                                confirmButton: "btn btn-primary"
-                                            }
-                                        });
-                                    }
-                                });
+                                var url = '{{ route('penjualan.export') }}' + (params.length ? ('?' + params.join('&')) : '');
+                                window.open(url, '_blank');
                             }
                         },
                         {

@@ -199,6 +199,8 @@ Route::group(['middleware' => ['auth']], function () {
 
     // Export
     Route::get('product/export', [ProductController::class, 'export'])->name('product.export');
+    Route::get('penjualan-export', [SellController::class, 'exportExcel'])
+        ->name('penjualan.export');
 
     // Download
     Route::get('supplier/download', [SupplierController::class, 'download'])->name('supplier.template.download');

@@ -15,6 +15,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\CashflowService;
+use App\Exports\SalesExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,6 +26,8 @@ use Mike42\Escpos\ImagickEscposImage;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\Printer;
 use DataTables;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SellController extends Controller
 {
@@ -49,13 +52,6 @@ class SellController extends Controller
     public function data(Request $request)
     {
         try {
-            // Add some debugging
-            \Log::info('SellController data method called', [
-                'request_data' => $request->all(),
-                'user_id' => auth()->id(),
-                'user_roles' => auth()->user()->getRoleNames()
-            ]);
-
             $role = auth()->user()->getRoleNames();
             $user_id = $request->input('user_id');
             $fromDate = $request->input('from_date') ?? date('Y-m-d');
@@ -97,7 +93,6 @@ class SellController extends Controller
                 $query->whereBetween('created_at', [$fromDate, $endDate]);
             }
 
-            // Apply search if provided
             if (!empty($search) && !empty($search['value'])) {
                 $searchValue = $search['value'];
                 $query->where(function ($q) use ($searchValue) {
@@ -116,52 +111,10 @@ class SellController extends Controller
                 });
             }
 
-            // If export parameter is set, return all data without pagination
-            if ($export) {
-                try {
-                    $sells = $query->get();
-
-                    // Transform the data to handle null relationships gracefully
-                    $sells = $sells->map(function ($sell) {
-                        return [
-                            'id' => $sell->id,
-                            'order_number' => $sell->order_number,
-                            'cashier' => $sell->cashier ? [
-                                'id' => $sell->cashier->id,
-                                'name' => $sell->cashier->name
-                            ] : null,
-                            'customer' => $sell->customer ? [
-                                'id' => $sell->customer->id,
-                                'name' => $sell->customer->name
-                            ] : null,
-                            'warehouse' => $sell->warehouse ? [
-                                'id' => $sell->warehouse->id,
-                                'name' => $sell->warehouse->name
-                            ] : null,
-                            'payment_method' => $sell->payment_method,
-                            'cash' => $sell->cash ?? 0,
-                            'transfer' => $sell->transfer ?? 0,
-                            'grand_total' => $sell->grand_total ?? 0,
-                            'status' => $sell->status,
-                            'created_at' => $sell->created_at,
-                            'updated_at' => $sell->updated_at
-                        ];
-                    });
-
-                    return response()->json($sells);
-                } catch (\Exception $e) {
-                    \Log::error('Error processing export data: ' . $e->getMessage(), [
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine()
-                    ]);
-                    throw $e;
-                }
-            }
-
             return DataTables::of($query)
                 ->make(true);
         } catch (\Throwable $e) {
-            \Log::error('SellController data method error: ' . $e->getMessage(), [
+            Log::error('SellController data method error: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
@@ -851,5 +804,66 @@ class SellController extends Controller
             'status' => 'success',
             'message' => 'Pembayaran piutang berhasil'
         ]);
+    }
+
+    /**
+     * Stream a synchronous Excel export for sales data
+     */
+    public function exportExcel(Request $request)
+    {
+        $role = auth()->user()->getRoleNames();
+        $isMaster = isset($role[0]) && $role[0] === 'master';
+
+        // Handle search parameter - can be string or object with value
+        $search = $request->input('search');
+        if (is_array($search) && isset($search['value'])) {
+            $search = $search['value'];
+        }
+
+        // Apply same defaults as data() method
+        $fromDate = $request->input('from_date') ?? date('Y-m-d');
+        $toDate = $request->input('to_date') ?? date('Y-m-d');
+
+        $filters = [
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+            'warehouse' => $request->input('warehouse'),
+            'user_id' => $request->input('user_id'),
+            'search' => $search,
+        ];
+
+        // Apply restrictions for non-master users
+        if (!$isMaster) {
+            $filters['restrict_warehouse_id'] = auth()->user()->warehouse_id;
+            $filters['restrict_cashier_id'] = auth()->id();
+        }
+
+        // Test query before export
+        $export = new SalesExport($filters);
+        $query = $export->query();
+        $count = $query->count();
+
+        try {
+            set_time_limit(600);
+            ini_set('memory_limit', '1024M');
+
+            $date = date('Ymd_His');
+            $filename = "sales_{$date}.xlsx";
+
+            if ($count > 20000) {
+                return response('<h1>Dataset Too Large</h1><p>This export contains ' . number_format($count) . ' records. Please use date filters to reduce the dataset size to under 20,000 records.</p>', 413);
+            }
+
+            return Excel::download(new SalesExport($filters), $filename);
+        } catch (\Exception $e) {
+            Log::error('Sales export failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response('<h1>Export Failed</h1><p>Error: ' . $e->getMessage() . '</p><p>Please check the logs for more details.</p>', 500);
+        }
     }
 }
