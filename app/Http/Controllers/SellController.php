@@ -503,16 +503,30 @@ class SellController extends Controller
      */
     public function destroy(string $id)
     {
-        $sell = Sell::with('details')->find($id);
+        $sell = Sell::find($id);
 
         if (!$sell) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data penjualan tidak ditemukan'
+                ], 404);
+            }
             return redirect()->back()->with('error', 'Data penjualan tidak ditemukan');
         }
 
-        // Then delete the sell record
+        // Delete the sell record
         $sell->delete();
 
         $message = "Data penjualan berhasil dihapus";
+
+        // For AJAX requests, return JSON to avoid redirect method-mismatch issues
+        if (request()->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => $message
+            ]);
+        }
 
         return redirect()->back()->with('success', $message);
     }

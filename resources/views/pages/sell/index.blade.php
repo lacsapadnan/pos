@@ -526,15 +526,6 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     deleteRecord(id);
-                    Swal.fire(
-                        'Terhapus!',
-                        'Data penjualan terhapus.',
-                        'success'
-                    ).then((result) => {
-                        if (result.isConfirmed) {
-                            location.reload();
-                        }
-                    });
                 }
             });
         }
@@ -549,7 +540,13 @@
                     id: id
                 },
                 success: function(response) {
-                    location.reload();
+                    Swal.fire(
+                        'Terhapus!',
+                        response && response.message ? response.message : 'Data penjualan terhapus.',
+                        'success'
+                    ).then(() => {
+                        location.reload();
+                    });
                 },
                 error: function(xhr, status, error) {
                     console.error('Delete error details:', {
