@@ -255,8 +255,8 @@
                 <p>Cara bayar: {{ $sell->payment_method }} *Nota: Copy, Tanggal cetak: {{ now() }}</p>
                 <br>
                 @if ($sell->warehouse->isOutOfTown)
-                <p>Pembayaran transfer ke rekening <span style="font-weight: bold">BNI</span></p>
-                <p style="font-weight: bold">1940519789 a/n Rizky Setiawan Wijaya.</p>
+                <p>Pembayaran transfer ke rekening <span style="font-weight: bold">BCA</span></p>
+                <p style="font-weight: bold">8421789002 a/n Rizky Setiawan Wijaya.</p>
                 @else
                 <p>Pembayaran transfer ke rekening <span style="font-weight: bold">BCA</span></p>
                 <p style="font-weight: bold">7285132827 a/n Andreas Jati Perkasa.</p>
